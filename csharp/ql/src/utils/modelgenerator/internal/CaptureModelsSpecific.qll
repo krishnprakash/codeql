@@ -27,6 +27,10 @@ private predicate isHigherOrder(CS::Callable api) {
   )
 }
 
+private predicate irrelevantAccessor(CS::Accessor a) {
+  a.getDeclaration().(CS::Property).isReadWrite()
+}
+
 /**
  * Holds if it is relevant to generate models for `api`.
  */
@@ -40,20 +44,25 @@ private predicate isRelevantForModels(CS::Callable api) {
   not api.(CS::Constructor).isParameterless() and
   // Disregard all APIs that have a manual model.
   not api = any(FlowSummaryImpl::Public::SummarizedCallable sc | sc.applyManualModel()) and
-  not api = any(FlowSummaryImpl::Public::NeutralSummaryCallable sc | sc.hasManualModel())
+  not api = any(FlowSummaryImpl::Public::NeutralSummaryCallable sc | sc.hasManualModel()) and
+  // Disregard properties that have both a get and a set accessor,
+  // which implicitly means auto implemented properties.
+  not irrelevantAccessor(api)
 }
 
 /**
- * Holds if it is relevant to generate models for `api` based on data flow analysis.
+ * Holds if it is irrelevant to generate models for `api` based on data flow analysis.
+ *
+ * This serves as an extra filter for the `relevant` predicate.
  */
-predicate isRelevantForDataFlowModels(CS::Callable api) {
-  isRelevantForModels(api) and not isHigherOrder(api)
-}
+predicate isUninterestingForDataFlowModels(CS::Callable api) { isHigherOrder(api) }
 
 /**
- * Holds if it is relevant to generate models for `api` based on its type.
+ * Holds if it is irrelevant to generate models for `api` based on type-based analysis.
+ *
+ * This serves as an extra filter for the `relevant` predicate.
  */
-predicate isRelevantForTypeBasedFlowModels = isRelevantForModels/1;
+predicate isUninterestingForTypeBasedFlowModels(CS::Callable api) { none() }
 
 /**
  * A class of callables that are relevant generating summary, source and sinks models for.
@@ -64,7 +73,8 @@ predicate isRelevantForTypeBasedFlowModels = isRelevantForModels/1;
 class TargetApiSpecific extends CS::Callable {
   TargetApiSpecific() {
     this.fromSource() and
-    this.isUnboundDeclaration()
+    this.isUnboundDeclaration() and
+    isRelevantForModels(this)
   }
 }
 

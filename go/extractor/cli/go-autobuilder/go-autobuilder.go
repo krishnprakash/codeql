@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,63 +53,6 @@ Build behavior:
 `,
 		os.Args[0])
 	fmt.Fprintf(os.Stderr, "Usage:\n\n  %s\n", os.Args[0])
-}
-
-// Returns the import path of the package being built, or "" if it cannot be determined.
-func getImportPath() (importpath string) {
-	importpath = os.Getenv("LGTM_INDEX_IMPORT_PATH")
-	if importpath == "" {
-		repourl := os.Getenv("SEMMLE_REPO_URL")
-		if repourl == "" {
-			githubrepo := os.Getenv("GITHUB_REPOSITORY")
-			if githubrepo == "" {
-				log.Printf("Unable to determine import path, as neither LGTM_INDEX_IMPORT_PATH nor GITHUB_REPOSITORY is set\n")
-				return ""
-			} else {
-				importpath = "github.com/" + githubrepo
-			}
-		} else {
-			importpath = getImportPathFromRepoURL(repourl)
-			if importpath == "" {
-				log.Printf("Failed to determine import path from SEMMLE_REPO_URL '%s'\n", repourl)
-				return
-			}
-		}
-	}
-	log.Printf("Import path is '%s'\n", importpath)
-	return
-}
-
-// Returns the import path of the package being built from `repourl`, or "" if it cannot be
-// determined.
-func getImportPathFromRepoURL(repourl string) string {
-	// check for scp-like URL as in "git@github.com:github/codeql-go.git"
-	shorturl := regexp.MustCompile(`^([^@]+@)?([^:]+):([^/].*?)(\.git)?$`)
-	m := shorturl.FindStringSubmatch(repourl)
-	if m != nil {
-		return m[2] + "/" + m[3]
-	}
-
-	// otherwise parse as proper URL
-	u, err := url.Parse(repourl)
-	if err != nil {
-		log.Fatalf("Malformed repository URL '%s'\n", repourl)
-	}
-
-	if u.Scheme == "file" {
-		// we can't determine import paths from file paths
-		return ""
-	}
-
-	if u.Hostname() == "" || u.Path == "" {
-		return ""
-	}
-
-	host := u.Hostname()
-	path := u.Path
-	// strip off leading slashes and trailing `.git` if present
-	path = regexp.MustCompile(`^/+|\.git$`).ReplaceAllString(path, "")
-	return host + "/" + path
 }
 
 func restoreRepoLayout(fromDir string, dirEntries []string, scratchDirName string, toDir string) {
@@ -378,21 +320,26 @@ func setGopath(root string) {
 	log.Printf("GOPATH set to %s.\n", newGopath)
 }
 
-// Try to build the project without custom commands. If that fails, return a boolean indicating
-// that we should install dependencies ourselves.
+// Try to build the project with a build script. If that fails, return a boolean indicating
+// that we should install dependencies in the normal way.
 func buildWithoutCustomCommands(modMode project.ModMode) bool {
 	shouldInstallDependencies := false
-	// try to build the project
-	buildSucceeded := autobuilder.Autobuild()
+	// try to run a build script
+	scriptSucceeded, scriptsExecuted := autobuilder.Autobuild()
+	scriptCount := len(scriptsExecuted)
 
-	// Build failed or there are still dependency errors; we'll try to install dependencies
-	// ourselves
-	if !buildSucceeded {
-		log.Println("Build failed, continuing to install dependencies.")
+	// If there is no build script we could invoke successfully or there are still dependency errors;
+	// we'll try to install dependencies ourselves in the normal Go way.
+	if !scriptSucceeded {
+		if scriptCount > 0 {
+			log.Printf("Unsuccessfully ran %d build scripts(s), continuing to install dependencies in the normal way.\n", scriptCount)
+		} else {
+			log.Println("Unable to find any build scripts, continuing to install dependencies in the normal way.")
+		}
 
 		shouldInstallDependencies = true
-	} else if util.DepErrors("./...", modMode.ArgsForGoVersion(toolchain.GetEnvGoSemVer())...) {
-		log.Println("Dependencies are still not resolving after the build, continuing to install dependencies.")
+	} else if toolchain.DepErrors("./...", modMode.ArgsForGoVersion(toolchain.GetEnvGoSemVer())...) {
+		log.Printf("Dependencies are still not resolving after executing %d build script(s), continuing to install dependencies in the normal way.\n", scriptCount)
 
 		shouldInstallDependencies = true
 	}
@@ -475,7 +422,7 @@ func installDependencies(workspace project.GoWorkspace) {
 	} else {
 		if workspace.Modules == nil {
 			project.InitGoModForLegacyProject(workspace.BaseDir)
-			workspace.Modules = project.LoadGoModules([]string{filepath.Join(workspace.BaseDir, "go.mod")})
+			workspace.Modules = project.LoadGoModules(true, []string{filepath.Join(workspace.BaseDir, "go.mod")})
 		}
 
 		// get dependencies for all modules
@@ -545,7 +492,9 @@ func extract(workspace project.GoWorkspace) bool {
 
 // Build the project and run the extractor.
 func installDependenciesAndBuild() {
-	log.Printf("Autobuilder was built with %s, environment has %s\n", runtime.Version(), toolchain.GetEnvGoVersion())
+	// do not print experiments the autobuilder was built with if any, only the version
+	version := strings.SplitN(runtime.Version(), " ", 2)[0]
+	log.Printf("Autobuilder was built with %s, environment has %s\n", version, toolchain.GetEnvGoVersion())
 
 	srcdir := getSourceDir()
 
@@ -568,7 +517,7 @@ func installDependenciesAndBuild() {
 	if len(workspaces) == 1 {
 		workspace := workspaces[0]
 
-		importpath := getImportPath()
+		importpath := util.GetImportPath()
 		needGopath := getNeedGopath(workspace, importpath)
 
 		inLGTM := os.Getenv("LGTM_SRC") != "" || os.Getenv("LGTM_INDEX_NEED_GOPATH") != ""

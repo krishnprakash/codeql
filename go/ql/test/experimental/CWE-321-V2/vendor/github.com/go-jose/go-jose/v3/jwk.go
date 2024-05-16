@@ -66,22 +66,6 @@ type rawJSONWebKey struct {
 	X5tSHA1   string   `json:"x5t,omitempty"`
 	X5tSHA256 string   `json:"x5t#S256,omitempty"`
 }
-
-// JSONWebKey represents a public or private key in JWK format. It can be
-// marshaled into JSON and unmarshaled from JSON.
-type JSONWebKey struct {
-	// Key is the Go in-memory representation of this key. It must have one
-	// of these types:
-	//  - ed25519.PublicKey
-	//  - ed25519.PrivateKey
-	//  - *ecdsa.PublicKey
-	//  - *ecdsa.PrivateKey
-	//  - *rsa.PublicKey
-	//  - *rsa.PrivateKey
-	//  - []byte (a symmetric key)
-	//
-	// When marshaling this JSONWebKey into JSON, the "kty" header parameter
-	// will be automatically set based on the type of this field.
 	Key interface{}
 	// Key identifier, parsed from `kid` header.
 	KeyID string
@@ -401,8 +385,6 @@ func (k *JSONWebKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
 		input, err = rsaThumbprintInput(key.N, key.E)
 	case ed25519.PrivateKey:
 		input, err = edThumbprintInput(ed25519.PublicKey(key[32:]))
-	case OpaqueSigner:
-		return key.Public().Thumbprint(hash)
 	default:
 		return nil, fmt.Errorf("go-jose/go-jose: unknown key type '%s'", reflect.TypeOf(key))
 	}

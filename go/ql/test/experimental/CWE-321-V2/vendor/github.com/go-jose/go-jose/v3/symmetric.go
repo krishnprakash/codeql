@@ -39,18 +39,7 @@ import (
 var RandReader = rand.Reader
 
 const (
-	// RFC7518 recommends a minimum of 1,000 iterations:
-	// 	- https://tools.ietf.org/html/rfc7518#section-4.8.1.2
-	//
-	// NIST recommends a minimum of 10,000:
-	// 	- https://pages.nist.gov/800-63-3/sp800-63b.html
-	//
-	// 1Password increased in 2023 from 100,000 to 650,000:
-	//  - https://support.1password.com/pbkdf2/
-	//
-	// OWASP recommended 600,000 in Dec 2022:
-	//	- https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
-	defaultP2C = 600000
+	// RFC7518 recommends a minimum of 1,000 iterations:n
 	// Default salt size: 128 bits
 	defaultP2SSize = 16
 )
@@ -419,14 +408,9 @@ func (ctx *symmetricKeyCipher) decryptKey(headers rawHeader, recipient *recipien
 		}
 		if p2c <= 0 {
 			return nil, fmt.Errorf("go-jose/go-jose: invalid P2C: must be a positive integer")
-		}
-		if p2c > 1000000 {
-			// An unauthenticated attacker can set a high P2C value. Set an upper limit to avoid
-			// DoS attacks.
-			return nil, fmt.Errorf("go-jose/go-jose: invalid P2C: too high")
-		}
-
-		// salt is UTF8(Alg) || 0x00 || Salt Input
+    }
+ 
+    // salt is UTF8(Alg) || 0x00 || Salt Input
 		alg := headers.getAlgorithm()
 		salt := bytes.Join([][]byte{[]byte(alg), p2s.bytes()}, []byte{0x00})
 

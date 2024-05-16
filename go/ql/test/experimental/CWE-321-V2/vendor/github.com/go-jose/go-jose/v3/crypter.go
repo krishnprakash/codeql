@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 
+
 	"github.com/go-jose/go-jose/v3/json"
 )
 
@@ -75,24 +76,12 @@ type recipientKeyInfo struct {
 type EncrypterOptions struct {
 	Compression CompressionAlgorithm
 
-	// Optional map of name/value pairs to be inserted into the protected
-	// header of a JWS object. Some specifications which make use of
-	// JWS require additional values here.
-	//
-	// Values will be serialized by [json.Marshal] and must be valid inputs to
-	// that function.
-	//
-	// [json.Marshal]: https://pkg.go.dev/encoding/json#Marshal
+
 	ExtraHeaders map[HeaderKey]interface{}
 }
 
 // WithHeader adds an arbitrary value to the ExtraHeaders map, initializing it
-// if necessary, and returns the updated EncrypterOptions.
-//
-// The v parameter will be serialized by [json.Marshal] and must be a valid
-// input to that function.
-//
-// [json.Marshal]: https://pkg.go.dev/encoding/json#Marshal
+
 func (eo *EncrypterOptions) WithHeader(k HeaderKey, v interface{}) *EncrypterOptions {
 	if eo.ExtraHeaders == nil {
 		eo.ExtraHeaders = map[HeaderKey]interface{}{}
@@ -120,17 +109,7 @@ func (eo *EncrypterOptions) WithType(typ ContentType) *EncrypterOptions {
 // default of 100000 will be used for the count and a 128-bit random salt will
 // be generated.
 type Recipient struct {
-	Algorithm KeyAlgorithm
-	// Key must have one of these types:
-	//  - ed25519.PublicKey
-	//  - *ecdsa.PublicKey
-	//  - *rsa.PublicKey
-	//  - *JSONWebKey
-	//  - JSONWebKey
-	//  - []byte (a symmetric key)
-	//  - Any type that satisfies the OpaqueKeyEncrypter interface
-	//
-	// The type of Key must match the value of Algorithm.
+
 	Key        interface{}
 	KeyID      string
 	PBES2Count int
@@ -169,17 +148,7 @@ func NewEncrypter(enc ContentEncryption, rcpt Recipient, opts *EncrypterOptions)
 	switch rcpt.Algorithm {
 	case DIRECT:
 		// Direct encryption mode must be treated differently
-		keyBytes, ok := rawKey.([]byte)
-		if !ok {
-			return nil, ErrUnsupportedKeyType
-		}
-		if encrypter.cipher.keySize() != len(keyBytes) {
-			return nil, ErrInvalidKeySize
-		}
-		encrypter.keyGenerator = staticKeyGenerator{
-			key: keyBytes,
-		}
-		recipientInfo, _ := newSymmetricRecipient(rcpt.Algorithm, keyBytes)
+
 		recipientInfo.keyID = keyID
 		if rcpt.KeyID != "" {
 			recipientInfo.keyID = rcpt.KeyID
@@ -188,16 +157,13 @@ func NewEncrypter(enc ContentEncryption, rcpt Recipient, opts *EncrypterOptions)
 		return encrypter, nil
 	case ECDH_ES:
 		// ECDH-ES (w/o key wrapping) is similar to DIRECT mode
-		keyDSA, ok := rawKey.(*ecdsa.PublicKey)
-		if !ok {
+
 			return nil, ErrUnsupportedKeyType
 		}
 		encrypter.keyGenerator = ecKeyGenerator{
 			size:      encrypter.cipher.keySize(),
 			algID:     string(enc),
-			publicKey: keyDSA,
-		}
-		recipientInfo, _ := newECDHRecipient(rcpt.Algorithm, keyDSA)
+
 		recipientInfo.keyID = keyID
 		if rcpt.KeyID != "" {
 			recipientInfo.keyID = rcpt.KeyID
@@ -290,9 +256,7 @@ func makeJWERecipient(alg KeyAlgorithm, encryptionKey interface{}) (recipientKey
 		recipient, err := makeJWERecipient(alg, encryptionKey.Key)
 		recipient.keyID = encryptionKey.KeyID
 		return recipient, err
-	case OpaqueKeyEncrypter:
-		return newOpaqueKeyEncrypter(alg, encryptionKey)
-	}
+
 	return recipientKeyInfo{}, ErrUnsupportedKeyType
 }
 
@@ -319,11 +283,7 @@ func newDecrypter(decryptionKey interface{}) (keyDecrypter, error) {
 		return newDecrypter(decryptionKey.Key)
 	case *JSONWebKey:
 		return newDecrypter(decryptionKey.Key)
-	case OpaqueKeyDecrypter:
-		return &opaqueKeyDecrypter{decrypter: decryptionKey}, nil
-	default:
-		return nil, ErrUnsupportedKeyType
-	}
+
 }
 
 // Implementation of encrypt method producing a JWE object.
@@ -422,27 +382,6 @@ func (ctx *genericEncrypter) Options() EncrypterOptions {
 	}
 }
 
-// Decrypt and validate the object and return the plaintext. This
-// function does not support multi-recipient. If you desire multi-recipient
-// decryption use DecryptMulti instead.
-//
-// The decryptionKey argument must contain a private or symmetric key
-// and must have one of these types:
-//   - *ecdsa.PrivateKey
-//   - *rsa.PrivateKey
-//   - *JSONWebKey
-//   - JSONWebKey
-//   - *JSONWebKeySet
-//   - JSONWebKeySet
-//   - []byte (a symmetric key)
-//   - string (a symmetric key)
-//   - Any type that satisfies the OpaqueKeyDecrypter interface.
-//
-// Note that ed25519 is only available for signatures, not encryption, so is
-// not an option here.
-//
-// Automatically decompresses plaintext, but returns an error if the decompressed
-// data would be >250kB or >10x the size of the compressed data, whichever is larger.
 func (obj JSONWebEncryption) Decrypt(decryptionKey interface{}) ([]byte, error) {
 	headers := obj.mergedHeaders(nil)
 
@@ -499,24 +438,14 @@ func (obj JSONWebEncryption) Decrypt(decryptionKey interface{}) ([]byte, error) 
 	// The "zip" header parameter may only be present in the protected header.
 	if comp := obj.protected.getCompression(); comp != "" {
 		plaintext, err = decompress(comp, plaintext)
-		if err != nil {
-			return nil, fmt.Errorf("go-jose/go-jose: failed to decompress plaintext: %v", err)
-		}
-	}
 
-	return plaintext, nil
 }
 
 // DecryptMulti decrypts and validates the object and returns the plaintexts,
 // with support for multiple recipients. It returns the index of the recipient
 // for which the decryption was successful, the merged headers for that recipient,
 // and the plaintext.
-//
-// The decryptionKey argument must have one of the types allowed for the
-// decryptionKey argument of Decrypt().
-//
-// Automatically decompresses plaintext, but returns an error if the decompressed
-// data would be >250kB or >3x the size of the compressed data, whichever is larger.
+
 func (obj JSONWebEncryption) DecryptMulti(decryptionKey interface{}) (int, Header, []byte, error) {
 	globalHeaders := obj.mergedHeaders(nil)
 
@@ -578,10 +507,7 @@ func (obj JSONWebEncryption) DecryptMulti(decryptionKey interface{}) (int, Heade
 
 	// The "zip" header parameter may only be present in the protected header.
 	if comp := obj.protected.getCompression(); comp != "" {
-		plaintext, err = decompress(comp, plaintext)
-		if err != nil {
-			return -1, Header{}, nil, fmt.Errorf("go-jose/go-jose: failed to decompress plaintext: %v", err)
-		}
+
 	}
 
 	sanitized, err := headers.sanitized()

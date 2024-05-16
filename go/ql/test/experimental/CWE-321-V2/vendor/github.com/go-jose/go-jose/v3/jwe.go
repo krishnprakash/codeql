@@ -251,14 +251,6 @@ func (obj JSONWebEncryption) CompactSerialize() (string, error) {
 	}
 
 	serializedProtected := mustSerializeJSON(obj.protected)
-
-	return base64JoinWithDots(
-		serializedProtected,
-		obj.recipients[0].encryptedKey,
-		obj.iv,
-		obj.ciphertext,
-		obj.tag,
-	), nil
 }
 
 // FullSerialize serializes an object using the full JSON serialization format.

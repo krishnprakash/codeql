@@ -55,7 +55,7 @@ Extensible predicates used to create custom models in C#
 
 The CodeQL library for C# analysis exposes the following extensible predicates:
 
-- ``sourceModel(namespace, type, subtypes, name, signature, ext, output, kind, provenance)``. This is used to model sources of potentially tainted data.
+- ``sourceModel(namespace, type, subtypes, name, signature, ext, output, kind, provenance)``. This is used to model sources of potentially tainted data. The ``kind`` of the sources defined using this predicate determine which threat model they are associated with. Different threat models can be used to customize the sources used in an analysis. For more information, see ":ref:`Threat models <threat-models-csharp>`."
 - ``sinkModel(namespace, type, subtypes, name, signature, ext, input, kind, provenance)``. This is used to model sinks where tainted data may be used in a way that makes the code vulnerable.
 - ``summaryModel(namespace, type, subtypes, name, signature, ext, input, output, kind, provenance)``. This is used to model flow through elements.
 - ``neutralModel(namespace, type, name, signature, kind, provenance)``. This is similar to a summary model but used to model the flow of values that have only a minor impact on the dataflow analysis. Manual neutral models (those with a provenance such as ``manual`` or ``ai-manual``) can be used to override generated summary models (those with a provenance such as ``df-generated``), so that the summary model will be ignored. Other than that, neutral models have no effect.
@@ -144,7 +144,7 @@ The sixth value should be left empty and is out of scope for this documentation.
 The remaining values are used to define the ``access path``, the ``kind``, and the ``provenance`` (origin) of the source.
 
 - The seventh value ``ReturnValue`` is the access path to the return of the method, which means that it is the return value that should be considered a source of tainted input.
-- The eighth value ``remote`` is the kind of the source. The source kind is used to define the threat model where the source is in scope. ``remote`` applies to many of the security related queries as it means a remote source of untrusted data. As an example the SQL injection query uses ``remote`` sources.
+- The eighth value ``remote`` is the kind of the source. The source kind is used to define the threat model where the source is in scope. ``remote`` applies to many of the security related queries as it means a remote source of untrusted data. As an example the SQL injection query uses ``remote`` sources. For more information, see ":ref:`Threat models <threat-models-csharp>`."
 - The ninth value ``manual`` is the provenance of the source, which is used to identify the origin of the source.
 
 Example: Add flow through the ``Concat`` method
@@ -282,7 +282,7 @@ These are the same for both of the rows above as we are adding two summaries for
 - The second value ``Enumerable`` is the class (type) name.
 - The third value ``False`` is a flag that indicates whether or not the summary also applies to all overrides of the method.
 - The fourth value ``Select<TSource,TResult>`` is the method name, along with the type parameters for the method. The names of the generic type parameters provided in the model must match the names of the generic type parameters in the method signature in the source code.
-- The fifth value ``(System.Collections.Generic.IEnumerable<TSource>,System.Func<TSource,TResult>)`` is the method input type signature. The generics in the signature must match the generics in the method signature in the source code. 
+- The fifth value ``(System.Collections.Generic.IEnumerable<TSource>,System.Func<TSource,TResult>)`` is the method input type signature. The generics in the signature must match the generics in the method signature in the source code.
 
 The sixth value should be left empty and is out of scope for this documentation.
 The remaining values are used to define the ``access path``, the ``kind``, and the ``provenance`` (origin) of the summary definition.
@@ -309,7 +309,7 @@ That is, the first row specifies that values can flow from the elements of the q
 
 Example: Add a ``neutral`` method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This example shows how we can model a method as being neutral with respect to flow. We will also cover how to model a property by modeling the getter of the ``Now`` property of the ``DateTime`` class as neutral. 
+This example shows how we can model a method as being neutral with respect to flow. We will also cover how to model a property by modeling the getter of the ``Now`` property of the ``DateTime`` class as neutral.
 A neutral model is used to define that there is no flow through a method.
 
 .. code-block:: csharp
@@ -340,3 +340,10 @@ The first four values identify the callable (in this case the getter of the ``No
 - The fourth value ``()`` is the method input type signature.
 - The fifth value ``summary`` is the kind of the neutral.
 - The sixth value ``manual`` is the provenance of the neutral.
+
+.. _threat-models-csharp:
+
+Threat models
+-------------
+
+.. include:: ../reusables/threat-model-description.rst

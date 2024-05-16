@@ -314,20 +314,6 @@ func (obj JSONWebSignature) compactSerialize(detached bool) (string, error) {
 		return "", ErrNotSupported
 	}
 
-	serializedProtected := mustSerializeJSON(obj.Signatures[0].protected)
-
-	var payload []byte
-	if !detached {
-		payload = obj.payload
-	}
-
-	return base64JoinWithDots(
-		serializedProtected,
-		payload,
-		obj.Signatures[0].Signature,
-	), nil
-}
-
 // CompactSerialize serializes an object using the compact serialization format.
 func (obj JSONWebSignature) CompactSerialize() (string, error) {
 	return obj.compactSerialize(false)
