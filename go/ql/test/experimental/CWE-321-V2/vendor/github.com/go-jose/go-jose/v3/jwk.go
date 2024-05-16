@@ -66,10 +66,6 @@ type rawJSONWebKey struct {
 	X5tSHA1   string   `json:"x5t,omitempty"`
 	X5tSHA256 string   `json:"x5t#S256,omitempty"`
 }
-
-// JSONWebKey represents a public or private key in JWK format.
-type JSONWebKey struct {
-	// Cryptographic key, can be a symmetric or asymmetric key.
 	Key interface{}
 	// Key identifier, parsed from `kid` header.
 	KeyID string

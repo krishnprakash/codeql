@@ -21,7 +21,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"reflect"
+
 
 	"github.com/go-jose/go-jose/v3/json"
 )
@@ -76,14 +76,12 @@ type recipientKeyInfo struct {
 type EncrypterOptions struct {
 	Compression CompressionAlgorithm
 
-	// Optional map of additional keys to be inserted into the protected header
-	// of a JWS object. Some specifications which make use of JWS like to insert
-	// additional values here. All values must be JSON-serializable.
+
 	ExtraHeaders map[HeaderKey]interface{}
 }
 
 // WithHeader adds an arbitrary value to the ExtraHeaders map, initializing it
-// if necessary. It returns itself and so can be used in a fluent style.
+
 func (eo *EncrypterOptions) WithHeader(k HeaderKey, v interface{}) *EncrypterOptions {
 	if eo.ExtraHeaders == nil {
 		eo.ExtraHeaders = map[HeaderKey]interface{}{}
@@ -111,7 +109,7 @@ func (eo *EncrypterOptions) WithType(typ ContentType) *EncrypterOptions {
 // default of 100000 will be used for the count and a 128-bit random salt will
 // be generated.
 type Recipient struct {
-	Algorithm  KeyAlgorithm
+
 	Key        interface{}
 	KeyID      string
 	PBES2Count int
@@ -150,16 +148,7 @@ func NewEncrypter(enc ContentEncryption, rcpt Recipient, opts *EncrypterOptions)
 	switch rcpt.Algorithm {
 	case DIRECT:
 		// Direct encryption mode must be treated differently
-		if reflect.TypeOf(rawKey) != reflect.TypeOf([]byte{}) {
-			return nil, ErrUnsupportedKeyType
-		}
-		if encrypter.cipher.keySize() != len(rawKey.([]byte)) {
-			return nil, ErrInvalidKeySize
-		}
-		encrypter.keyGenerator = staticKeyGenerator{
-			key: rawKey.([]byte),
-		}
-		recipientInfo, _ := newSymmetricRecipient(rcpt.Algorithm, rawKey.([]byte))
+
 		recipientInfo.keyID = keyID
 		if rcpt.KeyID != "" {
 			recipientInfo.keyID = rcpt.KeyID
@@ -168,16 +157,13 @@ func NewEncrypter(enc ContentEncryption, rcpt Recipient, opts *EncrypterOptions)
 		return encrypter, nil
 	case ECDH_ES:
 		// ECDH-ES (w/o key wrapping) is similar to DIRECT mode
-		typeOf := reflect.TypeOf(rawKey)
-		if typeOf != reflect.TypeOf(&ecdsa.PublicKey{}) {
+
 			return nil, ErrUnsupportedKeyType
 		}
 		encrypter.keyGenerator = ecKeyGenerator{
 			size:      encrypter.cipher.keySize(),
 			algID:     string(enc),
-			publicKey: rawKey.(*ecdsa.PublicKey),
-		}
-		recipientInfo, _ := newECDHRecipient(rcpt.Algorithm, rawKey.(*ecdsa.PublicKey))
+
 		recipientInfo.keyID = keyID
 		if rcpt.KeyID != "" {
 			recipientInfo.keyID = rcpt.KeyID
@@ -270,10 +256,7 @@ func makeJWERecipient(alg KeyAlgorithm, encryptionKey interface{}) (recipientKey
 		recipient, err := makeJWERecipient(alg, encryptionKey.Key)
 		recipient.keyID = encryptionKey.KeyID
 		return recipient, err
-	}
-	if encrypter, ok := encryptionKey.(OpaqueKeyEncrypter); ok {
-		return newOpaqueKeyEncrypter(alg, encrypter)
-	}
+
 	return recipientKeyInfo{}, ErrUnsupportedKeyType
 }
 
@@ -300,11 +283,7 @@ func newDecrypter(decryptionKey interface{}) (keyDecrypter, error) {
 		return newDecrypter(decryptionKey.Key)
 	case *JSONWebKey:
 		return newDecrypter(decryptionKey.Key)
-	}
-	if okd, ok := decryptionKey.(OpaqueKeyDecrypter); ok {
-		return &opaqueKeyDecrypter{decrypter: okd}, nil
-	}
-	return nil, ErrUnsupportedKeyType
+
 }
 
 // Implementation of encrypt method producing a JWE object.
@@ -403,9 +382,6 @@ func (ctx *genericEncrypter) Options() EncrypterOptions {
 	}
 }
 
-// Decrypt and validate the object and return the plaintext. Note that this
-// function does not support multi-recipient, if you desire multi-recipient
-// decryption use DecryptMulti instead.
 func (obj JSONWebEncryption) Decrypt(decryptionKey interface{}) ([]byte, error) {
 	headers := obj.mergedHeaders(nil)
 
@@ -462,15 +438,14 @@ func (obj JSONWebEncryption) Decrypt(decryptionKey interface{}) ([]byte, error) 
 	// The "zip" header parameter may only be present in the protected header.
 	if comp := obj.protected.getCompression(); comp != "" {
 		plaintext, err = decompress(comp, plaintext)
-	}
 
-	return plaintext, err
 }
 
 // DecryptMulti decrypts and validates the object and returns the plaintexts,
 // with support for multiple recipients. It returns the index of the recipient
 // for which the decryption was successful, the merged headers for that recipient,
 // and the plaintext.
+
 func (obj JSONWebEncryption) DecryptMulti(decryptionKey interface{}) (int, Header, []byte, error) {
 	globalHeaders := obj.mergedHeaders(nil)
 
@@ -532,7 +507,7 @@ func (obj JSONWebEncryption) DecryptMulti(decryptionKey interface{}) (int, Heade
 
 	// The "zip" header parameter may only be present in the protected header.
 	if comp := obj.protected.getCompression(); comp != "" {
-		plaintext, _ = decompress(comp, plaintext)
+
 	}
 
 	sanitized, err := headers.sanitized()

@@ -21,6 +21,7 @@ import (
 	"compress/flate"
 	"encoding/base64"
 	"encoding/binary"
+
 	"io"
 	"math/big"
 	"strings"
@@ -85,7 +86,7 @@ func decompress(algorithm CompressionAlgorithm, input []byte) ([]byte, error) {
 	}
 }
 
-// Compress with DEFLATE
+
 func deflate(input []byte) ([]byte, error) {
 	output := new(bytes.Buffer)
 
@@ -97,15 +98,11 @@ func deflate(input []byte) ([]byte, error) {
 	return output.Bytes(), err
 }
 
-// Decompress with DEFLATE
+
 func inflate(input []byte) ([]byte, error) {
 	output := new(bytes.Buffer)
 	reader := flate.NewReader(bytes.NewBuffer(input))
 
-	_, err := io.Copy(output, reader)
-	if err != nil {
-		return nil, err
-	}
 
 	err = reader.Close()
 	return output.Bytes(), err
@@ -189,3 +186,4 @@ func base64URLDecode(value string) ([]byte, error) {
 	value = strings.TrimRight(value, "=")
 	return base64.RawURLEncoding.DecodeString(value)
 }
+

@@ -52,12 +52,10 @@ type SignerOptions struct {
 
 	// Optional map of additional keys to be inserted into the protected header
 	// of a JWS object. Some specifications which make use of JWS like to insert
-	// additional values here. All values must be JSON-serializable.
 	ExtraHeaders map[HeaderKey]interface{}
 }
 
 // WithHeader adds an arbitrary value to the ExtraHeaders map, initializing it
-// if necessary. It returns itself and so can be used in a fluent style.
 func (so *SignerOptions) WithHeader(k HeaderKey, v interface{}) *SignerOptions {
 	if so.ExtraHeaders == nil {
 		so.ExtraHeaders = map[HeaderKey]interface{}{}
@@ -173,11 +171,6 @@ func newVerifier(verificationKey interface{}) (payloadVerifier, error) {
 		return newVerifier(verificationKey.Key)
 	case *JSONWebKey:
 		return newVerifier(verificationKey.Key)
-	}
-	if ov, ok := verificationKey.(OpaqueVerifier); ok {
-		return &opaqueVerifier{verifier: ov}, nil
-	}
-	return nil, ErrUnsupportedKeyType
 }
 
 func (ctx *genericSigner) addRecipient(alg SignatureAlgorithm, signingKey interface{}) error {
@@ -204,11 +197,6 @@ func makeJWSRecipient(alg SignatureAlgorithm, signingKey interface{}) (recipient
 		return newJWKSigner(alg, signingKey)
 	case *JSONWebKey:
 		return newJWKSigner(alg, *signingKey)
-	}
-	if signer, ok := signingKey.(OpaqueSigner); ok {
-		return newOpaqueSigner(alg, signer)
-	}
-	return recipientSigInfo{}, ErrUnsupportedKeyType
 }
 
 func newJWKSigner(alg SignatureAlgorithm, signingKey JSONWebKey) (recipientSigInfo, error) {
@@ -321,7 +309,6 @@ func (ctx *genericSigner) Options() SignerOptions {
 }
 
 // Verify validates the signature on the object and returns the payload.
-// This function does not support multi-signature, if you desire multi-sig
 // verification use VerifyMulti instead.
 //
 // Be careful when verifying signatures based on embedded JWKs inside the

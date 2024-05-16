@@ -251,14 +251,6 @@ func (obj JSONWebEncryption) CompactSerialize() (string, error) {
 	}
 
 	serializedProtected := mustSerializeJSON(obj.protected)
-
-	return fmt.Sprintf(
-		"%s.%s.%s.%s.%s",
-		base64.RawURLEncoding.EncodeToString(serializedProtected),
-		base64.RawURLEncoding.EncodeToString(obj.recipients[0].encryptedKey),
-		base64.RawURLEncoding.EncodeToString(obj.iv),
-		base64.RawURLEncoding.EncodeToString(obj.ciphertext),
-		base64.RawURLEncoding.EncodeToString(obj.tag)), nil
 }
 
 // FullSerialize serializes an object using the full JSON serialization format.

@@ -314,17 +314,6 @@ func (obj JSONWebSignature) compactSerialize(detached bool) (string, error) {
 		return "", ErrNotSupported
 	}
 
-	serializedProtected := base64.RawURLEncoding.EncodeToString(mustSerializeJSON(obj.Signatures[0].protected))
-	payload := ""
-	signature := base64.RawURLEncoding.EncodeToString(obj.Signatures[0].Signature)
-
-	if !detached {
-		payload = base64.RawURLEncoding.EncodeToString(obj.payload)
-	}
-
-	return fmt.Sprintf("%s.%s.%s", serializedProtected, payload, signature), nil
-}
-
 // CompactSerialize serializes an object using the compact serialization format.
 func (obj JSONWebSignature) CompactSerialize() (string, error) {
 	return obj.compactSerialize(false)

@@ -182,9 +182,6 @@ type Header struct {
 
 	// Unverified certificate chain parsed from x5c header.
 	certificates []*x509.Certificate
-
-	// Any headers not recognised above get unmarshalled
-	// from JSON in a generic manner and placed in this map.
 	ExtraHeaders map[HeaderKey]interface{}
 }
 

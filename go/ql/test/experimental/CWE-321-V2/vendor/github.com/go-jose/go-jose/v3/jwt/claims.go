@@ -118,8 +118,6 @@ func (s Audience) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal([]string(s))
 }
-
-//Contains checks whether a given string is included in the Audience
 func (s Audience) Contains(v string) bool {
 	for _, a := range s {
 		if a == v {
