@@ -130,10 +130,6 @@ class TargetApiSpecific extends Callable {
   predicate isRelevant() { relevant(this) }
 }
 
-string asPartialModel(TargetApiSpecific api) { result = ExternalFlow::asPartialModel(api.lift()) }
-
-string asPartialNeutralModel(TargetApiSpecific api) { result = ExternalFlow::getSignature(api) }
-
 /**
  * Holds if `t` is a type that is generally used for bulk data in collection types.
  * Eg. char[] is roughly equivalent to string and thus a highly
@@ -254,6 +250,29 @@ predicate apiSource(DataFlow::Node source) {
   exists(Callable enclosing | enclosing = source.getEnclosingCallable() |
     relevant(enclosing) and
     not enclosing instanceof ManualNeutralSinkCallable
+  )
+}
+
+private predicate uniquelyCalls(DataFlowCallable dc1, DataFlowCallable dc2) {
+  exists(DataFlowCall call |
+    dc1 = call.getEnclosingCallable() and
+    dc2 = unique(DataFlowCallable dc0 | dc0 = viableCallable(call) | dc0)
+  )
+}
+
+bindingset[dc1, dc2]
+private predicate uniquelyCallsPlus(DataFlowCallable dc1, DataFlowCallable dc2) =
+  fastTC(uniquelyCalls/2)(dc1, dc2)
+
+/**
+ * Holds if it is not relevant to generate a source model for `api`, even
+ * if flow is detected from a node within `source` to a sink within `api`.
+ */
+bindingset[sourceEnclosing, api]
+predicate irrelevantSourceSinkApi(Callable sourceEnclosing, TargetApiSpecific api) {
+  not exists(DataFlowCallable dc1, DataFlowCallable dc2 | uniquelyCallsPlus(dc1, dc2) or dc1 = dc2 |
+    dc1.getUnderlyingCallable() = api and
+    dc2.getUnderlyingCallable() = sourceEnclosing
   )
 }
 
