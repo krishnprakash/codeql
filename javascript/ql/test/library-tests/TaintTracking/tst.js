@@ -59,6 +59,7 @@ function test() {
     tagged`foo ${"safe"} bar ${x} baz`;
 
     sink(x.reverse()); // NOT OK
+    sink(x.toSpliced()); // NOT OK
 
     sink(x.toSorted()) // NOT OK
     const xSorted = x.toSorted();
@@ -67,4 +68,8 @@ function test() {
     sink(x.toReversed()) // NOT OK
     const xReversed = x.toReversed();
     sink(xReversed) // NOT OK
+
+    sink(x.with()) // NOT OK
+    const xWith = x.with();
+    sink(xWith) // NOT OK
 }
