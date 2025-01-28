@@ -6,7 +6,7 @@ require (
 	github.com/astaxie/beego v1.12.3
 	github.com/davecgh/go-spew v1.1.1
 	github.com/elazarl/goproxy v0.0.0-20211114080932-d06c3be7c11b
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/glog v1.2.4
 	github.com/sirupsen/logrus v1.8.1
 	go.uber.org/zap v1.27.0
 	k8s.io/klog v1.0.0
