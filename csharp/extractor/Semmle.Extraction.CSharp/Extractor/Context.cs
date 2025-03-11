@@ -496,9 +496,8 @@ namespace Semmle.Extraction.CSharp
                 return param;
             }
 
-            foreach (var sr in param.DeclaringSyntaxReferences)
+            foreach (var syntax in param.DeclaringSyntaxReferences.Select(sr => sr.GetSyntax()))
             {
-                var syntax = sr.GetSyntax();
                 if (lambdaParameterCache.TryGetValue(syntax, out var cached) &&
                     SymbolEqualityComparer.Default.Equals(param, cached))
                 {
