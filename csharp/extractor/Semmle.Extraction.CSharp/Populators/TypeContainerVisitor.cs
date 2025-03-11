@@ -25,10 +25,10 @@ namespace Semmle.Extraction.CSharp.Populators
             attributeLookup = new Lazy<Func<SyntaxNode, AttributeData?>>(() =>
                 {
                     var dict = new Dictionary<SyntaxNode, AttributeData?>();
-                    foreach (var attributeData in cx.Compilation.Assembly.GetAttributes().Concat(cx.Compilation.Assembly.Modules.SelectMany(m => m.GetAttributes())))
+                    foreach (var attributeData in cx.Compilation.Assembly.GetAttributes().Concat(cx.Compilation.Assembly.Modules.SelectMany(m => m.GetAttributes())).Where(attributeData => attributeData.ApplicationSyntaxReference?.GetSyntax() is SyntaxNode syntax))
                     {
-                        if (attributeData.ApplicationSyntaxReference?.GetSyntax() is SyntaxNode syntax)
-                            dict.Add(syntax, attributeData);
+                        var syntax = attributeData.ApplicationSyntaxReference?.GetSyntax() as SyntaxNode;
+                        dict.Add(syntax, attributeData);
                     }
                     return dict.GetValueOrDefault;
                 });
