@@ -118,9 +118,9 @@ namespace Semmle.Extraction.CSharp.Entities
             }
         }
 
-        private void Emit(TextWriter trapFile, Microsoft.CodeAnalysis.Location loc, IEntity parent, Type type)
+        private void Emit(TextWriter trapFile, Microsoft.CodeAnalysis.Location loc, IEntity localParent, Type type)
         {
-            trapFile.type_mention(this, type.TypeRef, parent);
+            trapFile.type_mention(this, type.TypeRef, localParent);
             trapFile.type_mention_location(this, Context.CreateLocation(loc));
         }
 
