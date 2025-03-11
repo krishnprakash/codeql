@@ -117,13 +117,6 @@ namespace Semmle.Extraction.CSharp.Entities
                     return;
             }
         }
-
-        private void Emit(TextWriter trapFile, Microsoft.CodeAnalysis.Location location, IEntity parent, Type type)
-        {
-            trapFile.type_mention(this, type.TypeRef, parent);
-            trapFile.type_mention_location(this, Context.CreateLocation(location));
-        }
-
         public static TypeMention Create(Context cx, TypeSyntax syntax, IEntity parent, Type type, Microsoft.CodeAnalysis.Location? loc = null)
         {
             var ret = new TypeMention(cx, syntax, parent, type, loc);
