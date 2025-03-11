@@ -22,9 +22,9 @@ namespace Semmle.Extraction.CSharp.Entities
             this.loc = loc;
         }
 
-        private TypeSyntax GetArrayElementType(TypeSyntax type)
+        private TypeSyntax GetArrayElementType(TypeSyntax typeSyntax)
         {
-            switch (type)
+            switch (typeSyntax)
             {
                 case ArrayTypeSyntax ats:
                     return GetArrayElementType(ats.ElementType);
@@ -37,7 +37,7 @@ namespace Semmle.Extraction.CSharp.Entities
                 case PointerTypeSyntax pts:
                     return GetArrayElementType(pts.ElementType);
                 default:
-                    return type;
+                    return typeSyntax;
             }
         }
 
@@ -117,13 +117,6 @@ namespace Semmle.Extraction.CSharp.Entities
                     return;
             }
         }
-
-        private void Emit(TextWriter trapFile, Microsoft.CodeAnalysis.Location loc, IEntity localParent, Type type)
-        {
-            trapFile.type_mention(this, type.TypeRef, localParent);
-            trapFile.type_mention_location(this, Context.CreateLocation(loc));
-        }
-
         public static TypeMention Create(Context cx, TypeSyntax syntax, IEntity parent, Type type, Microsoft.CodeAnalysis.Location? loc = null)
         {
             var ret = new TypeMention(cx, syntax, parent, type, loc);
