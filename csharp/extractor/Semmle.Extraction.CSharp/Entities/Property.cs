@@ -44,8 +44,8 @@ namespace Semmle.Extraction.CSharp.Entities
             PopulateNullability(trapFile, Symbol.GetAnnotatedType());
             PopulateRefKind(trapFile, Symbol.RefKind);
 
-            var type = Type;
-            trapFile.properties(this, Symbol.GetName(), ContainingType!, type.TypeRef, Create(Context, Symbol.OriginalDefinition));
+            var propertyType = Type;
+            trapFile.properties(this, Symbol.GetName(), ContainingType!, propertyType.TypeRef, Create(Context, Symbol.OriginalDefinition));
 
             var getter = BodyDeclaringSymbol.GetMethod;
             var setter = BodyDeclaringSymbol.SetMethod;
