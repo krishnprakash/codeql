@@ -22,9 +22,9 @@ namespace Semmle.Extraction.CSharp.Entities
             this.loc = loc;
         }
 
-        private TypeSyntax GetArrayElementType(TypeSyntax type)
+        private TypeSyntax GetArrayElementType(TypeSyntax typeSyntax)
         {
-            switch (type)
+            switch (typeSyntax)
             {
                 case ArrayTypeSyntax ats:
                     return GetArrayElementType(ats.ElementType);
@@ -37,7 +37,7 @@ namespace Semmle.Extraction.CSharp.Entities
                 case PointerTypeSyntax pts:
                     return GetArrayElementType(pts.ElementType);
                 default:
-                    return type;
+                    return typeSyntax;
             }
         }
 
