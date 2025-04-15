@@ -53,6 +53,6 @@ namespace Semmle.Extraction.CSharp.Entities.Statements
 
         public object? ConstantValue { get; private set; }
 
-        public bool IsDefault => ConstantValue == Switch.DefaultLabel;
+        public bool IsDefault => Equals(ConstantValue, Switch.DefaultLabel);
     }
 }
