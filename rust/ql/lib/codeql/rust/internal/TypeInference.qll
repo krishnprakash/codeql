@@ -7,6 +7,7 @@ private import Type as T
 private import TypeMention
 private import codeql.typeinference.internal.TypeInference
 private import codeql.rust.frameworks.stdlib.Stdlib
+private import codeql.rust.frameworks.stdlib.Bultins as Builtins
 
 class Type = T::Type;
 
@@ -190,6 +191,21 @@ private Type inferAnnotatedType(AstNode n, TypePath path) {
   result = getTypeAnnotation(n).resolveTypeAt(path)
 }
 
+private Type inferLogicalOperationType(AstNode n, TypePath path) {
+  exists(Builtins::BuiltinType t, BinaryLogicalOperation be |
+    n = [be, be.getLhs(), be.getRhs()] and
+    path.isEmpty() and
+    result = TStruct(t) and
+    t instanceof Builtins::Bool
+  )
+}
+
+private Type inferAssignmentOperationType(AstNode n, TypePath path) {
+  n instanceof AssignmentOperation and
+  path.isEmpty() and
+  result = TUnit()
+}
+
 /**
  * Holds if the type of `n1` at `path1` is the same as the type of `n2` at
  * `path2` and type information should propagate in both directions through the
@@ -213,13 +229,6 @@ private predicate typeEquality(AstNode n1, TypePath path1, AstNode n2, TypePath 
     path1 = path2
   )
   or
-  n2 =
-    any(PrefixExpr pe |
-      pe.getOperatorName() = "*" and
-      pe.getExpr() = n1 and
-      path1 = TypePath::cons(TRefTypeParameter(), path2)
-    )
-  or
   n1 = n2.(ParenExpr).getExpr() and
   path1 = path2
   or
@@ -237,14 +246,44 @@ private predicate typeEquality(AstNode n1, TypePath path1, AstNode n2, TypePath 
     break.getTarget() = n2.(LoopExpr) and
     path1 = path2
   )
+  or
+  exists(AssignmentExpr be |
+    n1 = be.getLhs() and
+    n2 = be.getRhs() and
+    path1 = path2
+  )
+}
+
+bindingset[path1]
+private predicate typeEqualityLeft(AstNode n1, TypePath path1, AstNode n2, TypePath path2) {
+  typeEquality(n1, path1, n2, path2)
+  or
+  n2 =
+    any(PrefixExpr pe |
+      pe.getOperatorName() = "*" and
+      pe.getExpr() = n1 and
+      path1.isCons(TRefTypeParameter(), path2)
+    )
+}
+
+bindingset[path2]
+private predicate typeEqualityRight(AstNode n1, TypePath path1, AstNode n2, TypePath path2) {
+  typeEquality(n1, path1, n2, path2)
+  or
+  n2 =
+    any(PrefixExpr pe |
+      pe.getOperatorName() = "*" and
+      pe.getExpr() = n1 and
+      path1 = TypePath::cons(TRefTypeParameter(), path2)
+    )
 }
 
 pragma[nomagic]
 private Type inferTypeEquality(AstNode n, TypePath path) {
   exists(AstNode n2, TypePath path2 | result = inferType(n2, path2) |
-    typeEquality(n, path, n2, path2)
+    typeEqualityRight(n, path, n2, path2)
     or
-    typeEquality(n2, path2, n, path)
+    typeEqualityLeft(n2, path2, n, path)
   )
 }
 
@@ -909,7 +948,7 @@ private Type inferRefExprType(Expr e, TypePath path) {
     e = re.getExpr() and
     exists(TypePath exprPath, TypePath refPath, Type exprType |
       result = inferType(re, exprPath) and
-      exprPath = TypePath::cons(TRefTypeParameter(), refPath) and
+      exprPath.isCons(TRefTypeParameter(), refPath) and
       exprType = inferType(e)
     |
       if exprType = TRefType()
@@ -923,16 +962,15 @@ private Type inferRefExprType(Expr e, TypePath path) {
 
 pragma[nomagic]
 private Type inferTryExprType(TryExpr te, TypePath path) {
-  exists(TypeParam tp |
-    result = inferType(te.getExpr(), TypePath::cons(TTypeParamTypeParameter(tp), path))
+  exists(TypeParam tp, TypePath path0 |
+    result = inferType(te.getExpr(), path0) and
+    path0.isCons(TTypeParamTypeParameter(tp), path)
   |
     tp = any(ResultEnum r).getGenericParamList().getGenericParam(0)
     or
     tp = any(OptionEnum o).getGenericParamList().getGenericParam(0)
   )
 }
-
-private import codeql.rust.frameworks.stdlib.Bultins as Builtins
 
 pragma[nomagic]
 private StructType inferLiteralType(LiteralExpr le) {
@@ -1000,7 +1038,7 @@ private module Cached {
     pragma[nomagic]
     Type getTypeAt(TypePath path) {
       exists(TypePath path0 | result = inferType(this, path0) |
-        path0 = TypePath::cons(TRefTypeParameter(), path)
+        path0.isCons(TRefTypeParameter(), path)
         or
         not path0.isCons(TRefTypeParameter(), _) and
         not (path0.isEmpty() and result = TRefType()) and
@@ -1155,6 +1193,10 @@ private module Cached {
   Type inferType(AstNode n, TypePath path) {
     Stages::TypeInferenceStage::ref() and
     result = inferAnnotatedType(n, path)
+    or
+    result = inferLogicalOperationType(n, path)
+    or
+    result = inferAssignmentOperationType(n, path)
     or
     result = inferTypeEquality(n, path)
     or
