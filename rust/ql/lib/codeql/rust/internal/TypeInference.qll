@@ -88,7 +88,8 @@ private module Input1 implements InputSig1<Location> {
         exists(AstNode node | id = idOfTypeParameterAstNode(node) |
           node = tp0.(TypeParamTypeParameter).getTypeParam() or
           node = tp0.(AssociatedTypeTypeParameter).getTypeAlias() or
-          node = tp0.(SelfTypeParameter).getTrait()
+          node = tp0.(SelfTypeParameter).getTrait() or
+          node = tp0.(ImplTraitTypeTypeParameter).getImplTraitTypeRepr()
         )
       |
         tp0 order by kind, id
@@ -117,6 +118,13 @@ private module Input2 implements InputSig2 {
     result = tp.(TypeParamTypeParameter).getTypeParam().getTypeBoundList().getABound().getTypeRepr()
     or
     result = tp.(SelfTypeParameter).getTrait()
+    or
+    result =
+      tp.(ImplTraitTypeTypeParameter)
+          .getImplTraitTypeRepr()
+          .getTypeBoundList()
+          .getABound()
+          .getTypeRepr()
   }
 
   /**
@@ -155,6 +163,12 @@ private module Input2 implements InputSig2 {
       abs = self and
       condition = self and
       constraint = self.getTrait()
+    )
+    or
+    exists(ImplTraitTypeRepr impl |
+      abs = impl and
+      condition = impl and
+      constraint = impl.getTypeBoundList().getABound().getTypeRepr()
     )
   }
 }
@@ -207,81 +221,69 @@ private Type inferAssignmentOperationType(AstNode n, TypePath path) {
 }
 
 /**
- * Holds if the type of `n1` at `path1` is the same as the type of `n2` at
- * `path2` and type information should propagate in both directions through the
- * type equality.
+ * Holds if the type tree of `n1` at `prefix1` should be equal to the type tree
+ * of `n2` at `prefix2` and type information should propagate in both directions
+ * through the type equality.
  */
-bindingset[path1]
-bindingset[path2]
-private predicate typeEquality(AstNode n1, TypePath path1, AstNode n2, TypePath path2) {
-  exists(Variable v |
-    path1 = path2 and
-    n1 = v.getAnAccess()
-  |
-    n2 = v.getPat()
+private predicate typeEquality(AstNode n1, TypePath prefix1, AstNode n2, TypePath prefix2) {
+  prefix1.isEmpty() and
+  prefix2.isEmpty() and
+  (
+    exists(Variable v | n1 = v.getAnAccess() |
+      n2 = v.getPat()
+      or
+      n2 = v.getParameter().(SelfParam)
+    )
     or
-    n2 = v.getParameter().(SelfParam)
-  )
-  or
-  exists(LetStmt let |
-    let.getPat() = n1 and
-    let.getInitializer() = n2 and
-    path1 = path2
-  )
-  or
-  n1 = n2.(ParenExpr).getExpr() and
-  path1 = path2
-  or
-  n1 = n2.(BlockExpr).getStmtList().getTailExpr() and
-  path1 = path2
-  or
-  n1 = n2.(IfExpr).getABranch() and
-  path1 = path2
-  or
-  n1 = n2.(MatchExpr).getAnArm().getExpr() and
-  path1 = path2
-  or
-  exists(BreakExpr break |
-    break.getExpr() = n1 and
-    break.getTarget() = n2.(LoopExpr) and
-    path1 = path2
-  )
-  or
-  exists(AssignmentExpr be |
-    n1 = be.getLhs() and
-    n2 = be.getRhs() and
-    path1 = path2
-  )
-}
-
-bindingset[path1]
-private predicate typeEqualityLeft(AstNode n1, TypePath path1, AstNode n2, TypePath path2) {
-  typeEquality(n1, path1, n2, path2)
-  or
-  n2 =
-    any(DerefExpr pe |
-      pe.getExpr() = n1 and
-      path1.isCons(TRefTypeParameter(), path2)
+    exists(LetStmt let |
+      let.getPat() = n1 and
+      let.getInitializer() = n2
     )
-}
-
-bindingset[path2]
-private predicate typeEqualityRight(AstNode n1, TypePath path1, AstNode n2, TypePath path2) {
-  typeEquality(n1, path1, n2, path2)
-  or
-  n2 =
-    any(DerefExpr pe |
-      pe.getExpr() = n1 and
-      path1 = TypePath::cons(TRefTypeParameter(), path2)
+    or
+    n1 = n2.(ParenExpr).getExpr()
+    or
+    n1 = n2.(IfExpr).getABranch()
+    or
+    n1 = n2.(MatchExpr).getAnArm().getExpr()
+    or
+    exists(BreakExpr break |
+      break.getExpr() = n1 and
+      break.getTarget() = n2.(LoopExpr)
     )
+    or
+    exists(AssignmentExpr be |
+      n1 = be.getLhs() and
+      n2 = be.getRhs()
+    )
+  )
+  or
+  n1 = n2.(DerefExpr).getExpr() and
+  prefix1 = TypePath::singleton(TRefTypeParameter()) and
+  prefix2.isEmpty()
+  or
+  exists(BlockExpr be |
+    n1 = be and
+    n2 = be.getStmtList().getTailExpr() and
+    if be.isAsync()
+    then
+      prefix1 = TypePath::singleton(getFutureOutputTypeParameter()) and
+      prefix2.isEmpty()
+    else (
+      prefix1.isEmpty() and
+      prefix2.isEmpty()
+    )
+  )
 }
 
 pragma[nomagic]
 private Type inferTypeEquality(AstNode n, TypePath path) {
-  exists(AstNode n2, TypePath path2 | result = inferType(n2, path2) |
-    typeEqualityRight(n, path, n2, path2)
+  exists(TypePath prefix1, AstNode n2, TypePath prefix2, TypePath suffix |
+    result = inferType(n2, prefix2.appendInverse(suffix)) and
+    path = prefix1.append(suffix)
+  |
+    typeEquality(n, prefix1, n2, prefix2)
     or
-    typeEqualityLeft(n2, path2, n, path)
+    typeEquality(n2, prefix2, n, prefix1)
   )
 }
 
@@ -586,6 +588,9 @@ private module CallExprBaseMatchingInput implements MatchingInputSig {
         ppos.isImplicit() and
         result.(AssociatedTypeTypeParameter).getTrait() = trait
       )
+      or
+      ppos.isImplicit() and
+      this = result.(ImplTraitTypeTypeParameter).getFunction()
     }
 
     override Type getParameterType(DeclarationPosition dpos, TypePath path) {
@@ -605,8 +610,21 @@ private module CallExprBaseMatchingInput implements MatchingInputSig {
       )
     }
 
-    override Type getReturnType(TypePath path) {
+    private Type resolveRetType(TypePath path) {
       result = this.getRetType().getTypeRepr().(TypeMention).resolveTypeAt(path)
+    }
+
+    override Type getReturnType(TypePath path) {
+      if this.isAsync()
+      then
+        path.isEmpty() and
+        result = getFutureTraitType()
+        or
+        exists(TypePath suffix |
+          result = this.resolveRetType(suffix) and
+          path = TypePath::cons(getFutureOutputTypeParameter(), suffix)
+        )
+      else result = this.resolveRetType(path)
     }
   }
 
@@ -1033,6 +1051,113 @@ private StructType inferLiteralType(LiteralExpr le) {
   )
 }
 
+pragma[nomagic]
+private TraitType getFutureTraitType() { result.getTrait() instanceof FutureTrait }
+
+pragma[nomagic]
+private AssociatedTypeTypeParameter getFutureOutputTypeParameter() {
+  result.getTypeAlias() = any(FutureTrait ft).getOutputType()
+}
+
+/**
+ * A matching configuration for resolving types of `.await` expressions.
+ */
+private module AwaitExprMatchingInput implements MatchingInputSig {
+  private newtype TDeclarationPosition =
+    TSelfDeclarationPosition() or
+    TOutputPos()
+
+  class DeclarationPosition extends TDeclarationPosition {
+    predicate isSelf() { this = TSelfDeclarationPosition() }
+
+    predicate isOutput() { this = TOutputPos() }
+
+    string toString() {
+      this.isSelf() and
+      result = "self"
+      or
+      this.isOutput() and
+      result = "(output)"
+    }
+  }
+
+  private class BuiltinsAwaitFile extends File {
+    BuiltinsAwaitFile() {
+      this.getBaseName() = "await.rs" and
+      this.getParentContainer() instanceof Builtins::BuiltinsFolder
+    }
+  }
+
+  class Declaration extends Function {
+    Declaration() {
+      this.getFile() instanceof BuiltinsAwaitFile and
+      this.getName().getText() = "await_type_matching"
+    }
+
+    TypeParameter getTypeParameter(TypeParameterPosition ppos) {
+      typeParamMatchPosition(this.getGenericParamList().getATypeParam(), result, ppos)
+    }
+
+    Type getDeclaredType(DeclarationPosition dpos, TypePath path) {
+      dpos.isSelf() and
+      result = this.getParam(0).getTypeRepr().(TypeMention).resolveTypeAt(path)
+      or
+      dpos.isOutput() and
+      result = this.getRetType().getTypeRepr().(TypeMention).resolveTypeAt(path)
+    }
+  }
+
+  class AccessPosition = DeclarationPosition;
+
+  class Access extends AwaitExpr {
+    Type getTypeArgument(TypeArgumentPosition apos, TypePath path) { none() }
+
+    AstNode getNodeAt(AccessPosition apos) {
+      result = this.getExpr() and
+      apos.isSelf()
+      or
+      result = this and
+      apos.isOutput()
+    }
+
+    Type getInferredType(AccessPosition apos, TypePath path) {
+      result = inferType(this.getNodeAt(apos), path)
+    }
+
+    Declaration getTarget() { exists(this) and exists(result) }
+  }
+
+  predicate accessDeclarationPositionMatch(AccessPosition apos, DeclarationPosition dpos) {
+    apos = dpos
+  }
+}
+
+pragma[nomagic]
+private TraitType inferAsyncBlockExprRootType(AsyncBlockExpr abe) {
+  // `typeEquality` handles the non-root case
+  exists(abe) and
+  result = getFutureTraitType()
+}
+
+private module AwaitExprMatching = Matching<AwaitExprMatchingInput>;
+
+pragma[nomagic]
+private Type inferAwaitExprType(AstNode n, TypePath path) {
+  exists(AwaitExprMatchingInput::Access a, AwaitExprMatchingInput::AccessPosition apos |
+    n = a.getNodeAt(apos) and
+    result = AwaitExprMatching::inferAccessType(a, apos, path)
+  )
+  or
+  // This case is needed for `async` functions and blocks, where we assign
+  // the type `Future<Output = T>` directly instead of `impl Future<Output = T>`
+  //
+  // TODO: It would be better if we could handle this in the shared library
+  exists(TypePath exprPath |
+    result = inferType(n.(AwaitExpr).getExpr(), exprPath) and
+    exprPath.isCons(getFutureOutputTypeParameter(), path)
+  )
+}
+
 private module MethodCall {
   /** An expression that calls a method. */
   abstract private class MethodCallImpl extends Expr {
@@ -1074,7 +1199,7 @@ private module MethodCall {
     Expr receiver;
 
     CallExprMethodCall() {
-      receiver = this.getArgList().getArg(0) and
+      receiver = this.getArg(0) and
       exists(Path path, Function f |
         path = this.getFunction().(PathExpr).getPath() and
         f = resolvePath(path) and
@@ -1143,11 +1268,16 @@ private predicate methodCandidateTrait(Type type, Trait trait, string name, int 
 
 private module IsInstantiationOfInput implements IsInstantiationOfInputSig<MethodCall> {
   pragma[nomagic]
+  private predicate isMethodCall(MethodCall mc, Type rootType, string name, int arity) {
+    rootType = mc.getTypeAt(TypePath::nil()) and
+    name = mc.getMethodName() and
+    arity = mc.getArity()
+  }
+
+  pragma[nomagic]
   predicate potentialInstantiationOf(MethodCall mc, TypeAbstraction impl, TypeMention constraint) {
     exists(Type rootType, string name, int arity |
-      rootType = mc.getTypeAt(TypePath::nil()) and
-      name = mc.getMethodName() and
-      arity = mc.getArity() and
+      isMethodCall(mc, rootType, name, arity) and
       constraint = impl.(ImplTypeAbstraction).getSelfTy()
     |
       methodCandidateTrait(rootType, mc.getTrait(), name, arity, impl)
@@ -1174,6 +1304,8 @@ private Function getTypeParameterMethod(TypeParameter tp, string name) {
   result = getMethodSuccessor(tp.(TypeParamTypeParameter).getTypeParam(), name)
   or
   result = getMethodSuccessor(tp.(SelfTypeParameter).getTrait(), name)
+  or
+  result = getMethodSuccessor(tp.(ImplTraitTypeTypeParameter).getImplTraitTypeRepr(), name)
 }
 
 /** Gets a method from an `impl` block that matches the method call `mc`. */
@@ -1182,6 +1314,12 @@ private Function getMethodFromImpl(MethodCall mc) {
     IsInstantiationOf<MethodCall, IsInstantiationOfInput>::isInstantiationOf(mc, impl, _) and
     result = getMethodSuccessor(impl, mc.getMethodName())
   )
+}
+
+bindingset[trait, name]
+pragma[inline_late]
+private Function getTraitMethod(ImplTraitReturnType trait, string name) {
+  result = getMethodSuccessor(trait.getImplTraitTypeRepr(), name)
 }
 
 /**
@@ -1195,6 +1333,9 @@ private Function inferMethodCallTarget(MethodCall mc) {
   // The type of the receiver is a type parameter and the method comes from a
   // trait bound on the type parameter.
   result = getTypeParameterMethod(mc.getTypeAt(TypePath::nil()), mc.getMethodName())
+  or
+  // The type of the receiver is an `impl Trait` type.
+  result = getTraitMethod(mc.getTypeAt(TypePath::nil()), mc.getMethodName())
 }
 
 cached
@@ -1370,6 +1511,11 @@ private module Cached {
     or
     result = inferLiteralType(n) and
     path.isEmpty()
+    or
+    result = inferAsyncBlockExprRootType(n) and
+    path.isEmpty()
+    or
+    result = inferAwaitExprType(n, path)
   }
 }
 
@@ -1386,7 +1532,7 @@ private module Debug {
     exists(string filepath, int startline, int startcolumn, int endline, int endcolumn |
       result.getLocation().hasLocationInfo(filepath, startline, startcolumn, endline, endcolumn) and
       filepath.matches("%/main.rs") and
-      startline = 948
+      startline = 1718
     )
   }
 
