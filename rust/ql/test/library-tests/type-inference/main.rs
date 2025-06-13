@@ -697,7 +697,7 @@ mod trait_associated_type {
         println!("{:?}", x3.put(1).unwrap()); // $ method=S::put method=unwrap
 
         // Call to default implementation in `trait` block
-        println!("{:?}", x3.putTwo(2, 3).unwrap()); // $ method=putTwo MISSING: method=unwrap
+        println!("{:?}", x3.putTwo(2, 3).unwrap()); // $ method=putTwo method=unwrap
 
         let x4 = g(S); // $ MISSING: type=x4:AT
         println!("{:?}", x4);
@@ -1098,9 +1098,9 @@ mod method_call_type_conversion {
         println!("{:?}", x5.m1()); // $ method=m1
         println!("{:?}", x5.0); // $ fieldof=S
 
-        let x6 = &S(S2);
+        let x6 = &S(S2); // $ SPURIOUS: type=x6:&T.&T.S
         // explicit dereference
-        println!("{:?}", (*x6).m1()); // $ method=m1
+        println!("{:?}", (*x6).m1()); // $ method=m1 method=deref
 
         let x7 = S(&S2);
         // Non-implicit dereference with nested borrow in order to test that the
@@ -1191,7 +1191,7 @@ mod borrowed_typed {
         x.f2(); // $ method=f2
         S::f3(&x);
 
-        let n = **&&true; // $ type=n:bool
+        let n = **&&true; // $ type=n:bool method=deref
 
         // In this example the type of `flag` must be inferred at the call to
         // `flip` and flow through the borrow in the argument.
@@ -1753,6 +1753,58 @@ mod impl_trait {
     }
 }
 
+mod indexers {
+    use std::ops::Index;
+
+    #[derive(Debug)]
+    struct S;
+
+    impl S {
+        fn foo(&self) -> Self {
+            S
+        }
+    }
+
+    #[derive(Debug)]
+    struct MyVec<T> {
+        data: Vec<T>,
+    }
+
+    impl<T> MyVec<T> {
+        fn new() -> Self {
+            MyVec { data: Vec::new() }
+        }
+
+        fn push(&mut self, value: T) {
+            self.data.push(value); // $ fieldof=MyVec method=push
+        }
+    }
+
+    impl<T> Index<usize> for MyVec<T> {
+        type Output = T;
+
+        // MyVec::index
+        fn index(&self, index: usize) -> &Self::Output {
+            &self.data[index] // $ fieldof=MyVec
+        }
+    }
+
+    fn analyze_slice(slice: &[S]) {
+        let x = slice[0].foo(); // $ method=foo type=x:S
+    }
+
+    pub fn f() {
+        let mut vec = MyVec::new(); // $ type=vec:T.S
+        vec.push(S); // $ method=push
+        vec[0].foo(); // $ MISSING: method=foo -- type inference does not support the `Index` trait yet
+
+        let xs: [S; 1] = [S];
+        let x = xs[0].foo(); // $ method=foo type=x:S
+
+        analyze_slice(&xs);
+    }
+}
+
 fn main() {
     field_access::f();
     method_impl::f();
@@ -1774,4 +1826,5 @@ fn main() {
     operators::f();
     async_::f();
     impl_trait::f();
+    indexers::f();
 }
