@@ -205,7 +205,11 @@ abstract class ItemNode extends Locatable {
     else result = this.getImmediateParentModule().getImmediateParentModule()
     or
     name = "self" and
-    if this instanceof Module or this instanceof Enum or this instanceof Struct
+    if
+      this instanceof Module or
+      this instanceof Enum or
+      this instanceof Struct or
+      this instanceof Crate
     then result = this
     else result = this.getImmediateParentModule()
     or
@@ -1522,8 +1526,8 @@ private module Debug {
   private Locatable getRelevantLocatable() {
     exists(string filepath, int startline, int startcolumn, int endline, int endcolumn |
       result.getLocation().hasLocationInfo(filepath, startline, startcolumn, endline, endcolumn) and
-      filepath.matches("%/test.rs") and
-      startline = 74
+      filepath.matches("%/main.rs") and
+      startline = 52
     )
   }
 
