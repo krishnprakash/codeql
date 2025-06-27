@@ -1,6 +1,8 @@
 /**
  * A language-independent library for reasoning about cryptography.
  */
+overlay[local?]
+module;
 
 import codeql.util.Location
 
@@ -295,6 +297,8 @@ module CryptographyBase<LocationSig Location, InputSig<Location> Input> {
       (
         exists(KeyCreationOperationInstance op | input = op.getKeySizeConsumer())
         or
+        exists(KeyGenerationOperationInstance op | input = op.getKeyValueConsumer())
+        or
         exists(KeyDerivationOperationInstance op |
           input = op.getIterationCountConsumer() or
           input = op.getOutputKeySizeConsumer()
@@ -538,6 +542,8 @@ module CryptographyBase<LocationSig Location, InputSig<Location> Input> {
     KeyArtifactConsumer() {
       (
         exists(KeyOperationInstance op | inputNode = op.getKeyConsumer())
+        or
+        exists(KeyGenerationOperationInstance op | inputNode = op.getKeyValueConsumer())
         or
         exists(MacOperationInstance op | inputNode = op.getKeyConsumer())
         or
@@ -957,6 +963,20 @@ module CryptographyBase<LocationSig Location, InputSig<Location> Input> {
 
   abstract class KeyGenerationOperationInstance extends KeyCreationOperationInstance {
     final override string getKeyCreationTypeDescription() { result = "KeyGeneration" }
+
+    /**
+     * Gets the consumer of a key for this key generaiton operation.
+     * This occurs when a key generation operaiton is based on a raw key value
+     * or it generates another key or key context from a previously generated key.
+     */
+    abstract ConsumerInputDataFlowNode getKeyValueConsumer();
+
+    /**
+     * Holds if the key generation operation has a key consumer
+     * i.e., an input that is explicitly used for the key value.
+     * This value should correspond to the value returned by `getKeyValueConsumer()`.
+     */
+    abstract predicate hasKeyValueConsumer();
   }
 
   abstract class KeyLoadOperationInstance extends KeyCreationOperationInstance {
@@ -1702,12 +1722,21 @@ module CryptographyBase<LocationSig Location, InputSig<Location> Input> {
       node instanceof KeyCreationCandidateAlgorithmNode
     }
 
+    KeyArtifactNode getKeyArtifact() {
+      result.asElement() = keyGenInstance.getKeyValueConsumer().getConsumer()
+    }
+
     override NodeBase getChild(string key) {
       result = super.getChild(key)
       or
       // [ALWAYS_KNOWN]
       key = "Output" and
       result = this.getOutputKeyArtifact()
+      or
+      // [KnOWN_OR_UNKNOWN] only if a raw key is a known input
+      key = "KeyInput" and
+      keyGenInstance.hasKeyValueConsumer() and
+      result = this.getKeyArtifact()
     }
   }
 
