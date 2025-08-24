@@ -143,7 +143,14 @@ private predicate isGlobalUse(
     min(int cand, VariableAddressInstruction vai |
       vai.getEnclosingIRFunction() = f and
       vai.getAstVariable() = v and
-      isDef(_, _, _, vai, cand, indirectionIndex)
+      (
+        isDef(_, _, _, vai, cand, indirectionIndex)
+        or
+        exists(Operand operand |
+          isUse(_, operand, vai, cand, indirectionIndex) and
+          isPostUpdateNodeImpl(operand, indirectionIndex)
+        )
+      )
     |
       cand
     )
@@ -749,9 +756,9 @@ private predicate modeledFlowBarrier(Node n) {
     partialFlowFunc = call.getStaticCallTarget() and
     not partialFlowFunc.isPartialWrite(output)
   |
-    call.getStaticCallTarget().(DataFlow::DataFlowFunction).hasDataFlow(_, output)
+    partialFlowFunc.(DataFlow::DataFlowFunction).hasDataFlow(_, output)
     or
-    call.getStaticCallTarget().(Taint::TaintFunction).hasTaintFlow(_, output)
+    partialFlowFunc.(Taint::TaintFunction).hasTaintFlow(_, output)
   )
   or
   exists(Operand operand, Instruction instr, Node n0, int indirectionIndex |
