@@ -856,9 +856,14 @@ Class getNextClassInMroKnownStartingClass(Class cls, Class startingClass) {
   )
 }
 
-private Function findFunctionAccordingToMroKnownStartingClass(
-  Class cls, Class startingClass, string name
-) {
+/**
+ * Gets a potential definition of the function `name` of the class `cls` according to our approximation of
+ * MRO for the class `startingCls` (see `getNextClassInMroKnownStartingClass` for more information).
+ *
+ * Note: this is almost the same as `findFunctionAccordingToMro`, except we know the
+ * `startingClass`, which can give slightly more precise results.
+ */
+Function findFunctionAccordingToMroKnownStartingClass(Class cls, Class startingClass, string name) {
   result = cls.getAMethod() and
   result.getName() = name and
   cls = getADirectSuperclass*(startingClass)
@@ -871,7 +876,7 @@ private Function findFunctionAccordingToMroKnownStartingClass(
 
 /**
  * Gets a potential definition of the function `name` according to our approximation of
- * MRO for the class `cls` (see `getNextClassInMroKnownStartingClass` for more information).
+ * MRO for the class `startingCls` (see `getNextClassInMroKnownStartingClass` for more information).
  *
  * Note: this is almost the same as `findFunctionAccordingToMro`, except we know the
  * `startingClass`, which can give slightly more precise results.
@@ -1709,36 +1714,66 @@ private class SummaryPostUpdateNode extends FlowSummaryNode, PostUpdateNodeImpl 
  * This is also known as the environment part of a closure.
  *
  * This is used for tracking flow through captured variables.
- *
- * TODO:
- * We might want a synthetic node here, but currently that incurs problems
- * with non-monotonic recursion, because of the use of `resolveCall` in the
- * char pred. This may be solvable by using
- * `CallGraphConstruction::Make` in stead of
- * `CallGraphConstruction::Simple::Make` appropriately.
  */
-class CapturedVariablesArgumentNode extends CfgNode, ArgumentNode {
-  CallNode callNode;
+class SynthCapturedVariablesArgumentNode extends Node, TSynthCapturedVariablesArgumentNode {
+  ControlFlowNode callable;
 
-  CapturedVariablesArgumentNode() {
-    node = callNode.getFunction() and
-    exists(Function target | resolveCall(callNode, target, _) |
-      target = any(VariableCapture::CapturedVariable v).getACapturingScope()
-    )
-  }
+  SynthCapturedVariablesArgumentNode() { this = TSynthCapturedVariablesArgumentNode(callable) }
+
+  /** Gets the `CallNode` corresponding to this captured variables argument node. */
+  CallNode getCallNode() { result.getFunction() = callable }
+
+  /** Gets the `CfgNode` that corresponds to this synthetic node. */
+  CfgNode getUnderlyingNode() { result.asCfgNode() = callable }
+
+  override Scope getScope() { result = callable.getScope() }
+
+  override Location getLocation() { result = callable.getLocation() }
 
   override string toString() { result = "Capturing closure argument" }
+}
 
+/** A captured variables argument node viewed as an argument node. Needed because `argumentOf` is a global predicate. */
+class CapturedVariablesArgumentNodeAsArgumentNode extends ArgumentNode,
+  SynthCapturedVariablesArgumentNode
+{
   override predicate argumentOf(DataFlowCall call, ArgumentPosition pos) {
-    callNode = call.getNode() and
-    pos.isLambdaSelf()
+    exists(CallNode callNode | callNode = this.getCallNode() |
+      callNode = call.getNode() and
+      exists(Function target | resolveCall(callNode, target, _) |
+        target = any(VariableCapture::CapturedVariable v).getACapturingScope()
+      ) and
+      pos.isLambdaSelf()
+    )
+  }
+}
+
+/** A synthetic node representing the values of captured variables after the output has been computed. */
+class SynthCapturedVariablesArgumentPostUpdateNode extends PostUpdateNodeImpl,
+  TSynthCapturedVariablesArgumentPostUpdateNode
+{
+  ControlFlowNode callable;
+
+  SynthCapturedVariablesArgumentPostUpdateNode() {
+    this = TSynthCapturedVariablesArgumentPostUpdateNode(callable)
+  }
+
+  /** Gets the `PostUpdateNode` (for a `CfgNode`) that corresponds to this synthetic node. */
+  PostUpdateNode getUnderlyingNode() { result.getPreUpdateNode().asCfgNode() = callable }
+
+  override string toString() { result = "[post] Capturing closure argument" }
+
+  override Scope getScope() { result = callable.getScope() }
+
+  override Location getLocation() { result = callable.getLocation() }
+
+  override SynthCapturedVariablesArgumentNode getPreUpdateNode() {
+    result = TSynthCapturedVariablesArgumentNode(callable)
   }
 }
 
 /** A synthetic node representing the values of variables captured by a comprehension. */
-class SynthCompCapturedVariablesArgumentNode extends Node, TSynthCompCapturedVariablesArgumentNode,
-  ArgumentNode
-{
+class SynthCompCapturedVariablesArgumentNode extends Node, TSynthCompCapturedVariablesArgumentNode {
   Comp comp;
 
   SynthCompCapturedVariablesArgumentNode() { this = TSynthCompCapturedVariablesArgumentNode(comp) }
@@ -1750,7 +1785,11 @@ class SynthCompCapturedVariablesArgumentNode extends Node, TSynthCompCapturedVar
   override Location getLocation() { result = comp.getLocation() }
 
   Comp getComprehension() { result = comp }
+}
 
+class SynthCompCapturedVariablesArgumentNodeAsArgumentNode extends SynthCompCapturedVariablesArgumentNode,
+  ArgumentNode
+{
   override predicate argumentOf(DataFlowCall call, ArgumentPosition pos) {
     call.(ComprehensionCall).getComprehension() = comp and
     pos.isLambdaSelf()
