@@ -8,7 +8,8 @@ module Impl {
     TPositionalArgumentPosition(int i) {
       i in [0 .. max([any(ParamList l).getNumberOfParams(), any(ArgList l).getNumberOfArgs()]) - 1]
     } or
-    TSelfArgumentPosition()
+    TSelfArgumentPosition() or
+    TTypeQualifierArgumentPosition()
 
   /** An argument position in a call. */
   class ArgumentPosition extends TArgumentPosition {
@@ -16,13 +17,22 @@ module Impl {
     int asPosition() { this = TPositionalArgumentPosition(result) }
 
     /** Holds if this call position is a self argument. */
-    predicate isSelf() { this instanceof TSelfArgumentPosition }
+    predicate isSelf() { this = TSelfArgumentPosition() }
+
+    /**
+     * Holds if this call position is a type qualifier, that is, not an actual
+     * argument, but rather an annotation that is needed to resolve the call target,
+     * just like actual arguments may be need to resolve the call target.
+     */
+    predicate isTypeQualifier() { this = TTypeQualifierArgumentPosition() }
 
     /** Gets a string representation of this argument position. */
     string toString() {
       result = this.asPosition().toString()
       or
       this.isSelf() and result = "self"
+      or
+      this.isTypeQualifier() and result = "type qualifier"
     }
   }
 
