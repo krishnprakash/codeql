@@ -15,8 +15,8 @@ namespace Semmle.Extraction.CSharp.Entities
         protected CachedSymbol(Context cx, T init)
             : base(cx, init)
         {
-            blockLazy = new Lazy<BlockSyntax?>(() => GetBlock(BodyDeclaringSymbol));
-            expressionBodyLazy = new Lazy<ExpressionSyntax?>(() => GetExpressionBody(BodyDeclaringSymbol));
+            blockLazy = new Lazy<BlockSyntax?>(() => GetBlock(Symbol));
+            expressionBodyLazy = new Lazy<ExpressionSyntax?>(() => GetExpressionBody(Symbol));
         }
 
         public virtual Type? ContainingType => Symbol.ContainingType is not null
@@ -91,8 +91,6 @@ namespace Semmle.Extraction.CSharp.Entities
             if (!Symbol.IsImplicitlyDeclared && IsSourceDeclaration && Symbol.FromSource())
                 Context.BindComments(this, FullLocation);
         }
-
-        protected virtual T BodyDeclaringSymbol => Symbol;
 
         private static BlockSyntax? GetBlock(T symbol)
         {
