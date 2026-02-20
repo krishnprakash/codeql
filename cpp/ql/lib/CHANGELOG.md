@@ -1,3 +1,107 @@
+## 7.1.1
+
+### Minor Analysis Improvements
+
+* Added remote flow source models for the `winhttp.h` windows header and the Azure SDK core library for C/C++.
+
+## 7.1.0
+
+### New Features
+
+* Added a subclass `Embed` of `PreprocessorDirective` for C23 and C++26 `#embed` preprocessor directives.
+* Added modules `DataFlow::ParameterizedBarrierGuard` and `DataFlow::ParameterizedInstructionBarrierGuard`. These modules provide the same features as `DataFlow::BarrierGuard` and `DataFlow::InstructionBarrierGuard`, but allow for an additional parameter to support properly using them in dataflow configurations that uses flow states.
+
+### Minor Analysis Improvements
+
+* The `Buffer.qll` library will no longer report incorrect buffer sizes on certain malformed databases. As a result, the queries `cpp/static-buffer-overflow`, `cpp/overflow-buffer`, `cpp/badly-bounded-write`, `cpp/overrunning-write`, `cpp/overrunning-write-with-float`, and `cpp/very-likely-overrunning-write` will report fewer false positives on such databases.
+* Added `taint` summary models and `sql-injection` barrier models for the MySQL `mysql_real_escape_string` and `mysql_real_escape_string_quote` escaping functions.
+* The predicate `SummarizedCallable.propagatesFlow` has been extended with the columns `Provenance p` and `boolean isExact`, and as a consequence the predicates `SummarizedCallable.hasProvenance` and `SummarizedCallable.hasExactModel` have been removed.
+
+### Bug Fixes
+
+* Fixed a bug in the `GuardCondition` library which sometimes prevented binary logical operators from being recognized as guard conditions. As a result, queries using `GuardCondition` may see improved results.
+* Fixed a bug which caused `Node.asDefinition()` to not have a result for certain assignments.
+
+## 7.0.0
+
+### Breaking Changes
+
+* The `_Decimal32`, `_Decimal64`, and `_Decimal128` types are no longer exposed as builtin types. Support for these gcc-specific types was incomplete, and are generally not used in C/C++ codebases.
+
+### Deprecated APIs
+
+* The `OverloadedArrayExpr::getArrayOffset/0` predicate has been deprecated. Use `OverloadedArrayExpr::getArrayOffset/1` and `OverloadedArrayExpr::getAnArrayOffset` instead.
+
+### New Features
+
+* Added subclasses of `BuiltInOperations` for the `__is_bitwise_cloneable`, `__is_invocable`, and `__is_nothrow_invocable` builtin operations.
+* Added a `isThisAccess` predicate to `ParamAccessForType` that holds when the access is to the implicit object parameter.
+* Predicates `getArrayOffset/1` and `getAnArrayOffset` have been added to the `OverloadedArrayExpr` class to support C++23 multidimensional subscript operators.
+
+### Minor Analysis Improvements
+
+* Some constants will now be represented by their unfolded expression trees. The `isConstant` predicate of `Expr` will no longer yield a result for those constants.
+
+### Bug Fixes
+
+* Fixed a bug in the `DataFlow::BarrierGuard<...>::getABarrierNode` predicate which caused the predicate to return `DataFlow::Node`s with incorrect indirections. If you use `getABarrierNode` to implement barriers in a dataflow/taint-tracking query it may result in more query results. You can use `DataFlow::BarrierGuard<...>::getAnIndirectBarrierNode` to remove those query results.
+
+## 6.1.4
+
+No user-facing changes.
+
+## 6.1.3
+
+No user-facing changes.
+
+## 6.1.2
+
+No user-facing changes.
+
+## 6.1.1
+
+### Minor Analysis Improvements
+
+* The class `DataFlow::FieldContent` now covers both `union` and `struct`/`class` types. A new predicate `FieldContent.getAField` has been added to access the union members associated with the `FieldContent`. The old `FieldContent` has been renamed to `NonUnionFieldContent`.
+
+## 6.1.0
+
+### New Features
+
+* New predicates `getAnExpandedArgument` and `getExpandedArgument` were added to the `Compilation` class, yielding compilation arguments after expansion of response files.
+
+### Bug Fixes
+
+* Improve performance of the range analysis in cases where it would otherwise take an exorbitant amount of time.
+
+## 6.0.1
+
+No user-facing changes.
+
+## 6.0.0
+
+### Breaking Changes
+
+* The "Guards" libraries (`semmle.code.cpp.controlflow.Guards` and `semmle.code.cpp.controlflow.IRGuards`) have been totally rewritten to recognize many more guards. The API remains unchanged, but the `GuardCondition` class now extends `Element` instead of `Expr`.
+
+### New Features
+
+* C/C++ `build-mode: none` support is now generally available.
+
+## 5.6.1
+
+No user-facing changes.
+
+## 5.6.0
+
+### Deprecated APIs
+
+* The predicate `getAContructorCall` in the class `SslContextClass` has been deprecated. Use `getAConstructorCall` instead.
+
+### New Features
+
+* Added predicates `getTransitiveNumberOfVlaDimensionStmts`, `getTransitiveVlaDimensionStmt`, and `getParentVlaDecl` to `VlaDeclStmt` for handling `VlaDeclStmt`s whose base type is defined in terms of another `VlaDeclStmt` via a `typedef`.
+
 ## 5.5.0
 
 ### New Features

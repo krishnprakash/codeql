@@ -13,6 +13,10 @@ namespace Semmle.Extraction.CSharp.Entities
             this.@event = @event;
         }
 
+        public override bool NeedsPopulation =>
+            base.NeedsPopulation &&
+            !Symbol.IsPartialDefinition; // Accessors always have an implementing declaration as well.
+
         /// <summary>
         /// Gets the event symbol associated with accessor `symbol`, or `null`
         /// if there is no associated symbol.
@@ -48,8 +52,10 @@ namespace Semmle.Extraction.CSharp.Entities
 
             trapFile.event_accessors(this, kind, Symbol.Name, parent, unboundAccessor);
 
-            foreach (var l in Locations)
-                trapFile.event_accessor_location(this, l);
+            if (Context.ExtractLocation(Symbol))
+            {
+                WriteLocationsToTrap(trapFile.event_accessor_location, this, Locations);
+            }
 
             Overrides(trapFile);
 

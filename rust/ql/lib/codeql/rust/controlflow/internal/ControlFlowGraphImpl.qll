@@ -77,7 +77,7 @@ class CallableScopeTree extends StandardTree, PreOrderTree, PostOrderTree, Scope
 
   override AstNode getChildNode(int i) {
     i = 0 and
-    result = this.getParamList().getSelfParam()
+    result = this.getSelfParam()
     or
     result = this.getParam(i - 1)
     or
@@ -99,7 +99,7 @@ class FormatTemplateVariableAccessTree extends LeafTree, FormatTemplateVariableA
 class ItemTree extends LeafTree, Item {
   ItemTree() {
     not this instanceof MacroCall and
-    this = [any(StmtList s).getAStatement(), any(MacroBlockExpr s).getAStatement()]
+    this = any(StmtList s).getAStatement()
   }
 }
 
@@ -138,15 +138,6 @@ class MacroCallTree extends StandardPostOrderTree, MacroCall {
   MacroCallTree() { not this.getParentNode() instanceof MacroPat }
 
   override AstNode getChildNode(int i) { i = 0 and result = this.getMacroCallExpansion() }
-}
-
-class MacroBlockExprTree extends StandardPostOrderTree, MacroBlockExpr {
-  override AstNode getChildNode(int i) {
-    result = this.getStatement(i)
-    or
-    i = this.getNumberOfStatements() and
-    result = this.getTailExpr()
-  }
 }
 
 class MatchArmTree extends ControlFlowTree, MatchArm {
@@ -210,13 +201,17 @@ module ExprTrees {
     override AstNode getChildNode(int i) { i = 0 and result = super.getExpr() }
   }
 
-  class BinaryOpExprTree extends StandardPostOrderTree instanceof BinaryExpr {
-    BinaryOpExprTree() { not this instanceof BinaryLogicalOperation }
+  class InvocationExprTree extends StandardPostOrderTree instanceof InvocationExpr {
+    InvocationExprTree() {
+      not this instanceof CallExpr and
+      not this instanceof BinaryLogicalOperation
+    }
 
     override AstNode getChildNode(int i) {
-      i = 0 and result = super.getLhs()
+      i = 0 and
+      result = super.getSyntacticReceiver()
       or
-      i = 1 and result = super.getRhs()
+      result = super.getSyntacticPositionalArgument(i - 1)
     }
   }
 
@@ -266,15 +261,8 @@ module ExprTrees {
     }
   }
 
-  private AstNode getBlockChildNode(BlockExpr b, int i) {
-    result = b.getStmtList().getStatement(i)
-    or
-    i = b.getStmtList().getNumberOfStatements() and
-    result = b.getStmtList().getTailExpr()
-  }
-
   class AsyncBlockExprTree extends StandardTree, PreOrderTree, PostOrderTree, AsyncBlockExpr {
-    override AstNode getChildNode(int i) { result = getBlockChildNode(this, i) }
+    override AstNode getChildNode(int i) { result = this.getStmtList().getStmtOrExpr(i) }
 
     override predicate propagatesAbnormal(AstNode child) { none() }
   }
@@ -282,7 +270,7 @@ module ExprTrees {
   class BlockExprTree extends StandardPostOrderTree, BlockExpr {
     BlockExprTree() { not this.isAsync() }
 
-    override AstNode getChildNode(int i) { result = getBlockChildNode(this, i) }
+    override AstNode getChildNode(int i) { result = this.getStmtList().getStmtOrExpr(i) }
 
     override predicate propagatesAbnormal(AstNode child) { child = this.getChildNode(_) }
   }
@@ -303,7 +291,7 @@ module ExprTrees {
     override AstNode getChildNode(int i) {
       i = 0 and result = super.getFunction()
       or
-      result = super.getArgList().getArg(i - 1)
+      result = super.getSyntacticPositionalArgument(i - 1)
     }
   }
 
@@ -375,14 +363,6 @@ module ExprTrees {
         |
           v
         )
-    }
-  }
-
-  class IndexExprTree extends StandardPostOrderTree instanceof IndexExpr {
-    override AstNode getChildNode(int i) {
-      i = 0 and result = super.getBase()
-      or
-      i = 1 and result = super.getIndex()
     }
   }
 
@@ -517,12 +497,6 @@ module ExprTrees {
     }
   }
 
-  class MethodCallExprTree extends StandardPostOrderTree, MethodCallExpr {
-    override AstNode getChildNode(int i) {
-      if i = 0 then result = this.getReceiver() else result = this.getArg(i - 1)
-    }
-  }
-
   class OffsetOfExprTree extends LeafTree instanceof OffsetOfExpr { }
 
   class ParenExprTree extends ControlFlowTree, ParenExpr {
@@ -541,10 +515,6 @@ module ExprTrees {
 
   class PathExprTree extends LeafTree instanceof PathExpr { }
 
-  class PrefixExprTree extends StandardPostOrderTree instanceof PrefixExpr {
-    override AstNode getChildNode(int i) { i = 0 and result = super.getExpr() }
-  }
-
   class RangeExprTree extends StandardPostOrderTree instanceof RangeExpr {
     override AstNode getChildNode(int i) {
       i = 0 and result = super.getStart()
@@ -557,10 +527,6 @@ module ExprTrees {
     override AstNode getChildNode(int i) {
       result = super.getStructExprFieldList().getField(i).getExpr()
     }
-  }
-
-  class RefExprTree extends StandardPostOrderTree instanceof RefExpr {
-    override AstNode getChildNode(int i) { i = 0 and result = super.getExpr() }
   }
 
   class ReturnExprTree extends StandardPostOrderTree instanceof ReturnExpr {

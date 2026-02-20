@@ -1,3 +1,55 @@
+## 5.1.10
+
+No user-facing changes.
+
+## 5.1.9
+
+### Minor Analysis Improvements
+
+* The predicate `SummarizedCallable.propagatesFlow` has been extended with the columns `Provenance p` and `boolean isExact`, and as a consequence the predicates `SummarizedCallable.hasProvenance` and `SummarizedCallable.hasExactModel` have been removed.
+
+## 5.1.8
+
+No user-facing changes.
+
+## 5.1.7
+
+No user-facing changes.
+
+## 5.1.6
+
+No user-facing changes.
+
+## 5.1.5
+
+No user-facing changes.
+
+## 5.1.4
+
+No user-facing changes.
+
+## 5.1.3
+
+No user-facing changes.
+
+## 5.1.2
+
+No user-facing changes.
+
+## 5.1.1
+
+No user-facing changes.
+
+## 5.1.0
+
+### New Features
+
+* Initial modeling for the Ruby Grape framework in `Grape.qll` has been added to detect API endpoints, parameters, and headers within Grape API classes.
+
+## 5.0.4
+
+No user-facing changes.
+
 ## 5.0.3
 
 No user-facing changes.
