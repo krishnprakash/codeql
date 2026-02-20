@@ -23,7 +23,7 @@ jobs:
     outputs:
       languages: ${{ steps.detect.outputs.languages }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Detect changed languages
         id: detect
         run: |
@@ -54,7 +54,7 @@ jobs:
         language: ${{ fromJson(needs.detect-changes.outputs.languages) }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup CodeQL
         uses: ./.github/actions/fetch-codeql
         with:
