@@ -50,8 +50,7 @@ class File extends Container, Impl::File {
    * (rather than another location such as inside a dependency).
    */
   predicate fromSource() {
-    exists(ExtractorStep s | s.getAction() = "Extract" and s.getFile() = this)
-    and
+    exists(ExtractorStep s | s.getAction() = "Extract" and s.getFile() = this) and
     not additionalExternalFile(this.getRelativePath())
   }
 
