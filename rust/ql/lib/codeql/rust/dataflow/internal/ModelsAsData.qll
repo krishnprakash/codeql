@@ -140,19 +140,14 @@ private class SummarizedCallableFromModel extends SummarizedCallable::Range {
     |
       this = f and
       isExact_ = true and
-      p_ = p and
-      // Do not apply generated models where there is a neutral model
-      not (
-        p_.isGenerated() and
-        neutralModel(path, "summary", _, _)
-      )
+      p_ = p
       or
       this.implements(f) and
       isExact_ = false and
       // making inherited models generated means that source code definitions and
       // exact generated models take precedence
       p_ = "hq-generated" and
-      // Do not apply inherited models where there is a neutral model
+      // Do not apply inherited models (which are considered generated) where there is a neutral model
       not neutralModel(path, "summary", _, _)
     )
   }
@@ -183,6 +178,7 @@ private class FlowSourceFromModel extends FlowSource::Range {
       model = "MaD:" + madId.toString()
     ) and
     // Only apply generated models when no neutral model exists
+    // (the shared code only applies neutral models to summaries at present)
     not (
       provenance.isGenerated() and
       neutralModel(path, "source", _, _)
@@ -204,6 +200,7 @@ private class FlowSinkFromModel extends FlowSink::Range {
       model = "MaD:" + madId.toString()
     ) and
     // Only apply generated models when no neutral model exists
+    // (the shared code only applies neutral models to summaries at present)
     not (
       provenance.isGenerated() and
       neutralModel(path, "sink", _, _)
