@@ -12100,7 +12100,10 @@ inferType
 | main.rs:2692:9:2692:9 | x | T | {EXTERNAL LOCATION} | i32 |
 | main.rs:2692:9:2692:17 | x.push(...) |  | {EXTERNAL LOCATION} | () |
 | main.rs:2692:16:2692:16 | y |  | {EXTERNAL LOCATION} | i32 |
+| main.rs:2694:13:2694:13 | s |  | main.rs:2639:5:2640:13 | S |
+| main.rs:2694:17:2694:34 | ...::default(...) |  | main.rs:2639:5:2640:13 | S |
 | main.rs:2695:9:2695:15 | ...::f(...) |  | {EXTERNAL LOCATION} | () |
+| main.rs:2695:14:2695:14 | s |  | main.rs:2639:5:2640:13 | S |
 | main.rs:2702:14:2702:17 | SelfParam |  | main.rs:2700:5:2708:5 | Self [trait MyTrait] |
 | main.rs:2705:14:2705:18 | SelfParam |  | {EXTERNAL LOCATION} | & |
 | main.rs:2705:14:2705:18 | SelfParam | TRef | main.rs:2700:5:2708:5 | Self [trait MyTrait] |

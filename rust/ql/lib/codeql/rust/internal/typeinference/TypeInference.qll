@@ -1033,7 +1033,7 @@ pragma[nomagic]
 private Type inferStructExprType0(AstNode n, FunctionPosition pos, TypePath path) {
   exists(StructExprMatchingInput::Access a, StructExprMatchingInput::AccessPosition apos |
     n = a.getNodeAt(apos) and
-    if apos.isStructPos() then pos.isReturn() else pos.asPosition() = 0 // the acutal position doesn't matter, as long as it is positional
+    if apos.isStructPos() then pos.isReturn() else pos.asPosition() = 0 // the actual position doesn't matter, as long as it is positional
   |
     result = StructExprMatching::inferAccessType(a, apos, path)
     or
@@ -1229,12 +1229,9 @@ private module ContextTyping {
         result = inferCallNonReturnType(n, pos, prefix, path) and
         hasUnknownTypeAt(n, prefix)
       |
-        pos.isPosition()
-        or
         // Never propagate type information directly into the receiver, since its type
         // must already have been known in order to resolve the call
-        pos.isSelf() and
-        not prefix.isEmpty()
+        if pos.isSelf() then not prefix.isEmpty() else any()
       )
     }
   }
@@ -2648,12 +2645,12 @@ private Type inferMethodCallTypeNonSelf(AstNode n, FunctionPosition pos, TypePat
  * empty, at which point the inferred type can be applied back to `n`.
  */
 pragma[nomagic]
-private Type inferMethodCallTypeSelf(AstNode n, DerefChain derefChain, TypePath path) {
+private Type inferMethodCallTypeSelf(MethodCall mc, AstNode n, DerefChain derefChain, TypePath path) {
   exists(
     MethodCallMatchingInput::AccessPosition apos, string derefChainBorrow, BorrowKind borrow,
     TypePath path0
   |
-    result = inferMethodCallType0(_, apos, n, derefChainBorrow, path0) and
+    result = inferMethodCallType0(mc, apos, n, derefChainBorrow, path0) and
     apos.isSelf() and
     MethodCallMatchingInput::decodeDerefChainBorrow(derefChainBorrow, derefChain, borrow)
   |
@@ -2672,7 +2669,7 @@ private Type inferMethodCallTypeSelf(AstNode n, DerefChain derefChain, TypePath 
     DerefChain derefChain0, Type t0, TypePath path0, DerefImplItemNode impl, Type selfParamType,
     TypePath selfPath
   |
-    t0 = inferMethodCallTypeSelf(n, derefChain0, path0) and
+    t0 = inferMethodCallTypeSelf(mc, n, derefChain0, path0) and
     derefChain0.isCons(impl, derefChain) and
     selfParamType = impl.resolveSelfTypeAt(selfPath)
   |
@@ -2692,8 +2689,10 @@ private Type inferMethodCallTypeSelf(AstNode n, DerefChain derefChain, TypePath 
 private Type inferMethodCallTypePreCheck(AstNode n, FunctionPosition pos, TypePath path) {
   result = inferMethodCallTypeNonSelf(n, pos, path)
   or
-  result = inferMethodCallTypeSelf(n, DerefChain::nil(), path) and
-  pos.isSelf()
+  exists(MethodCall mc |
+    result = inferMethodCallTypeSelf(mc, n, DerefChain::nil(), path) and
+    if mc instanceof CallExpr then pos.asPosition() = 0 else pos.isSelf()
+  )
 }
 
 /**

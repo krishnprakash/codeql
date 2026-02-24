@@ -2691,7 +2691,7 @@ mod context_typed {
         let y = Default::default(); // $ type=y:i32 target=default
         x.push(y); // $ target=push
 
-        let s = Default::default(); // $ MISSING: target=default type=s:S
+        let s = Default::default(); // $ target=default type=s:S
         S::f(s); // $ target=f
     }
 }
