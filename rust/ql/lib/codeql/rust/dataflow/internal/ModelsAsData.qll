@@ -146,9 +146,7 @@ private class SummarizedCallableFromModel extends SummarizedCallable::Range {
       isExact_ = false and
       // making inherited models generated means that source code definitions and
       // exact generated models take precedence
-      p_ = "hq-generated" and
-      // Do not apply inherited models (which are considered generated) where there is a neutral model
-      not neutralModel(path, "summary", _, _)
+      p_ = "hq-generated"
     )
   }
 
