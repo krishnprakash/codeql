@@ -3,7 +3,7 @@ module wcd
 go 1.21
 
 require (
-	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/julienschmidt/httprouter v1.3.0
 )
