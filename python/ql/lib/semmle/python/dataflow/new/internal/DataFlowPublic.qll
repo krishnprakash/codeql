@@ -608,7 +608,7 @@ ControlFlowNode guardNode(ConditionBlock conditionBlock, boolean flipped) {
   // if a guard node is compared to a boolean literal,
   // the other operand is also a guard node,
   // but with polarity depending on the literal (and on the comparison).
-  exists(CompareNode cmpNode, Cmpop op, ControlFlowNode b, boolean bool |
+  exists(CompareNode cmpNode, Cmpop op, ControlFlowNode b, boolean should_flip |
     (
       cmpNode.operands(result, op, b) or
       cmpNode.operands(b, op, result)
@@ -617,19 +617,19 @@ ControlFlowNode guardNode(ConditionBlock conditionBlock, boolean flipped) {
     (
       // comparing to the boolean
       (op instanceof Eq or op instanceof Is) and
-      // `bool` is the value being compared against, here the value of `b`
-      b.getNode().(BooleanLiteral).booleanValue() = bool
+      // we shoould flip if the value compared against, here the value of `b`, is false
+      should_flip = b.getNode().(BooleanLiteral).booleanValue().booleanNot()
       or
       // comparing to the negation of the boolean
       (op instanceof NotEq or op instanceof IsNot) and
-      // again, `bool` is the value being compared against, but here it is the value of `not b`
-      b.getNode().(BooleanLiteral).booleanValue() = bool.booleanNot()
+      // again, we should flip if the value compared against, here the value of `not b`, is false.
+      // That is, if the value of `b` is true.
+      should_flip = b.getNode().(BooleanLiteral).booleanValue()
     )
   |
-    // if `bool` is true, we should preserve `flipped`, otherwise we should flip it
-    // `flipped xor (not bool)` achieves that.
+    // we flip `flipped` according to `should_flip` via the formula `flipped xor should_flip`.
     flipped in [true, false] and
-    cmpNode = guardNode(conditionBlock, flipped.booleanXor(bool.booleanNot()))
+    cmpNode = guardNode(conditionBlock, flipped.booleanXor(should_flip))
   )
 }
 
