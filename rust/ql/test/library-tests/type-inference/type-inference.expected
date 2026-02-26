@@ -11177,12 +11177,15 @@ inferType
 | main.rs:2319:18:2319:23 | range1 | Idx | {EXTERNAL LOCATION} | u16 |
 | main.rs:2319:25:2319:26 | { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2323:13:2323:17 | vals3 |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2323:13:2323:17 | vals3 | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2323:21:2323:33 | MacroExpr |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2323:21:2323:33 | MacroExpr | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2323:26:2323:26 | 1 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2323:29:2323:29 | 2 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2323:32:2323:32 | 3 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2324:9:2324:25 | for ... in ... { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2324:18:2324:22 | vals3 |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2324:18:2324:22 | vals3 | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2324:24:2324:25 | { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2326:13:2326:18 | vals4a |  | {EXTERNAL LOCATION} | Vec |
 | main.rs:2326:13:2326:18 | vals4a | A | {EXTERNAL LOCATION} | Global |
@@ -11272,18 +11275,25 @@ inferType
 | main.rs:2340:18:2340:22 | vals7 | T | {EXTERNAL LOCATION} | u8 |
 | main.rs:2340:24:2340:25 | { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2342:13:2342:19 | matrix1 |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2342:13:2342:19 | matrix1 | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2342:23:2342:50 | MacroExpr |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2342:23:2342:50 | MacroExpr | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2342:28:2342:37 | (...) |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2342:28:2342:37 | (...) | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2342:28:2342:37 | MacroExpr |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2342:28:2342:37 | MacroExpr | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2342:33:2342:33 | 1 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2342:36:2342:36 | 2 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2342:40:2342:49 | (...) |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2342:40:2342:49 | (...) | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2342:40:2342:49 | MacroExpr |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2342:40:2342:49 | MacroExpr | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2342:45:2342:45 | 3 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2342:48:2342:48 | 4 |  | {EXTERNAL LOCATION} | i32 |
 | main.rs:2344:13:2344:13 | _ |  | {EXTERNAL LOCATION} | () |
 | main.rs:2344:17:2347:9 | for ... in ... { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2344:28:2344:34 | matrix1 |  | {EXTERNAL LOCATION} | Vec |
+| main.rs:2344:28:2344:34 | matrix1 | A | {EXTERNAL LOCATION} | Global |
 | main.rs:2344:36:2347:9 | { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2345:13:2346:13 | for ... in ... { ... } |  | {EXTERNAL LOCATION} | () |
 | main.rs:2345:29:2346:13 | { ... } |  | {EXTERNAL LOCATION} | () |
@@ -14500,7 +14510,9 @@ inferType
 | pattern_matching.rs:788:41:788:45 | tuple | T2 | {EXTERNAL LOCATION} | bool |
 | pattern_matching.rs:792:35:824:1 | { ... } |  | {EXTERNAL LOCATION} | () |
 | pattern_matching.rs:794:9:794:14 | points |  | {EXTERNAL LOCATION} | Vec |
+| pattern_matching.rs:794:9:794:14 | points | A | {EXTERNAL LOCATION} | Global |
 | pattern_matching.rs:794:18:794:65 | MacroExpr |  | {EXTERNAL LOCATION} | Vec |
+| pattern_matching.rs:794:18:794:65 | MacroExpr | A | {EXTERNAL LOCATION} | Global |
 | pattern_matching.rs:794:23:794:42 | (...) |  | pattern_matching.rs:135:1:140:1 | Point |
 | pattern_matching.rs:794:23:794:42 | Point {...} |  | pattern_matching.rs:135:1:140:1 | Point |
 | pattern_matching.rs:794:34:794:34 | 1 |  | {EXTERNAL LOCATION} | i32 |
@@ -14514,6 +14526,7 @@ inferType
 | pattern_matching.rs:795:17:795:17 | x |  | {EXTERNAL LOCATION} | i32 |
 | pattern_matching.rs:795:20:795:20 | y |  | {EXTERNAL LOCATION} | i32 |
 | pattern_matching.rs:795:27:795:32 | points |  | {EXTERNAL LOCATION} | Vec |
+| pattern_matching.rs:795:27:795:32 | points | A | {EXTERNAL LOCATION} | Global |
 | pattern_matching.rs:795:34:799:5 | { ... } |  | {EXTERNAL LOCATION} | () |
 | pattern_matching.rs:796:13:796:18 | loop_x |  | {EXTERNAL LOCATION} | i32 |
 | pattern_matching.rs:796:22:796:22 | x |  | {EXTERNAL LOCATION} | i32 |
