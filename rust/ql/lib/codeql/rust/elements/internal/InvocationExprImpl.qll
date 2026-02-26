@@ -22,7 +22,13 @@ module Impl {
     /**
      * Holds if this call position is a type qualifier, that is, not an actual
      * argument, but rather an annotation that is needed to resolve the call target,
-     * just like actual arguments may be need to resolve the call target.
+     * just like actual arguments may be needed to resolve the call target.
+     *
+     * Example:
+     * ```rust
+     *    Vec<i64>::new();
+     * // ^^^^^^^^ type qualifier
+     * ```
      */
     predicate isTypeQualifier() { this = TTypeQualifierArgumentPosition() }
 

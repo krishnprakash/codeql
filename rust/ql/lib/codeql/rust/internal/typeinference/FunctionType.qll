@@ -86,7 +86,7 @@ private newtype TAssocFunctionType =
     // through `i`. This ensures that `parent` is either a supertrait of `i` or
     // `i` in an `impl` block implementing `parent`.
     (parent = i or BaseTypes::rootTypesSatisfaction(_, TTrait(parent), i, _, _)) and
-    // We always include the type qualifer position, even for non-methods, where it is used
+    // We always include the type qualifier position, even for non-methods, where it is used
     // to match type qualifiers against the `impl` or trait type, such as in `Vec::new`.
     (exists(pos.getTypeMention(f)) or pos.isTypeQualifier())
   }
