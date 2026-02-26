@@ -10,6 +10,7 @@ private import semmle.python.Concepts
 private import semmle.python.dataflow.new.RemoteFlowSources
 private import semmle.python.dataflow.new.BarrierGuards
 private import semmle.python.ApiGraphs
+private import semmle.python.frameworks.data.internal.ApiGraphModels
 
 /**
  * Provides default sources, sinks and sanitizers for detecting
@@ -177,21 +178,7 @@ module ServerSideRequestForgery {
     )
   }
 
-  private class UriValidator extends FullUrlControlSanitizer {
-    UriValidator() { this = DataFlow::BarrierGuard<uri_validator/3>::getABarrierNode() }
-  }
-
-  import semmle.python.dataflow.new.internal.DataFlowPublic
-
-  private predicate uri_validator(DataFlow::GuardNode g, ControlFlowNode node, boolean branch) {
-    exists(DataFlow::CallCfgNode call, string validator_name |
-      validator_name in ["in_domain", "in_azure_keyvault_domain", "in_azure_storage_domain"] and
-      call =
-        API::moduleImport("AntiSSRF").getMember("URIValidator").getMember(validator_name).getACall() and
-      call.getArg(0).asCfgNode() = node
-    |
-      g = call.asCfgNode() and
-      branch = true
-    )
+  private class ExternalRequestForgerySanitizer extends FullUrlControlSanitizer {
+    ExternalRequestForgerySanitizer() { ModelOutput::barrierNode(this, "request-forgery") }
   }
 }
