@@ -617,7 +617,7 @@ ControlFlowNode guardNode(ConditionBlock conditionBlock, boolean flipped) {
     (
       // comparing to the boolean
       (op instanceof Eq or op instanceof Is) and
-      // we shoould flip if the value compared against, here the value of `b`, is false
+      // we should flip if the value compared against, here the value of `b`, is false
       should_flip = b.getNode().(BooleanLiteral).booleanValue().booleanNot()
       or
       // comparing to the negation of the boolean
