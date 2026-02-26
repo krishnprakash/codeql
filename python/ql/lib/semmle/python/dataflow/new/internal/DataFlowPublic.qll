@@ -595,13 +595,41 @@ ControlFlowNode guardNode(ConditionBlock conditionBlock, boolean flipped) {
   result = conditionBlock.getLastNode() and
   flipped = false
   or
-  // Recursive case: if a guard node is a `not`-expression,
+  // Recursive cases:
+  // if a guard node is a `not`-expression,
   // the operand is also a guard node, but with inverted polarity.
   exists(UnaryExprNode notNode |
     result = notNode.getOperand() and
     notNode.getNode().getOp() instanceof Not
   |
     notNode = guardNode(conditionBlock, flipped.booleanNot())
+  )
+  or
+  // if a guard node is compared to a boolean literal,
+  // the other operand is also a guard node,
+  // but with polarity depending on the literal (and on the comparison).
+  exists(CompareNode cmpNode, Cmpop op, ControlFlowNode b, boolean should_flip |
+    (
+      cmpNode.operands(result, op, b) or
+      cmpNode.operands(b, op, result)
+    ) and
+    not result.getNode() instanceof BooleanLiteral and
+    (
+      // comparing to the boolean
+      (op instanceof Eq or op instanceof Is) and
+      // we should flip if the value compared against, here the value of `b`, is false
+      should_flip = b.getNode().(BooleanLiteral).booleanValue().booleanNot()
+      or
+      // comparing to the negation of the boolean
+      (op instanceof NotEq or op instanceof IsNot) and
+      // again, we should flip if the value compared against, here the value of `not b`, is false.
+      // That is, if the value of `b` is true.
+      should_flip = b.getNode().(BooleanLiteral).booleanValue()
+    )
+  |
+    // we flip `flipped` according to `should_flip` via the formula `flipped xor should_flip`.
+    flipped in [true, false] and
+    cmpNode = guardNode(conditionBlock, flipped.booleanXor(should_flip))
   )
 }
 
