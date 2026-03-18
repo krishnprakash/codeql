@@ -872,188 +872,6 @@ private Type inferTypeEquality(AstNode n, TypePath path) {
   )
 }
 
-/**
- * A matching configuration for resolving types of struct expressions
- * like `Foo { bar = baz }`.
- *
- * This also includes nullary struct expressions like `None`.
- */
-private module StructExprMatchingInput implements MatchingInputSig {
-  private newtype TPos =
-    TFieldPos(string name) { exists(any(Declaration decl).getField(name)) } or
-    TStructPos()
-
-  class DeclarationPosition extends TPos {
-    string asFieldPos() { this = TFieldPos(result) }
-
-    predicate isStructPos() { this = TStructPos() }
-
-    string toString() {
-      result = this.asFieldPos()
-      or
-      this.isStructPos() and
-      result = "(struct)"
-    }
-  }
-
-  abstract class Declaration extends AstNode {
-    final TypeParameter getTypeParameter(TypeParameterPosition ppos) {
-      typeParamMatchPosition(this.getTypeItem().getGenericParamList().getATypeParam(), result, ppos)
-    }
-
-    abstract StructField getField(string name);
-
-    abstract TypeItem getTypeItem();
-
-    Type getDeclaredType(DeclarationPosition dpos, TypePath path) {
-      // type of a field
-      exists(TypeMention tp |
-        tp = this.getField(dpos.asFieldPos()).getTypeRepr() and
-        result = tp.getTypeAt(path)
-      )
-      or
-      // type parameter of the struct itself
-      dpos.isStructPos() and
-      result = this.getTypeParameter(_) and
-      path = TypePath::singleton(result)
-      or
-      // type of the struct or enum itself
-      dpos.isStructPos() and
-      path.isEmpty() and
-      result = TDataType(this.getTypeItem())
-    }
-  }
-
-  private class StructDecl extends Declaration, Struct {
-    StructDecl() { this.isStruct() or this.isUnit() }
-
-    override StructField getField(string name) { result = this.getStructField(name) }
-
-    override TypeItem getTypeItem() { result = this }
-  }
-
-  private class StructVariantDecl extends Declaration, Variant {
-    StructVariantDecl() { this.isStruct() or this.isUnit() }
-
-    override StructField getField(string name) { result = this.getStructField(name) }
-
-    override TypeItem getTypeItem() { result = this.getEnum() }
-  }
-
-  class AccessPosition = DeclarationPosition;
-
-  abstract class Access extends AstNode {
-    pragma[nomagic]
-    abstract AstNode getNodeAt(AccessPosition apos);
-
-    pragma[nomagic]
-    Type getInferredType(AccessPosition apos, TypePath path) {
-      result = inferType(this.getNodeAt(apos), path)
-    }
-
-    pragma[nomagic]
-    abstract Path getStructPath();
-
-    pragma[nomagic]
-    Declaration getTarget() { result = resolvePath(this.getStructPath()) }
-
-    pragma[nomagic]
-    Type getTypeArgument(TypeArgumentPosition apos, TypePath path) {
-      // Handle constructions that use `Self {...}` syntax
-      exists(TypeMention tm, TypePath path0 |
-        tm = this.getStructPath() and
-        result = tm.getTypeAt(path0) and
-        path0.isCons(TTypeParamTypeParameter(apos.asTypeParam()), path)
-      )
-    }
-
-    /**
-     * Holds if the return type of this struct expression at `path` may have to
-     * be inferred from the context.
-     */
-    pragma[nomagic]
-    predicate hasUnknownTypeAt(DeclarationPosition pos, TypePath path) {
-      exists(Declaration d, TypeParameter tp |
-        d = this.getTarget() and
-        pos.isStructPos() and
-        tp = d.getDeclaredType(pos, path) and
-        not exists(DeclarationPosition fieldPos |
-          not fieldPos.isStructPos() and
-          tp = d.getDeclaredType(fieldPos, _)
-        ) and
-        // check that no explicit type arguments have been supplied for `tp`
-        not exists(TypeArgumentPosition tapos |
-          exists(this.getTypeArgument(tapos, _)) and
-          TTypeParamTypeParameter(tapos.asTypeParam()) = tp
-        )
-      )
-    }
-  }
-
-  private class StructExprAccess extends Access, StructExpr {
-    override Type getTypeArgument(TypeArgumentPosition apos, TypePath path) {
-      result = super.getTypeArgument(apos, path)
-      or
-      exists(TypePath suffix |
-        suffix.isCons(TTypeParamTypeParameter(apos.asTypeParam()), path) and
-        result = CertainTypeInference::inferCertainType(this, suffix)
-      )
-    }
-
-    override AstNode getNodeAt(AccessPosition apos) {
-      result = this.getFieldExpr(apos.asFieldPos()).getExpr()
-      or
-      result = this and
-      apos.isStructPos()
-    }
-
-    override Path getStructPath() { result = this.getPath() }
-  }
-
-  /**
-   * A potential nullary struct/variant construction such as `None`.
-   */
-  private class PathExprAccess extends Access, PathExpr {
-    PathExprAccess() { not exists(CallExpr ce | this = ce.getFunction()) }
-
-    override AstNode getNodeAt(AccessPosition apos) {
-      result = this and
-      apos.isStructPos()
-    }
-
-    override Path getStructPath() { result = this.getPath() }
-  }
-
-  predicate accessDeclarationPositionMatch(AccessPosition apos, DeclarationPosition dpos) {
-    apos = dpos
-  }
-}
-
-private module StructExprMatching = Matching<StructExprMatchingInput>;
-
-pragma[nomagic]
-private Type inferStructExprType0(
-  AstNode n, FunctionPosition pos, boolean hasReceiver, TypePath path
-) {
-  exists(StructExprMatchingInput::Access a, StructExprMatchingInput::AccessPosition apos |
-    n = a.getNodeAt(apos) and
-    hasReceiver = false and
-    if apos.isStructPos() then pos.isReturn() else pos.asPosition() = 0 // the actual position doesn't matter, as long as it is positional
-  |
-    result = StructExprMatching::inferAccessType(a, apos, path)
-    or
-    a.hasUnknownTypeAt(apos, path) and
-    result = TUnknownType()
-  )
-}
-
-/**
- * Gets the type of `n` at `path`, where `n` is either a struct expression or
- * a field expression of a struct expression.
- */
-private predicate inferStructExprType =
-  ContextTyping::CheckContextTyping<inferStructExprType0/4>::check/2;
-
 pragma[nomagic]
 private TupleType inferTupleRootType(AstNode n) {
   // `typeEquality` handles the non-root cases
@@ -3083,14 +2901,14 @@ private Type inferFunctionCallTypePreCheck(
 private predicate inferFunctionCallType =
   ContextTyping::CheckContextTyping<inferFunctionCallTypePreCheck/4>::check/2;
 
-abstract private class TupleLikeConstructor extends Addressable {
+abstract private class Constructor extends Addressable {
   final TypeParameter getTypeParameter(TypeParameterPosition ppos) {
     typeParamMatchPosition(this.getTypeItem().getGenericParamList().getATypeParam(), result, ppos)
   }
 
   abstract TypeItem getTypeItem();
 
-  abstract TupleField getTupleField(int i);
+  abstract TypeRepr getParameterTypeRepr(int pos);
 
   Type getReturnType(TypePath path) {
     result = TDataType(this.getTypeItem()) and
@@ -3105,65 +2923,59 @@ abstract private class TupleLikeConstructor extends Addressable {
     or
     pos.isReturn() and
     result = this.getReturnType(path)
-    or
-    pos.isTypeQualifier() and
-    result = this.getReturnType(path)
   }
 
   Type getParameterType(int pos, TypePath path) {
-    result = this.getTupleField(pos).getTypeRepr().(TypeMention).getTypeAt(path)
+    result = this.getParameterTypeRepr(pos).(TypeMention).getTypeAt(path)
   }
 }
 
-private class TupleLikeStruct extends TupleLikeConstructor instanceof Struct {
-  TupleLikeStruct() { this.isTuple() }
-
+private class StructConstructor extends Constructor instanceof Struct {
   override TypeItem getTypeItem() { result = this }
 
-  override TupleField getTupleField(int i) { result = Struct.super.getTupleField(i) }
+  override TypeRepr getParameterTypeRepr(int i) {
+    result = [super.getTupleField(i).getTypeRepr(), super.getNthStructField(i).getTypeRepr()]
+  }
 }
 
-private class TupleLikeVariant extends TupleLikeConstructor instanceof Variant {
-  TupleLikeVariant() { this.isTuple() }
-
+private class VariantConstructor extends Constructor instanceof Variant {
   override TypeItem getTypeItem() { result = super.getEnum() }
 
-  override TupleField getTupleField(int i) { result = Variant.super.getTupleField(i) }
+  override TypeRepr getParameterTypeRepr(int i) {
+    result = [super.getTupleField(i).getTypeRepr(), super.getNthStructField(i).getTypeRepr()]
+  }
 }
 
 /**
- * A matching configuration for resolving types of tuple-like variants and tuple
- * structs such as `Result::Ok(42)`.
+ * A matching configuration for resolving types of constructions of enums and
+ * structs, such as `Result::Ok(42)`, `Foo { bar: 1 }` and `None`.
  */
-private module TupleLikeConstructionMatchingInput implements MatchingInputSig {
+private module ConstructionMatchingInput implements MatchingInputSig {
   import FunctionPositionMatchingInput
 
-  class Declaration = TupleLikeConstructor;
+  class Declaration = Constructor;
 
-  class Access extends NonAssocCallExpr, ContextTyping::ContextTypedCallCand {
-    Access() {
-      this instanceof CallExprImpl::TupleStructExpr or
-      this instanceof CallExprImpl::TupleVariantExpr
-    }
+  abstract class Access extends AstNode {
+    abstract Type getInferredType(FunctionPosition pos, TypePath path);
 
-    override Type getTypeArgument(TypeArgumentPosition apos, TypePath path) {
-      result = NonAssocCallExpr.super.getTypeArgument(apos, path)
-    }
+    abstract Declaration getTarget();
 
-    Declaration getTarget() { result = this.resolveCallTargetViaPathResolution() }
+    abstract AstNode getNodeAt(AccessPosition apos);
+
+    abstract Type getTypeArgument(TypeArgumentPosition apos, TypePath path);
 
     /**
-     * Holds if the return type of this tuple-like construction at `path` may have to be inferred
-     * from the context, for example in `Result::Ok(42)` the error type has to be inferred from the
-     * context.
+     * Holds if the return type of this construction expression at `path` may
+     * have to be inferred from the context. For example in `Result::Ok(42)` the
+     * error type has to be inferred from the context.
      */
     pragma[nomagic]
     predicate hasUnknownTypeAt(FunctionPosition pos, TypePath path) {
-      exists(TupleLikeConstructor tc, TypeParameter tp |
-        tc = this.getTarget() and
+      exists(Declaration d, TypeParameter tp |
+        d = this.getTarget() and
         pos.isReturn() and
-        tp = tc.getReturnType(path) and
-        not tp = tc.getParameterType(_, _) and
+        tp = d.getReturnType(path) and
+        not exists(FunctionPosition pos2 | not pos2.isReturn() and tp = d.getDeclaredType(pos2, _)) and
         // check that no explicit type arguments have been supplied for `tp`
         not exists(TypeArgumentPosition tapos |
           exists(this.getTypeArgument(tapos, _)) and
@@ -3172,25 +2984,93 @@ private module TupleLikeConstructionMatchingInput implements MatchingInputSig {
       )
     }
   }
+
+  private class NonAssocCallAccess extends Access, NonAssocCallExpr,
+    ContextTyping::ContextTypedCallCand
+  {
+    NonAssocCallAccess() {
+      this instanceof CallExprImpl::TupleStructExpr or
+      this instanceof CallExprImpl::TupleVariantExpr
+    }
+
+    override Type getTypeArgument(TypeArgumentPosition apos, TypePath path) {
+      result = NonAssocCallExpr.super.getTypeArgument(apos, path)
+    }
+
+    override AstNode getNodeAt(AccessPosition apos) {
+      result = NonAssocCallExpr.super.getNodeAt(apos)
+    }
+
+    override Type getInferredType(FunctionPosition pos, TypePath path) {
+      result = NonAssocCallExpr.super.getInferredType(pos, path)
+    }
+
+    override Declaration getTarget() { result = this.resolveCallTargetViaPathResolution() }
+  }
+
+  abstract private class StructAccess extends Access instanceof PathAstNode {
+    pragma[nomagic]
+    override Type getInferredType(AccessPosition apos, TypePath path) {
+      result = inferType(this.getNodeAt(apos), path)
+    }
+
+    pragma[nomagic]
+    override Declaration getTarget() { result = resolvePath(super.getPath()) }
+
+    pragma[nomagic]
+    override Type getTypeArgument(TypeArgumentPosition apos, TypePath path) {
+      // Handle constructions that use `Self {...}` syntax
+      exists(TypeMention tm, TypePath path0 |
+        tm = super.getPath() and
+        result = tm.getTypeAt(path0) and
+        path0.isCons(TTypeParamTypeParameter(apos.asTypeParam()), path)
+      )
+    }
+  }
+
+  private class StructExprAccess extends StructAccess, StructExpr {
+    override Type getTypeArgument(TypeArgumentPosition apos, TypePath path) {
+      result = super.getTypeArgument(apos, path)
+      or
+      exists(TypePath suffix |
+        suffix.isCons(TTypeParamTypeParameter(apos.asTypeParam()), path) and
+        result = CertainTypeInference::inferCertainType(this, suffix)
+      )
+    }
+
+    override AstNode getNodeAt(AccessPosition apos) {
+      result =
+        this.getFieldExpr(this.getNthStructField(apos.asPosition()).getName().getText()).getExpr()
+      or
+      result = this and apos.isReturn()
+    }
+  }
+
+  /** A potential nullary struct/variant construction such as `None`. */
+  private class PathExprAccess extends StructAccess, PathExpr {
+    PathExprAccess() { not exists(CallExpr ce | this = ce.getFunction()) }
+
+    override AstNode getNodeAt(AccessPosition apos) { result = this and apos.isReturn() }
+  }
 }
 
-private module TupleLikeConstructionMatching = Matching<TupleLikeConstructionMatchingInput>;
+private module ConstructionMatching = Matching<ConstructionMatchingInput>;
 
 pragma[nomagic]
-private Type inferTupleLikeConstructionTypePreCheck(
+private Type inferConstructionTypePreCheck(
   AstNode n, FunctionPosition pos, boolean hasReceiver, TypePath path
 ) {
   hasReceiver = false and
-  exists(TupleLikeConstructionMatchingInput::Access a | n = a.getNodeAt(pos) |
-    result = TupleLikeConstructionMatching::inferAccessType(a, pos, path)
+  exists(ConstructionMatchingInput::Access a | n = a.getNodeAt(pos) |
+    result = ConstructionMatching::inferAccessType(a, pos, path)
     or
     a.hasUnknownTypeAt(pos, path) and
     result = TUnknownType()
   )
 }
 
-private predicate inferTupleLikeConstructionType =
-  ContextTyping::CheckContextTyping<inferTupleLikeConstructionTypePreCheck/4>::check/2;
+private predicate inferConstructionType =
+  ContextTyping::CheckContextTyping<inferConstructionTypePreCheck/4>::check/2;
 
 /**
  * A matching configuration for resolving types of operations like `a + b`.
@@ -3676,71 +3556,27 @@ private Type inferDereferencedExprPtrType(AstNode n, TypePath path) {
 }
 
 /**
- * A matching configuration for resolving types of struct patterns
- * like `let Foo { bar } = ...`.
+ * A matching configuration for resolving types of deconstruction patterns like
+ * `let Foo { bar } = ...` or `let Some(x) = ...`.
  */
-private module StructPatMatchingInput implements MatchingInputSig {
-  class DeclarationPosition = StructExprMatchingInput::DeclarationPosition;
-
-  class Declaration = StructExprMatchingInput::Declaration;
-
-  class AccessPosition = DeclarationPosition;
-
-  class Access extends StructPat {
-    Type getTypeArgument(TypeArgumentPosition apos, TypePath path) { none() }
-
-    AstNode getNodeAt(AccessPosition apos) {
-      result = this.getPatField(apos.asFieldPos()).getPat()
-      or
-      result = this and
-      apos.isStructPos()
-    }
-
-    Type getInferredType(AccessPosition apos, TypePath path) {
-      result = inferType(this.getNodeAt(apos), path)
-      or
-      // The struct/enum type is supplied explicitly as a type qualifier, e.g.
-      // `let Foo<Bar>::Variant { ... } = ...`.
-      apos.isStructPos() and
-      result = this.getPath().(TypeMention).getTypeAt(path)
-    }
-
-    Declaration getTarget() { result = resolvePath(this.getPath()) }
-  }
-
-  predicate accessDeclarationPositionMatch(AccessPosition apos, DeclarationPosition dpos) {
-    apos = dpos
-  }
-}
-
-private module StructPatMatching = Matching<StructPatMatchingInput>;
-
-/**
- * Gets the type of `n` at `path`, where `n` is either a struct pattern or
- * a field pattern of a struct pattern.
- */
-pragma[nomagic]
-private Type inferStructPatType(AstNode n, TypePath path) {
-  exists(StructPatMatchingInput::Access a, StructPatMatchingInput::AccessPosition apos |
-    n = a.getNodeAt(apos) and
-    result = StructPatMatching::inferAccessType(a, apos, path)
-  )
-}
-
-/**
- * A matching configuration for resolving types of tuple struct patterns
- * like `let Some(x) = ...`.
- */
-private module TupleStructPatMatchingInput implements MatchingInputSig {
+private module DeconstructionPatMatchingInput implements MatchingInputSig {
   import FunctionPositionMatchingInput
 
-  class Declaration = TupleLikeConstructor;
+  class Declaration = ConstructionMatchingInput::Declaration;
 
-  class Access extends TupleStructPat {
+  class Access extends Pat instanceof PathAstNode {
+    Access() { this instanceof TupleStructPat or this instanceof StructPat }
+
     Type getTypeArgument(TypeArgumentPosition apos, TypePath path) { none() }
 
     AstNode getNodeAt(AccessPosition apos) {
-      result = this.getField(apos.asPosition())
+      this =
+        any(StructPat sp |
+          result =
+            sp.getPatField(sp.getNthStructField(apos.asPosition()).getName().getText()).getPat()
+        )
+      or
+      result = this.(TupleStructPat).getField(apos.asPosition())
       or
       result = this and
       apos.isReturn()
@@ -3750,26 +3586,27 @@ private module TupleStructPatMatchingInput implements MatchingInputSig {
       result = inferType(this.getNodeAt(apos), path)
       or
       // The struct/enum type is supplied explicitly as a type qualifier, e.g.
+      // `let Foo::<Bar>::Variant { ... } = ...` or
       // `let Option::<Foo>::Some(x) = ...`.
-      apos.isTypeQualifier() and
-      result = this.getPath().(TypeMention).getTypeAt(path)
+      apos.isReturn() and
+      result = super.getPath().(TypeMention).getTypeAt(path)
     }
 
-    Declaration getTarget() { result = resolvePath(this.getPath()) }
+    Declaration getTarget() { result = resolvePath(super.getPath()) }
   }
 }
 
-private module TupleStructPatMatching = Matching<TupleStructPatMatchingInput>;
+private module DeconstructionPatMatching = Matching<DeconstructionPatMatchingInput>;
 
 /**
- * Gets the type of `n` at `path`, where `n` is either a tuple struct pattern or
- * a positional pattern of a tuple struct pattern.
+ * Gets the type of `n` at `path`, where `n` is a pattern for a constructor,
+ * either a struct pattern or a tuple-struct pattern.
  */
 pragma[nomagic]
-private Type inferTupleStructPatType(AstNode n, TypePath path) {
-  exists(TupleStructPatMatchingInput::Access a, TupleStructPatMatchingInput::AccessPosition apos |
+private Type inferDeconstructionPatType(AstNode n, TypePath path) {
+  exists(DeconstructionPatMatchingInput::Access a, FunctionPosition apos |
     n = a.getNodeAt(apos) and
-    result = TupleStructPatMatching::inferAccessType(a, apos, path)
+    result = DeconstructionPatMatching::inferAccessType(a, apos, path)
   )
 }
 
@@ -4080,11 +3917,9 @@ private module Cached {
       or
       result = inferTypeEquality(n, path)
       or
-      result = inferStructExprType(n, path)
-      or
       result = inferFunctionCallType(n, path)
       or
-      result = inferTupleLikeConstructionType(n, path)
+      result = inferConstructionType(n, path)
       or
       result = inferOperationType(n, path)
       or
@@ -4106,9 +3941,7 @@ private module Cached {
       or
       result = inferClosureExprType(n, path)
       or
-      result = inferStructPatType(n, path)
-      or
-      result = inferTupleStructPatType(n, path)
+      result = inferDeconstructionPatType(n, path)
     )
   }
 }
@@ -4157,9 +3990,9 @@ private module Debug {
     t = inferFunctionCallType(n, path)
   }
 
-  predicate debugInferTupleLikeConstructionType(AstNode n, TypePath path, Type t) {
+  predicate debugInferConstructionType(AstNode n, TypePath path, Type t) {
     n = getRelevantLocatable() and
-    t = inferTupleLikeConstructionType(n, path)
+    t = inferConstructionType(n, path)
   }
 
   predicate debugTypeMention(TypeMention tm, TypePath path, Type type) {
