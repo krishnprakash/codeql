@@ -11,41 +11,14 @@ private import semmle.code.csharp.commons.Compilation
 
 private module Initializers {
   /**
-   * A non-static member with an initializer, for example a field `int Field = 0`.
-   */
-  class InitializedInstanceMember extends Member {
-    private AssignExpr ae;
-
-    InitializedInstanceMember() {
-      not this.isStatic() and
-      expr_parent_top_level(ae, _, this) and
-      not ae = any(Callable c).getExpressionBody()
-    }
-
-    /** Gets the initializer expression. */
-    AssignExpr getInitializer() { result = ae }
-  }
-
-  /**
-   * Holds if `obinit` is an object initializer method that performs the initialization
-   * of a member via assignment `init`.
-   */
-  predicate obinitInitializes(ObjectInitMethod obinit, AssignExpr init) {
-    exists(InitializedInstanceMember m |
-      obinit.getDeclaringType().getAMember() = m and
-      init = m.getInitializer()
-    )
-  }
-
-  /**
    * Gets the `i`th member initializer expression for object initializer method `obinit`
    * in compilation `comp`.
    */
   AssignExpr initializedInstanceMemberOrder(ObjectInitMethod obinit, CompilationExt comp, int i) {
-    obinitInitializes(obinit, result) and
+    obinit.initializes(result) and
     result =
       rank[i + 1](AssignExpr ae0, Location l |
-        obinitInitializes(obinit, ae0) and
+        obinit.initializes(ae0) and
         l = ae0.getLocation() and
         getCompilation(l.getFile()) = comp
       |
@@ -74,7 +47,7 @@ class CfgScope extends Element, @top_level_exprorstmt_parent {
         any(Callable c |
           c.(Constructor).hasInitializer()
           or
-          Initializers::obinitInitializes(c, _)
+          c.(ObjectInitMethod).initializes(_)
           or
           c.hasBody()
         )
