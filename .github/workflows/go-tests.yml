@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest-xl
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Run tests
         uses: ./go/actions/test
         with:
