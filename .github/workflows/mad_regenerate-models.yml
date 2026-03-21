@@ -36,12 +36,14 @@ jobs:
       - name: Setup CodeQL binaries
         uses: ./.github/actions/fetch-codeql
       - name: Clone repositories
+        if: github.event_name != 'pull_request'
         uses: actions/checkout@v5
         with:
           path: repos/${{ matrix.ref }}
           ref: ${{ matrix.ref }}
           repository: ${{ matrix.slug }}
       - name: Build database
+        if: github.event_name != 'pull_request'
         env:
           SLUG: ${{ matrix.slug }}
           REF: ${{ matrix.ref }}
@@ -51,6 +53,7 @@ jobs:
           SHORTNAME=${SLUG//[^a-zA-Z0-9_]/}
           codeql database create --language=java ../../dbs/${SHORTNAME}
       - name: Regenerate models in-place
+        if: github.event_name != 'pull_request'
         env:
           SLUG: ${{ matrix.slug }}
         run: |
@@ -58,12 +61,14 @@ jobs:
           SHORTNAME=${SLUG//[^a-zA-Z0-9_]/}
           java/ql/src/utils/modelgenerator/RegenerateModels.py "${SLUG}" dbs/${SHORTNAME}
       - name: Stage changes
+        if: github.event_name != 'pull_request'
         run: |
           cd self
           find java -name "*.model.yml" -print0 | xargs -0 git add
           git status
           git diff --cached > models.patch
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
           name: patch
           path: self/models.patch
