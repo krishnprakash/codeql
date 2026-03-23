@@ -618,6 +618,25 @@ module Public {
     LocalVariable asUninitialized() { result = this.(UninitializedNode).getLocalVariable() }
 
     /**
+     * Gets the uninitialized local variable corresponding to this node behind
+     * `index` number of indirections, if any.
+     */
+    LocalVariable asIndirectUninitialized(int index) {
+      exists(IndirectUninitializedNode indirectUninitializedNode |
+        this = indirectUninitializedNode and
+        indirectUninitializedNode.getIndirectionIndex() = index
+      |
+        result = indirectUninitializedNode.getLocalVariable()
+      )
+    }
+
+    /**
+     * Gets the uninitialized local variable corresponding to this node behind
+     * a number indirections, if any.
+     */
+    LocalVariable asIndirectUninitialized() { result = this.asIndirectUninitialized(_) }
+
+    /**
      * Gets the positional parameter corresponding to the node that represents
      * the value of the parameter after `index` number of loads, if any. For
      * example, in:
@@ -761,16 +780,13 @@ module Public {
     final override Type getType() { result = this.getPreUpdateNode().getType() }
   }
 
-  /**
-   * The value of an uninitialized local variable, viewed as a node in a data
-   * flow graph.
-   */
-  class UninitializedNode extends Node {
+  abstract private class AbstractUninitializedNode extends Node {
     LocalVariable v;
+    int indirectionIndex;
 
-    UninitializedNode() {
+    AbstractUninitializedNode() {
       exists(SsaImpl::Definition def, SsaImpl::SourceVariable sv |
-        def.getIndirectionIndex() = 0 and
+        def.getIndirectionIndex() = indirectionIndex and
         def.getValue().asInstruction() instanceof UninitializedInstruction and
         SsaImpl::defToNode(this, def, sv) and
         v = sv.getBaseVariable().(SsaImpl::BaseIRVariable).getIRVariable().getAst()
@@ -779,6 +795,25 @@ module Public {
 
     /** Gets the uninitialized local variable corresponding to this node. */
     LocalVariable getLocalVariable() { result = v }
+  }
+
+  /**
+   * The value of an uninitialized local variable, viewed as a node in a data
+   * flow graph.
+   */
+  class UninitializedNode extends AbstractUninitializedNode {
+    UninitializedNode() { indirectionIndex = 0 }
+  }
+
+  /**
+   * The value of an uninitialized local variable behind one or more levels of
+   * indirection, viewed as a node in a data flow graph.
+   */
+  class IndirectUninitializedNode extends AbstractUninitializedNode {
+    IndirectUninitializedNode() { indirectionIndex > 0 }
+
+    /** Gets the indirection index of this node. */
+    int getIndirectionIndex() { result = indirectionIndex }
   }
 
   /**
