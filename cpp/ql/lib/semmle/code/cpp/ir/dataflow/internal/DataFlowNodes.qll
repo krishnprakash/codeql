@@ -322,6 +322,12 @@ module Public {
     Operand asIndirectOperand(int index) { hasOperandAndIndex(this, result, index) }
 
     /**
+     * Gets the instruction that is indirectly tracked by this node behind
+     * `index` number of indirections.
+     */
+    Instruction asIndirectInstruction(int index) { hasInstructionAndIndex(this, result, index) }
+
+    /**
      * Holds if this node is at index `i` in basic block `block`.
      *
      * Note: Phi nodes are considered to be at index `-1`.
@@ -830,6 +836,12 @@ module Public {
   /** An explicit positional parameter, including `this`, but not `...`. */
   final class DirectParameterNode = AbstractDirectParameterNode;
 
+  /**
+   * A node representing an indirection of a positional parameter,
+   * including `*this`, but not `*...`.
+   */
+  final class IndirectParameterNode = AbstractIndirectParameterNode;
+
   final class ExplicitParameterNode = AbstractExplicitParameterNode;
 
   /** An implicit `this` parameter. */
@@ -988,11 +1000,6 @@ module Public {
 }
 
 private import Public
-
-/**
- * A node representing an indirection of a parameter.
- */
-final class IndirectParameterNode = AbstractIndirectParameterNode;
 
 /**
  * A class that lifts pre-SSA dataflow nodes to regular dataflow nodes.
