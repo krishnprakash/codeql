@@ -512,7 +512,7 @@ module LocalFlow {
   predicate localExprStep(Expr e1, Expr e2) {
     e1 = e2.(ParenthesizedExpr).getExpr()
     or
-    e1 = e2.(NullCoalescingExpr).getAnOperand()
+    e1 = e2.(NullCoalescingOperation).getAnOperand()
     or
     e1 = e2.(SuppressNullableWarningExpr).getExpr()
     or
@@ -623,7 +623,7 @@ module LocalFlow {
     (
       e instanceof ConditionalExpr or
       e instanceof Cast or
-      e instanceof NullCoalescingExpr or
+      e instanceof NullCoalescingOperation or
       e instanceof SwitchExpr or
       e instanceof SuppressNullableWarningExpr or
       e instanceof AssignExpr

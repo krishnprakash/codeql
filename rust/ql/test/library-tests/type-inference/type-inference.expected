@@ -5083,6 +5083,15 @@ inferCertainType
 | regressions.rs:99:22:99:22 | x |  | regressions.rs:99:18:99:19 | T2 |
 | regressions.rs:103:5:107:5 | { ... } |  | regressions.rs:99:18:99:19 | T2 |
 | regressions.rs:104:33:104:33 | x |  | regressions.rs:99:18:99:19 | T2 |
+| regressions.rs:113:14:113:17 | SelfParam |  | regressions.rs:111:5:114:5 | Self [trait MyTrait] |
+| regressions.rs:118:14:118:17 | SelfParam |  | {EXTERNAL LOCATION} | & |
+| regressions.rs:118:14:118:17 | SelfParam | TRef | regressions.rs:116:10:116:10 | T |
+| regressions.rs:118:20:118:21 | { ... } |  | {EXTERNAL LOCATION} | () |
+| regressions.rs:124:19:124:22 | SelfParam |  | regressions.rs:121:5:121:19 | S |
+| regressions.rs:124:19:124:22 | SelfParam | T | regressions.rs:123:10:123:10 | T |
+| regressions.rs:127:9:130:9 | { ... } |  | {EXTERNAL LOCATION} | () |
+| regressions.rs:128:24:128:27 | self |  | regressions.rs:121:5:121:19 | S |
+| regressions.rs:128:24:128:27 | self | T | regressions.rs:123:10:123:10 | T |
 inferType
 | associated_types.rs:5:15:5:18 | SelfParam |  | associated_types.rs:1:1:2:21 | Wrapper |
 | associated_types.rs:5:15:5:18 | SelfParam | A | associated_types.rs:4:6:4:6 | A |
@@ -15135,4 +15144,18 @@ inferType
 | regressions.rs:105:33:105:33 | y | T | regressions.rs:99:14:99:15 | T1 |
 | regressions.rs:105:33:105:33 | y | T | regressions.rs:99:18:99:19 | T2 |
 | regressions.rs:106:9:106:9 | z |  | regressions.rs:99:18:99:19 | T2 |
+| regressions.rs:113:14:113:17 | SelfParam |  | regressions.rs:111:5:114:5 | Self [trait MyTrait] |
+| regressions.rs:118:14:118:17 | SelfParam |  | {EXTERNAL LOCATION} | & |
+| regressions.rs:118:14:118:17 | SelfParam | TRef | regressions.rs:116:10:116:10 | T |
+| regressions.rs:118:20:118:21 | { ... } |  | {EXTERNAL LOCATION} | () |
+| regressions.rs:124:19:124:22 | SelfParam |  | regressions.rs:121:5:121:19 | S |
+| regressions.rs:124:19:124:22 | SelfParam | T | regressions.rs:123:10:123:10 | T |
+| regressions.rs:127:9:130:9 | { ... } |  | {EXTERNAL LOCATION} | () |
+| regressions.rs:128:17:128:20 | S(...) |  | regressions.rs:121:5:121:19 | S |
+| regressions.rs:128:17:128:20 | S(...) | T | regressions.rs:123:10:123:10 | T |
+| regressions.rs:128:19:128:19 | s |  | regressions.rs:123:10:123:10 | T |
+| regressions.rs:128:24:128:27 | self |  | regressions.rs:121:5:121:19 | S |
+| regressions.rs:128:24:128:27 | self | T | regressions.rs:123:10:123:10 | T |
+| regressions.rs:129:13:129:13 | s |  | regressions.rs:123:10:123:10 | T |
+| regressions.rs:129:13:129:17 | s.m() |  | {EXTERNAL LOCATION} | () |
 testFailures

@@ -1297,6 +1297,15 @@ module Make1<LocationSig Location, InputSig1<Location> Input1> {
       }
 
       /**
+       * Gets a type constraint on the type parameter `tp` that applies to `decl`,
+       * if any.
+       */
+      bindingset[decl]
+      default TypeMention getATypeParameterConstraint(TypeParameter tp, Declaration decl) {
+        result = getATypeParameterConstraint(tp)
+      }
+
+      /**
        * A position inside an access. For example, the integer position of an
        * argument inside a method call.
        */
@@ -1644,6 +1653,24 @@ module Make1<LocationSig Location, InputSig1<Location> Input1> {
       }
 
       /**
+       * Holds if the type parameter `constrainedTp` occurs in the declared type of
+       * `target` at `apos` and `pathToConstrained`, and there is a constraint
+       * `constraint` on `constrainedTp`.
+       */
+      pragma[nomagic]
+      private predicate typeParameterHasConstraint(
+        Declaration target, AccessPosition apos, TypeParameter constrainedTp,
+        TypePath pathToConstrained, TypeMention constraint
+      ) {
+        exists(DeclarationPosition dpos |
+          accessDeclarationPositionMatch(apos, dpos) and
+          constrainedTp = target.getTypeParameter(_) and
+          constrainedTp = target.getDeclaredType(dpos, pathToConstrained) and
+          constraint = getATypeParameterConstraint(constrainedTp, target)
+        )
+      }
+
+      /**
        * Holds if the declared type of `target` contains a type parameter at
        * `apos` and `pathToConstrained` that must satisfy `constraint` and `tp`
        * occurs at `pathToTp` in `constraint`.
@@ -1665,14 +1692,11 @@ module Make1<LocationSig Location, InputSig1<Location> Input1> {
         Declaration target, AccessPosition apos, TypePath pathToConstrained, TypeMention constraint,
         TypePath pathToTp, TypeParameter tp
       ) {
-        exists(DeclarationPosition dpos, TypeParameter constrainedTp |
-          accessDeclarationPositionMatch(apos, dpos) and
-          constrainedTp = target.getTypeParameter(_) and
-          constraint = getATypeParameterConstraint(constrainedTp) and
+        exists(TypeParameter constrainedTp |
+          typeParameterHasConstraint(target, apos, constrainedTp, pathToConstrained, constraint) and
           tp = target.getTypeParameter(_) and
           tp = constraint.getTypeAt(pathToTp) and
-          constrainedTp != tp and
-          constrainedTp = target.getDeclaredType(dpos, pathToConstrained)
+          constrainedTp != tp
         )
       }
 
@@ -1800,6 +1824,15 @@ module Make1<LocationSig Location, InputSig1<Location> Input1> {
       }
 
       /**
+       * Gets a type constraint on the type parameter `tp` that applies to `decl`,
+       * if any.
+       */
+      bindingset[decl]
+      default TypeMention getATypeParameterConstraint(TypeParameter tp, Declaration decl) {
+        result = getATypeParameterConstraint(tp)
+      }
+
+      /**
        * A position inside an access. For example, the integer position of an
        * argument inside a method call.
        */
@@ -1855,6 +1888,8 @@ module Make1<LocationSig Location, InputSig1<Location> Input1> {
       private module Inp implements MatchingWithEnvironmentInputSig {
         private import codeql.util.Unit
         import Input
+
+        predicate getATypeParameterConstraint = Input::getATypeParameterConstraint/2;
 
         class AccessEnvironment = Unit;
 

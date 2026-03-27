@@ -1589,7 +1589,7 @@ private module AssocFunctionResolution {
     Trait getATrait() {
       result = this.getTrait()
       or
-      result = getALookupTrait(getCallExprTypeQualifier(this, TypePath::nil(), _))
+      result = getALookupTrait(this, getCallExprTypeQualifier(this, TypePath::nil(), _))
     }
 
     predicate hasATrait() { exists(this.getATrait()) }
@@ -1639,7 +1639,7 @@ private module AssocFunctionResolution {
     private predicate isRelevantSelfPos(FunctionPosition selfPos) {
       not this.hasReceiver() and
       exists(TypePath strippedTypePath, Type strippedType |
-        strippedType = substituteLookupTraits(this.getTypeAt(selfPos, strippedTypePath)) and
+        strippedType = substituteLookupTraits(this, this.getTypeAt(selfPos, strippedTypePath)) and
         strippedType != TNeverType() and
         strippedType != TUnknownType()
       |
@@ -1803,7 +1803,7 @@ private module AssocFunctionResolution {
       this.hasNoCompatibleTargetNoBorrowToIndex(selfPos, derefChain, strippedTypePath, strippedType,
         n - 1) and
       exists(Type t |
-        t = getNthLookupType(strippedType, n) and
+        t = getNthLookupType(this, strippedType, n) and
         this.hasNoCompatibleTargetCheck(selfPos, derefChain, TNoBorrowKind(), strippedTypePath, t)
       )
     }
@@ -1816,7 +1816,7 @@ private module AssocFunctionResolution {
     predicate hasNoCompatibleTargetNoBorrow(FunctionPosition selfPos, DerefChain derefChain) {
       exists(Type strippedType |
         this.hasNoCompatibleTargetNoBorrowToIndex(selfPos, derefChain, _, strippedType,
-          getLastLookupTypeIndex(strippedType))
+          getLastLookupTypeIndex(this, strippedType))
       )
     }
 
@@ -1845,7 +1845,7 @@ private module AssocFunctionResolution {
       this.hasNoCompatibleNonBlanketTargetNoBorrowToIndex(selfPos, derefChain, strippedTypePath,
         strippedType, n - 1) and
       exists(Type t |
-        t = getNthLookupType(strippedType, n) and
+        t = getNthLookupType(this, strippedType, n) and
         this.hasNoCompatibleNonBlanketTargetCheck(selfPos, derefChain, TNoBorrowKind(),
           strippedTypePath, t)
       )
@@ -1861,7 +1861,7 @@ private module AssocFunctionResolution {
     ) {
       exists(Type strippedType |
         this.hasNoCompatibleNonBlanketTargetNoBorrowToIndex(selfPos, derefChain, _, strippedType,
-          getLastLookupTypeIndex(strippedType))
+          getLastLookupTypeIndex(this, strippedType))
       )
     }
 
@@ -1880,7 +1880,7 @@ private module AssocFunctionResolution {
       this.hasNoCompatibleTargetSharedBorrowToIndex(selfPos, derefChain, strippedTypePath,
         strippedType, n - 1) and
       exists(Type t |
-        t = getNthLookupType(strippedType, n) and
+        t = getNthLookupType(this, strippedType, n) and
         this.hasNoCompatibleNonBlanketLikeTargetCheck(selfPos, derefChain, TSomeBorrowKind(false),
           strippedTypePath, t)
       )
@@ -1895,7 +1895,7 @@ private module AssocFunctionResolution {
     predicate hasNoCompatibleTargetSharedBorrow(FunctionPosition selfPos, DerefChain derefChain) {
       exists(Type strippedType |
         this.hasNoCompatibleTargetSharedBorrowToIndex(selfPos, derefChain, _, strippedType,
-          getLastLookupTypeIndex(strippedType))
+          getLastLookupTypeIndex(this, strippedType))
       )
     }
 
@@ -1913,7 +1913,7 @@ private module AssocFunctionResolution {
       this.hasNoCompatibleTargetMutBorrowToIndex(selfPos, derefChain, strippedTypePath,
         strippedType, n - 1) and
       exists(Type t |
-        t = getNthLookupType(strippedType, n) and
+        t = getNthLookupType(this, strippedType, n) and
         this.hasNoCompatibleNonBlanketLikeTargetCheck(selfPos, derefChain, TSomeBorrowKind(true),
           strippedTypePath, t)
       )
@@ -1928,7 +1928,7 @@ private module AssocFunctionResolution {
     predicate hasNoCompatibleTargetMutBorrow(FunctionPosition selfPos, DerefChain derefChain) {
       exists(Type strippedType |
         this.hasNoCompatibleTargetMutBorrowToIndex(selfPos, derefChain, _, strippedType,
-          getLastLookupTypeIndex(strippedType))
+          getLastLookupTypeIndex(this, strippedType))
       )
     }
 
@@ -1947,7 +1947,7 @@ private module AssocFunctionResolution {
       this.hasNoCompatibleNonBlanketTargetSharedBorrowToIndex(selfPos, derefChain, strippedTypePath,
         strippedType, n - 1) and
       exists(Type t |
-        t = getNthLookupType(strippedType, n) and
+        t = getNthLookupType(this, strippedType, n) and
         this.hasNoCompatibleNonBlanketTargetCheck(selfPos, derefChain, TSomeBorrowKind(false),
           strippedTypePath, t)
       )
@@ -1964,7 +1964,7 @@ private module AssocFunctionResolution {
     ) {
       exists(Type strippedType |
         this.hasNoCompatibleNonBlanketTargetSharedBorrowToIndex(selfPos, derefChain, _,
-          strippedType, getLastLookupTypeIndex(strippedType))
+          strippedType, getLastLookupTypeIndex(this, strippedType))
       )
     }
 
@@ -1982,7 +1982,7 @@ private module AssocFunctionResolution {
       this.hasNoCompatibleNonBlanketTargetMutBorrowToIndex(selfPos, derefChain, strippedTypePath,
         strippedType, n - 1) and
       exists(Type t |
-        t = getNthLookupType(strippedType, n) and
+        t = getNthLookupType(this, strippedType, n) and
         this.hasNoCompatibleNonBlanketTargetCheck(selfPos, derefChain, TSomeBorrowKind(true),
           strippedTypePath, t)
       )
@@ -1999,7 +1999,7 @@ private module AssocFunctionResolution {
     ) {
       exists(Type strippedType |
         this.hasNoCompatibleNonBlanketTargetMutBorrowToIndex(selfPos, derefChain, _, strippedType,
-          getLastLookupTypeIndex(strippedType))
+          getLastLookupTypeIndex(this, strippedType))
       )
     }
 
@@ -2268,9 +2268,12 @@ private module AssocFunctionResolution {
 
     AssocFunctionCall getAssocFunctionCall() { result = afc_ }
 
+    ItemNode getEnclosingItemNode() { result.getADescendant() = afc_ }
+
     Type getTypeAt(TypePath path) {
       result =
-        substituteLookupTraits(afc_.getANonPseudoSelfTypeAt(selfPos_, derefChain, borrow, path))
+        substituteLookupTraits(afc_,
+          afc_.getANonPseudoSelfTypeAt(selfPos_, derefChain, borrow, path))
     }
 
     pragma[nomagic]
@@ -2404,7 +2407,7 @@ private module AssocFunctionResolution {
       CallDerefCand() { this = MkCallDerefCand(afc, selfPos, derefChain) }
 
       Type getTypeAt(TypePath path) {
-        result = substituteLookupTraits(afc.getSelfTypeAtNoBorrow(selfPos, derefChain, path)) and
+        result = substituteLookupTraits(afc, afc.getSelfTypeAtNoBorrow(selfPos, derefChain, path)) and
         result != TNeverType() and
         result != TUnknownType()
       }
@@ -2641,6 +2644,8 @@ private module FunctionCallMatchingInput implements MatchingWithEnvironmentInput
 
     Declaration() { this = TFunctionDeclaration(i, f) }
 
+    FunctionDeclaration getFunction() { result = f }
+
     predicate isAssocFunction(ImplOrTraitItemNode i_, Function f_) {
       i_ = i.asSome() and
       f_ = f
@@ -2664,6 +2669,23 @@ private module FunctionCallMatchingInput implements MatchingWithEnvironmentInput
     }
 
     Location getLocation() { result = f.getLocation() }
+  }
+
+  pragma[nomagic]
+  private TypeMention getAdditionalTypeParameterConstraint(TypeParameter tp, Declaration decl) {
+    result =
+      tp.(TypeParamTypeParameter)
+          .getTypeParam()
+          .getAdditionalTypeBound(decl.getFunction(), _)
+          .getTypeRepr()
+  }
+
+  bindingset[decl]
+  TypeMention getATypeParameterConstraint(TypeParameter tp, Declaration decl) {
+    result = Input2::getATypeParameterConstraint(tp) and
+    exists(decl)
+    or
+    result = getAdditionalTypeParameterConstraint(tp, decl)
   }
 
   class AccessEnvironment = string;

@@ -106,3 +106,27 @@ mod regression3 {
         z
     }
 }
+
+mod regression4 {
+    trait MyTrait {
+        // MyTrait::m
+        fn m(self);
+    }
+
+    impl<T> MyTrait for &T {
+        // RefAsMyTrait::m
+        fn m(self) {}
+    }
+
+    struct S<T>(T);
+
+    impl<T> S<T> {
+        fn call_m(self)
+        where
+            T: MyTrait,
+        {
+            let S(s) = self;
+            s.m(); // $ target=MyTrait::m
+        }
+    }
+}
