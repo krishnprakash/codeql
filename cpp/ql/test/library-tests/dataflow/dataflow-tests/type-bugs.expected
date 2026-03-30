@@ -36,6 +36,12 @@ irTypeBugs
 | ../../../include/iterator.h:31:16:31:25 | ../../../include/iterator.h:31:16:31:25 | ../../../include/iterator.h:31:16:31:25 | [summary] read: Argument[this].Element[*] in operator-> |
 | ../../../include/iterator.h:31:16:31:25 | ../../../include/iterator.h:31:16:31:25 | ../../../include/iterator.h:31:16:31:25 | [summary] to write: ReturnValue[**] in operator-> |
 | ../../../include/iterator.h:31:16:31:25 | ../../../include/iterator.h:31:16:31:25 | ../../../include/iterator.h:31:16:31:25 | [summary] to write: ReturnValue[*] in operator-> |
+| test.cpp:356:7:356:11 | test.cpp:356:7:356:11 | test.cpp:356:7:356:11 | field |
+| test.cpp:356:7:356:11 | test.cpp:356:7:356:11 | test.cpp:356:7:356:11 | field |
+| test.cpp:356:7:356:11 | test.cpp:356:7:356:11 | test.cpp:356:7:356:11 | field |
+| test.cpp:1318:9:1318:9 | test.cpp:1318:9:1318:9 | test.cpp:1318:9:1318:9 | i |
+| test.cpp:1318:9:1318:9 | test.cpp:1318:9:1318:9 | test.cpp:1318:9:1318:9 | i |
+| test.cpp:1318:9:1318:9 | test.cpp:1318:9:1318:9 | test.cpp:1318:9:1318:9 | i |
 incorrectBaseType
 | clang.cpp:22:8:22:20 | *& ... | Expected 'Node.getType()' to be int, but it was int * |
 | clang.cpp:23:17:23:29 | *& ... | Expected 'Node.getType()' to be int, but it was int * |
