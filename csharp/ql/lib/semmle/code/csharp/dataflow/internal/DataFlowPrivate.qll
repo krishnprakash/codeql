@@ -274,7 +274,7 @@ module VariableCapture {
   }
 
   private module CaptureInput implements Shared::InputSig<Location, BasicBlocks::BasicBlock> {
-    private import csharp as Cs
+    private import csharp as CS
     private import semmle.code.csharp.controlflow.ControlFlowGraph as Cfg
     private import TaintTrackingPrivate as TaintTrackingPrivate
 
@@ -391,7 +391,7 @@ module VariableCapture {
       }
     }
 
-    class Callable extends Cs::Callable {
+    class Callable extends CS::Callable {
       predicate isConstructor() { this instanceof Constructor }
     }
   }

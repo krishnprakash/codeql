@@ -11,13 +11,18 @@ private import TypeFlow
 private import semmle.code.cpp.ir.ValueNumbering
 
 /**
- * Gets the C++ type of `this` in the member function `f`.
+ * Gets the C++ type of `this` in an `IRFunction` generated from `f`.
  * The result is a glvalue if `isGLValue` is true, and
  * a prvalue if `isGLValue` is false.
  */
 bindingset[isGLValue]
-private CppType getThisType(Cpp::MemberFunction f, boolean isGLValue) {
-  result.hasType(f.getTypeOfThis(), isGLValue)
+private CppType getThisType(Cpp::Declaration f, boolean isGLValue) {
+  result.hasType(f.(Cpp::MemberFunction).getTypeOfThis(), isGLValue)
+  or
+  exists(Cpp::PointerType pt |
+    pt.getBaseType() = f.(Cpp::Field).getDeclaringType() and
+    result.hasType(pt, isGLValue)
+  )
 }
 
 /**

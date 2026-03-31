@@ -1324,7 +1324,7 @@ struct nsdmi {
 
 void nsdmi_test() {
   nsdmi x;
-  sink(x.i); // $ MISSING: ir ast
+  sink(x.i); // $ ir MISSING: ast
 
   nsdmi y(source());
   sink(y.i); // $ ir ast

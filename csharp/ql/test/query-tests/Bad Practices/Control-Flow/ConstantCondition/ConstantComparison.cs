@@ -16,16 +16,16 @@ class Test
     {
         bool good, bad;
 
-        bad = uintValue < 0;
-        bad = 0 > uintValue;
-        bad = 0 <= uintValue;
-        bad = uintValue >= 0;
+        bad = uintValue < 0; // $ Alert
+        bad = 0 > uintValue; // $ Alert
+        bad = 0 <= uintValue; // $ Alert
+        bad = uintValue >= 0; // $ Alert
 
-        bad = uintValue == -1;
-        bad = uintValue != -1;
-        bad = 256 == byteValue;
-        bad = 256 != byteValue;
-        bad = 1 != 0;
+        bad = uintValue == -1; // $ Alert
+        bad = uintValue != -1; // $ Alert
+        bad = 256 == byteValue; // $ Alert
+        bad = 256 != byteValue; // $ Alert
+        bad = 1 != 0; // $ Alert
 
         good = byteValue == 50;
         good = 50 != byteValue;
@@ -35,61 +35,61 @@ class Test
         good = intValue <= 1u;
         good = 1u >= intValue;
 
-        good = charValue >= '0';  // Regression
+        good = charValue >= '0';
         good = charValue < '0';
 
         // Test ranges
-        bad = charValue <= 65535;
-        bad = charValue >= 0;
+        bad = charValue <= 65535; // $ Alert
+        bad = charValue >= 0; // $ Alert
 
         good = charValue < 255;
         good = charValue > 0;
 
-        bad = byteValue >= byte.MinValue;
-        bad = byteValue <= byte.MaxValue;
+        bad = byteValue >= byte.MinValue; // $ Alert
+        bad = byteValue <= byte.MaxValue; // $ Alert
 
         good = byteValue > byte.MinValue;
         good = byteValue < byte.MaxValue;
 
-        bad = sbyteValue >= sbyte.MinValue;
-        bad = sbyteValue <= sbyte.MaxValue;
+        bad = sbyteValue >= sbyte.MinValue; // $ Alert
+        bad = sbyteValue <= sbyte.MaxValue; // $ Alert
 
         good = sbyteValue < sbyte.MaxValue;
         good = sbyteValue > sbyte.MinValue;
 
-        bad = shortValue >= short.MinValue;
-        bad = shortValue <= short.MaxValue;
+        bad = shortValue >= short.MinValue; // $ Alert
+        bad = shortValue <= short.MaxValue; // $ Alert
 
         good = shortValue > short.MinValue;
         good = shortValue < short.MaxValue;
 
-        bad = ushortValue >= ushort.MinValue;
-        bad = ushortValue <= ushort.MaxValue;
+        bad = ushortValue >= ushort.MinValue; // $ Alert
+        bad = ushortValue <= ushort.MaxValue; // $ Alert
 
         good = ushortValue > ushort.MinValue;
         good = ushortValue < ushort.MaxValue;
 
-        bad = intValue >= int.MinValue;
-        bad = intValue <= int.MaxValue;
+        bad = intValue >= int.MinValue; // $ Alert
+        bad = intValue <= int.MaxValue; // $ Alert
 
         good = intValue > int.MinValue;
         good = intValue < int.MaxValue;
 
-        bad = uintValue >= uint.MinValue;
+        bad = uintValue >= uint.MinValue; // $ Alert
         good = uintValue > uint.MinValue;
 
-        bad = ulongValue >= ulong.MinValue;
+        bad = ulongValue >= ulong.MinValue; // $ Alert
         good = ulongValue > ulong.MinValue;
 
         // Explicit casts can cause large values to be truncated or
         // to wrap into negative values.
         good = (sbyte)byteValue >= 0;
         good = (sbyte)byteValue == -1;
-        bad = (sbyte)byteValue > 127;
-        bad = (sbyte)byteValue > (sbyte)127;
+        bad = (sbyte)byteValue > 127; // $ Alert
+        bad = (sbyte)byteValue > (sbyte)127; // $ Alert
         good = (int)uintValue == -1;
         good = (sbyte)uintValue == -1;
-        bad = (sbyte)uintValue == 256;
+        bad = (sbyte)uintValue == 256; // $ Alert
 
         System.Diagnostics.Debug.Assert(ulongValue >= ulong.MinValue);  // GOOD
     }
