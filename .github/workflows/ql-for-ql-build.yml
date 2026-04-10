@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest-xl
     steps:
       ### Build the queries ###
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Find codeql
@@ -33,7 +33,7 @@ jobs:
       ### Build the extractor ###
       - name: Cache entire extractor
         id: cache-extractor
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ql/extractor-pack/
@@ -41,7 +41,7 @@ jobs:
           key: ${{ runner.os }}-${{ steps.os_version.outputs.version }}-extractor-${{ hashFiles('ql/**/Cargo.lock') }}-${{ hashFiles('shared/tree-sitter-extractor') }}-${{ hashFiles('ql/**/*.rs') }}
       - name: Cache cargo
         if: steps.cache-extractor.outputs.cache-hit != 'true'
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
