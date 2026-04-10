@@ -30,6 +30,7 @@ ql/cpp/ql/src/Security/CWE/CWE-120/VeryLikelyOverrunWrite.ql
 ql/cpp/ql/src/Security/CWE/CWE-131/NoSpaceForZeroTerminator.ql
 ql/cpp/ql/src/Security/CWE/CWE-134/UncontrolledFormatString.ql
 ql/cpp/ql/src/Security/CWE/CWE-190/ArithmeticUncontrolled.ql
+ql/cpp/ql/src/Security/CWE/CWE-190/ComparisonWithWiderType.ql
 ql/cpp/ql/src/Security/CWE/CWE-191/UnsignedDifferenceExpressionComparedZero.ql
 ql/cpp/ql/src/Security/CWE/CWE-253/HResultBooleanConversion.ql
 ql/cpp/ql/src/Security/CWE/CWE-311/CleartextFileWrite.ql
