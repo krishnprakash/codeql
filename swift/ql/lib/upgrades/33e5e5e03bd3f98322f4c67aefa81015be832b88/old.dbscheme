@@ -2266,8 +2266,8 @@ any_generic_type_parents(  //dir=type
 | @builtin_bridge_object_type
 | @builtin_default_actor_storage_type
 | @builtin_executor_type
+| @builtin_fixed_array_type
 | @builtin_float_type
-| @builtin_generic_type
 | @builtin_job_type
 | @builtin_native_object_type
 | @builtin_raw_pointer_type
@@ -2449,13 +2449,13 @@ builtin_executor_types(  //dir=type
   unique int id: @builtin_executor_type
 );
 
+builtin_fixed_array_types(  //dir=type
+  unique int id: @builtin_fixed_array_type
+);
+
 builtin_float_types(  //dir=type
   unique int id: @builtin_float_type
 );
-
-@builtin_generic_type =
-  @builtin_fixed_array_type
-;
 
 builtin_job_types(  //dir=type
   unique int id: @builtin_job_type
@@ -2556,10 +2556,6 @@ bound_generic_type_arg_types(  //dir=type
   int id: @bound_generic_type ref,
   int index: int ref,
   int arg_type: @type_or_none ref
-);
-
-builtin_fixed_array_types(  //dir=type
-  unique int id: @builtin_fixed_array_type
 );
 
 builtin_integer_literal_types(  //dir=type
