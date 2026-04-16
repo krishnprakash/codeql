@@ -222,6 +222,12 @@ codeql::Accessor DeclTranslator::translateAccessorDecl(const swift::AccessorDecl
     case swift::AccessorKind::Init:
       entry.is_init = true;
       break;
+    case swift::AccessorKind::Borrow:
+      break;
+    case swift::AccessorKind::Mutate:
+      break;
+    case swift::AccessorKind::Last:
+      break;
   }
   fillFunction(decl, entry);
   return entry;
