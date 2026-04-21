@@ -20,6 +20,9 @@ class DispatchCall extends Internal::TDispatchCall {
   /** Gets the underlying expression of this call. */
   Expr getCall() { result = Internal::getCall(this) }
 
+  /** Gets the control flow node of this call. */
+  ControlFlowNode getControlFlowNode() { result = Internal::getControlFlowNode(this) }
+
   /** Gets the `i`th argument of this call. */
   Expr getArgument(int i) { result = Internal::getArgument(this, i) }
 
@@ -90,7 +93,12 @@ private module Internal {
         not mc.isLateBound() and
         not isExtensionAccessorCall(mc)
       } or
-      TDispatchAccessorCall(AccessorCall ac) or
+      TDispatchAccessorCall(AccessorCall ac, boolean isRead) {
+        // For compound assignments an AccessorCall can be both a read and a write
+        ac instanceof AssignableRead and isRead = true
+        or
+        ac instanceof AssignableWrite and isRead = false
+      } or
       TDispatchOperatorCall(OperatorCall oc) { not oc.isLateBound() } or
       TDispatchReflectionCall(MethodCall mc, string name, Expr object, Expr qualifier, int args) {
         isReflectionCall(mc, name, object, qualifier, args)
@@ -116,6 +124,11 @@ private module Internal {
 
     cached
     Expr getCall(DispatchCall dc) { result = dc.(DispatchCallImpl).getCall() }
+
+    cached
+    ControlFlowNode getControlFlowNode(DispatchCall dc) {
+      result = dc.(DispatchCallImpl).getControlFlowNode()
+    }
 
     cached
     Expr getArgument(DispatchCall dc, int i) { result = dc.(DispatchCallImpl).getArgument(i) }
@@ -223,6 +236,9 @@ private module Internal {
 
     /** Gets the underlying expression of this call. */
     abstract Expr getCall();
+
+    /** Gets the control flow node of this call. */
+    ControlFlowNode getControlFlowNode() { result = this.getCall().getControlFlowNode() }
 
     /** Gets the `i`th argument of this call. */
     abstract Expr getArgument(int i);
@@ -877,13 +893,28 @@ private module Internal {
    * into account.
    */
   private class DispatchAccessorCall extends DispatchOverridableCall, TDispatchAccessorCall {
-    override AccessorCall getCall() { this = TDispatchAccessorCall(result) }
+    private predicate isRead() { this = TDispatchAccessorCall(_, true) }
+
+    override ControlFlowNode getControlFlowNode() {
+      if this.isRead()
+      then result = this.getCall().getControlFlowNode()
+      else
+        exists(AssignableDefinition def |
+          def.getTargetAccess() = this.getCall() and result = def.getExpr().getControlFlowNode()
+        )
+    }
+
+    override AccessorCall getCall() { this = TDispatchAccessorCall(result, _) }
 
     override Expr getArgument(int i) { result = this.getCall().getArgument(i) }
 
     override Expr getQualifier() { result = this.getCall().(MemberAccess).getQualifier() }
 
-    override Accessor getAStaticTarget() { result = this.getCall().getTarget() }
+    override Accessor getAStaticTarget() {
+      if this.isRead()
+      then result = this.getCall().getReadTarget()
+      else result = this.getCall().getWriteTarget()
+    }
 
     override RuntimeAccessor getADynamicTarget() {
       result = DispatchOverridableCall.super.getADynamicTarget() and

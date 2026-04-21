@@ -633,7 +633,25 @@ class FunctionPointerCall extends DelegateLikeCall, @function_pointer_invocation
  * (`EventCall`).
  */
 class AccessorCall extends Call, QualifiableExpr, @call_access_expr {
-  override Accessor getTarget() { none() }
+  override Accessor getTarget() { result = this.getReadTarget() or result = this.getWriteTarget() }
+
+  /**
+   * Gets the static (compile-time) target of this call, assuming that this is
+   * an `AssignableRead`.
+   *
+   * Note that left-hand sides of compound assignments are both
+   * `AssignableRead`s and `AssignableWrite`s.
+   */
+  Accessor getReadTarget() { none() }
+
+  /**
+   * Gets the static (compile-time) target of this call, assuming that this is
+   * an `AssignableWrite`.
+   *
+   * Note that left-hand sides of compound assignments are both
+   * `AssignableRead`s and `AssignableWrite`s.
+   */
+  Accessor getWriteTarget() { none() }
 
   override Expr getArgument(int i) { none() }
 
@@ -655,12 +673,12 @@ class AccessorCall extends Call, QualifiableExpr, @call_access_expr {
  * ```
  */
 class PropertyCall extends AccessorCall, PropertyAccessExpr {
-  override Accessor getTarget() {
-    exists(PropertyAccess pa, Property p | pa = this and p = this.getProperty() |
-      pa instanceof AssignableRead and result = p.getGetter()
-      or
-      pa instanceof AssignableWrite and result = p.getSetter()
-    )
+  override Accessor getReadTarget() {
+    this instanceof AssignableRead and result = this.getProperty().getGetter()
+  }
+
+  override Accessor getWriteTarget() {
+    this instanceof AssignableWrite and result = this.getProperty().getSetter()
   }
 
   override Expr getArgument(int i) {
@@ -690,12 +708,12 @@ class PropertyCall extends AccessorCall, PropertyAccessExpr {
  * ```
  */
 class IndexerCall extends AccessorCall, IndexerAccessExpr {
-  override Accessor getTarget() {
-    exists(IndexerAccess ia, Indexer i | ia = this and i = this.getIndexer() |
-      ia instanceof AssignableRead and result = i.getGetter()
-      or
-      ia instanceof AssignableWrite and result = i.getSetter()
-    )
+  override Accessor getReadTarget() {
+    this instanceof AssignableRead and result = this.getIndexer().getGetter()
+  }
+
+  override Accessor getWriteTarget() {
+    this instanceof AssignableWrite and result = this.getIndexer().getSetter()
   }
 
   override Expr getArgument(int i) {
@@ -770,7 +788,7 @@ class ExtensionPropertyCall extends PropertyCall {
  * ```
  */
 class EventCall extends AccessorCall, EventAccessExpr {
-  override EventAccessor getTarget() {
+  override EventAccessor getWriteTarget() {
     exists(Event e, AddOrRemoveEventExpr aoree |
       e = this.getEvent() and
       aoree.getLeftOperand() = this

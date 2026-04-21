@@ -129,13 +129,6 @@ private module Cached {
     result = parent.getAChildStmt()
   }
 
-  pragma[inline]
-  private ControlFlowElement enclosingStart(ControlFlowElement cfe) {
-    result = cfe
-    or
-    getAChild(result).(AnonymousFunctionExpr) = cfe
-  }
-
   private predicate parent(ControlFlowElement child, ExprOrStmtParent parent) {
     child = getAChild(parent) and
     not child = getBody(_)
@@ -145,7 +138,7 @@ private module Cached {
   cached
   predicate enclosingBody(ControlFlowElement cfe, ControlFlowElement body) {
     body = getBody(_) and
-    parent*(enclosingStart(cfe), body)
+    parent*(cfe, body)
   }
 
   /** Holds if the enclosing callable of `cfe` is `c`. */
@@ -153,7 +146,7 @@ private module Cached {
   predicate enclosingCallable(ControlFlowElement cfe, Callable c) {
     enclosingBody(cfe, getBody(c))
     or
-    parent*(enclosingStart(cfe), c.(Constructor).getInitializer())
+    parent*(cfe, c.(Constructor).getInitializer())
     or
     parent*(cfe, c.(Constructor).getObjectInitializerCall())
     or

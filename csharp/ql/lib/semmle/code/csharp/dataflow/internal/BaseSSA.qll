@@ -5,7 +5,6 @@ import csharp
  */
 module BaseSsa {
   private import AssignableDefinitions
-  private import semmle.code.csharp.controlflow.BasicBlocks as BasicBlocks
   private import codeql.ssa.Ssa as SsaImplCommon
 
   /**
@@ -13,9 +12,9 @@ module BaseSsa {
    * targeting local scope variable `v`.
    */
   private predicate definitionAt(
-    AssignableDefinition def, ControlFlow::BasicBlock bb, int i, SsaInput::SourceVariable v
+    AssignableDefinition def, BasicBlock bb, int i, SsaInput::SourceVariable v
   ) {
-    bb.getNode(i) = def.getExpr().getAControlFlowNode() and
+    bb.getNode(i) = def.getExpr().getControlFlowNode() and
     v = def.getTarget() and
     // In cases like `(x, x) = (0, 1)`, we discard the first (dead) definition of `x`
     not exists(TupleAssignmentDefinition first, TupleAssignmentDefinition second | first = def |
@@ -25,11 +24,9 @@ module BaseSsa {
     )
   }
 
-  private predicate implicitEntryDef(
-    Callable c, ControlFlow::BasicBlocks::EntryBlock bb, SsaInput::SourceVariable v
-  ) {
-    exists(ControlFlow::BasicBlocks::EntryBlock entry |
-      c = entry.getCallable() and
+  private predicate implicitEntryDef(Callable c, EntryBasicBlock bb, SsaInput::SourceVariable v) {
+    exists(EntryBasicBlock entry |
+      c = entry.getEnclosingCallable() and
       // In case `c` has multiple bodies, we want each body to get its own implicit
       // entry definition. In case `c` doesn't have multiple bodies, the line below
       // is simply the same as `bb = entry`, because `entry.getFirstNode().getASuccessor()`
@@ -82,10 +79,10 @@ module BaseSsa {
     }
   }
 
-  private module SsaInput implements SsaImplCommon::InputSig<Location, ControlFlow::BasicBlock> {
+  private module SsaInput implements SsaImplCommon::InputSig<Location, BasicBlock> {
     class SourceVariable = SimpleLocalScopeVariable;
 
-    predicate variableWrite(ControlFlow::BasicBlock bb, int i, SourceVariable v, boolean certain) {
+    predicate variableWrite(BasicBlock bb, int i, SourceVariable v, boolean certain) {
       exists(AssignableDefinition def |
         definitionAt(def, bb, i, v) and
         if def.isCertain() then certain = true else certain = false
@@ -96,34 +93,34 @@ module BaseSsa {
       certain = true
     }
 
-    predicate variableRead(ControlFlow::BasicBlock bb, int i, SourceVariable v, boolean certain) {
+    predicate variableRead(BasicBlock bb, int i, SourceVariable v, boolean certain) {
       exists(AssignableRead read |
-        read.getAControlFlowNode() = bb.getNode(i) and
+        read.getControlFlowNode() = bb.getNode(i) and
         read.getTarget() = v and
         certain = true
       )
     }
   }
 
-  private module SsaImpl = SsaImplCommon::Make<Location, BasicBlocks::Cfg, SsaInput>;
+  private module SsaImpl = SsaImplCommon::Make<Location, Cfg, SsaInput>;
 
   class Definition extends SsaImpl::Definition {
     final AssignableRead getARead() {
-      exists(ControlFlow::BasicBlock bb, int i |
+      exists(BasicBlock bb, int i |
         SsaImpl::ssaDefReachesRead(_, this, bb, i) and
-        result.getAControlFlowNode() = bb.getNode(i)
+        result.getControlFlowNode() = bb.getNode(i)
       )
     }
 
     final AssignableDefinition getDefinition() {
-      exists(ControlFlow::BasicBlock bb, int i, SsaInput::SourceVariable v |
+      exists(BasicBlock bb, int i, SsaInput::SourceVariable v |
         this.definesAt(v, bb, i) and
         definitionAt(result, bb, i, v)
       )
     }
 
     final predicate isImplicitEntryDefinition(SsaInput::SourceVariable v) {
-      exists(ControlFlow::BasicBlock bb |
+      exists(BasicBlock bb |
         this.definesAt(v, bb, -1) and
         implicitEntryDef(_, bb, v)
       )
@@ -142,7 +139,7 @@ module BaseSsa {
     override Location getLocation() {
       result = this.getDefinition().getLocation()
       or
-      exists(Callable c, ControlFlow::BasicBlock bb, SsaInput::SourceVariable v |
+      exists(Callable c, BasicBlock bb, SsaInput::SourceVariable v |
         this.definesAt(v, bb, -1) and
         implicitEntryDef(c, bb, v) and
         result = c.getLocation()
