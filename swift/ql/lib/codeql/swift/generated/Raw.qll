@@ -6537,6 +6537,16 @@ module Raw {
    */
   class BuiltinFixedArrayType extends @builtin_fixed_array_type, BuiltinGenericType {
     override string toString() { result = "BuiltinFixedArrayType" }
+
+    /**
+     * Gets the size of this builtin fixed array type.
+     */
+    Type getSize() { builtin_fixed_array_types(this, result, _) }
+
+    /**
+     * Gets the element type of this builtin fixed array type.
+     */
+    Type getElementType() { builtin_fixed_array_types(this, _, result) }
   }
 
   private Element getImmediateChildOfBuiltinFixedArrayType(BuiltinFixedArrayType e, int index) {

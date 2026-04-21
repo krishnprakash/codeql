@@ -2559,9 +2559,7 @@ bound_generic_type_arg_types(  //dir=type
 );
 
 builtin_fixed_array_types(  //dir=type
-  unique int id: @builtin_fixed_array_type,
-  int size: @type_or_none ref,
-  int element_type: @type_or_none ref
+  unique int id: @builtin_fixed_array_type
 );
 
 builtin_integer_literal_types(  //dir=type
