@@ -468,6 +468,7 @@ private module NonReturningCalls {
 
 private module Input implements InputSig1, InputSig2 {
   private import java as J
+  private import codeql.util.Void
 
   predicate cfgCachedStageRef() { CfgCachedStage::ref() }
 
@@ -532,6 +533,8 @@ private module Input implements InputSig1, InputSig2 {
     or
     l = TYield() and n instanceof SwitchExpr
   }
+
+  class CallableBodyPartContext = Void;
 
   predicate inConditionalContext(Ast::AstNode n, ConditionKind kind) {
     kind.isBoolean() and

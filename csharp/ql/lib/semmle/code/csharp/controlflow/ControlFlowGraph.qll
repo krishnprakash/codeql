@@ -25,7 +25,7 @@ private module Ast implements AstSig<Location> {
 
   class AstNode = ControlFlowElementOrCallable;
 
-  private predicate skipControlFlow(AstNode e) {
+  additional predicate skipControlFlow(AstNode e) {
     e instanceof TypeAccess and
     not e instanceof TypeAccessPatternExpr
     or
@@ -82,13 +82,7 @@ private module Ast implements AstSig<Location> {
 
   AstNode callableGetBody(Callable c) {
     not skipControlFlow(result) and
-    (
-      result = c.getBody() or
-      result = c.(Constructor).getObjectInitializerCall() or
-      result = c.(Constructor).getInitializer() or
-      c.(ObjectInitMethod).initializes(result) or
-      Initializers::staticMemberInitializer(c, result)
-    )
+    result = c.getBody()
   }
 
   class Stmt = CS::Stmt;
@@ -222,9 +216,20 @@ private module Ast implements AstSig<Location> {
  * Unlike the standard `Compilation` class, this class also supports buildless
  * extraction.
  */
-private newtype CompilationExt =
+private newtype TCompilationExt =
   TCompilation(Compilation c) { not extractionIsStandalone() } or
   TBuildless() { extractionIsStandalone() }
+
+private class CompilationExt extends TCompilationExt {
+  string toString() {
+    exists(Compilation c |
+      this = TCompilation(c) and
+      result = c.toString()
+    )
+    or
+    this = TBuildless() and result = "buildless compilation"
+  }
+}
 
 /** Gets the compilation that source file `f` belongs to. */
 private CompilationExt getCompilation(File f) {
@@ -286,31 +291,17 @@ private module Initializers {
   }
 
   /**
-   * Gets the `i`th member initializer expression for object initializer method `obinit`
-   * in compilation `comp`.
+   * Gets the `i`th member initializer expression for object initializer method `obinit`.
    */
-  AssignExpr initializedInstanceMemberOrder(ObjectInitMethod obinit, CompilationExt comp, int i) {
-    obinit.initializes(result) and
+  AssignExpr initializedInstanceMemberOrder(ObjectInitMethod obinit, int i) {
     result =
       rank[i + 1](AssignExpr ae0, Location l, string filepath, int startline, int startcolumn |
         obinit.initializes(ae0) and
         l = ae0.getLocation() and
-        l.hasLocationInfo(filepath, startline, startcolumn, _, _) and
-        getCompilation(l.getFile()) = comp
+        l.hasLocationInfo(filepath, startline, startcolumn, _, _)
       |
         ae0 order by startline, startcolumn, filepath
       )
-  }
-
-  /**
-   * Gets the last member initializer expression for object initializer method `obinit`
-   * in compilation `comp`.
-   */
-  AssignExpr lastInitializer(ObjectInitMethod obinit, CompilationExt comp) {
-    exists(int i |
-      result = initializedInstanceMemberOrder(obinit, comp, i) and
-      not exists(initializedInstanceMemberOrder(obinit, comp, i + 1))
-    )
   }
 }
 
@@ -424,6 +415,31 @@ private module Input implements InputSig1, InputSig2 {
     l = TLblGoto(n.(LabelStmt).getLabel())
   }
 
+  class CallableBodyPartContext = CompilationExt;
+
+  pragma[nomagic]
+  Ast::AstNode callableGetBodyPart(Callable c, CallableBodyPartContext ctx, int index) {
+    not Ast::skipControlFlow(result) and
+    ctx = getCompilation(result.getFile()) and
+    (
+      result = Initializers::initializedInstanceMemberOrder(c, index)
+      or
+      result = Initializers::initializedStaticMemberOrder(c, index)
+      or
+      exists(Constructor ctor, int i, int staticMembers |
+        c = ctor and
+        staticMembers = count(Expr init | Initializers::staticMemberInitializer(ctor, init)) and
+        index = staticMembers + i + 1
+      |
+        i = 0 and result = ctor.getObjectInitializerCall()
+        or
+        i = 1 and result = ctor.getInitializer()
+        or
+        i = 2 and result = ctor.getBody()
+      )
+    )
+  }
+
   private Expr getQualifier(QualifiableExpr qe) {
     result = qe.getQualifier() or
     result = qe.(ExtensionMethodCall).getArgument(0)
@@ -474,80 +490,7 @@ private module Input implements InputSig1, InputSig2 {
     )
   }
 
-  pragma[noinline]
-  private MethodCall getObjectInitializerCall(Constructor ctor, CompilationExt comp) {
-    result = ctor.getObjectInitializerCall() and
-    comp = getCompilation(result.getFile())
-  }
-
-  pragma[noinline]
-  private ConstructorInitializer getInitializer(Constructor ctor, CompilationExt comp) {
-    result = ctor.getInitializer() and
-    comp = getCompilation(result.getFile())
-  }
-
-  pragma[noinline]
-  private Ast::AstNode getBody(Constructor ctor, CompilationExt comp) {
-    result = ctor.getBody() and
-    comp = getCompilation(result.getFile())
-  }
-
   predicate step(PreControlFlowNode n1, PreControlFlowNode n2) {
-    exists(Constructor ctor |
-      n1.(EntryNodeImpl).getEnclosingCallable() = ctor and
-      if Initializers::staticMemberInitializer(ctor, _)
-      then n2.isBefore(Initializers::initializedStaticMemberOrder(ctor, 0))
-      else
-        if exists(ctor.getObjectInitializerCall())
-        then n2.isBefore(ctor.getObjectInitializerCall())
-        else
-          if exists(ctor.getInitializer())
-          then n2.isBefore(ctor.getInitializer())
-          else n2.isBefore(ctor.getBody())
-      or
-      exists(int i | n1.isAfter(Initializers::initializedStaticMemberOrder(ctor, i)) |
-        n2.isBefore(Initializers::initializedStaticMemberOrder(ctor, i + 1))
-        or
-        not exists(Initializers::initializedStaticMemberOrder(ctor, i + 1)) and
-        n2.isBefore(ctor.getBody())
-      )
-      or
-      exists(CompilationExt comp |
-        n1.isAfter(getObjectInitializerCall(ctor, comp)) and
-        if exists(getInitializer(ctor, comp))
-        then n2.isBefore(getInitializer(ctor, comp))
-        else
-          // This is only relevant in the context of compilation errors, since
-          // normally the existence of an object initializer call implies the
-          // existence of an initializer.
-          if exists(getBody(ctor, comp))
-          then n2.isBefore(getBody(ctor, comp))
-          else n2.(NormalExitNodeImpl).getEnclosingCallable() = ctor
-        or
-        n1.isAfter(getInitializer(ctor, comp)) and
-        if exists(getBody(ctor, comp))
-        then n2.isBefore(getBody(ctor, comp))
-        else n2.(NormalExitNodeImpl).getEnclosingCallable() = ctor
-      )
-      or
-      n1.isAfter(ctor.getBody()) and
-      n2.(NormalExitNodeImpl).getEnclosingCallable() = ctor
-    )
-    or
-    exists(ObjectInitMethod obinit |
-      n1.(EntryNodeImpl).getEnclosingCallable() = obinit and
-      n2.isBefore(Initializers::initializedInstanceMemberOrder(obinit, _, 0))
-      or
-      exists(CompilationExt comp, int i |
-        // Flow from one member initializer to the next
-        n1.isAfter(Initializers::initializedInstanceMemberOrder(obinit, comp, i)) and
-        n2.isBefore(Initializers::initializedInstanceMemberOrder(obinit, comp, i + 1))
-      )
-      or
-      n1.isAfter(Initializers::lastInitializer(obinit, _)) and
-      n2.(NormalExitNodeImpl).getEnclosingCallable() = obinit
-    )
-    or
     exists(QualifiableExpr qe | qe.isConditional() |
       n1.isBefore(qe) and n2.isBefore(getQualifier(qe))
       or
