@@ -312,69 +312,6 @@ module Ssa {
     }
 
     /**
-     * Gets a last read of the source variable underlying this SSA definition.
-     * That is, a read that can reach the end of the enclosing callable, or
-     * another SSA definition for the source variable, without passing through
-     * any other read. Example:
-     *
-     * ```csharp
-     * int Field;
-     *
-     * void SetField(int i) {
-     *   this.Field = i;
-     *   Use(this.Field);
-     *   if (i > 0)
-     *     this.Field = i - 1;
-     *   else if (i < 0)
-     *     SetField(1);
-     *   Use(this.Field);
-     *   Use(this.Field);
-     * }
-     * ```
-     *
-     * - The reads of `i` on lines 7 and 8 are the last reads for the implicit
-     *   parameter definition on line 3.
-     * - The read of `this.Field` on line 5 is a last read of the definition on
-     *   line 4.
-     * - The read of `this.Field` on line 11 is a last read of the phi node
-     *   between lines 9 and 10.
-     */
-    deprecated final AssignableRead getALastRead() { result = this.getALastReadAtNode(_) }
-
-    /**
-     * Gets a last read of the source variable underlying this SSA definition at
-     * control flow node `cfn`. That is, a read that can reach the end of the
-     * enclosing callable, or another SSA definition for the source variable,
-     * without passing through any other read. Example:
-     *
-     * ```csharp
-     * int Field;
-     *
-     * void SetField(int i) {
-     *   this.Field = i;
-     *   Use(this.Field);
-     *   if (i > 0)
-     *     this.Field = i - 1;
-     *   else if (i < 0)
-     *     SetField(1);
-     *   Use(this.Field);
-     *   Use(this.Field);
-     * }
-     * ```
-     *
-     * - The reads of `i` on lines 7 and 8 are the last reads for the implicit
-     *   parameter definition on line 3.
-     * - The read of `this.Field` on line 5 is a last read of the definition on
-     *   line 4.
-     * - The read of `this.Field` on line 11 is a last read of the phi node
-     *   between lines 9 and 10.
-     */
-    deprecated final AssignableRead getALastReadAtNode(ControlFlowNode cfn) {
-      SsaImpl::lastReadSameVar(this, cfn) and
-      result.getControlFlowNode() = cfn
-    }
-
-    /**
      * Gets an SSA definition whose value can flow to this one in one step. This
      * includes inputs to phi nodes and the prior definitions of uncertain writes.
      */

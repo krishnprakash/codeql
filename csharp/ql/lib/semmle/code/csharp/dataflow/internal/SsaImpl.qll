@@ -713,61 +713,6 @@ private predicate variableReadPseudo(BasicBlock bb, int i, Ssa::SourceVariable v
   refReadBeforeWrite(bb, i, v)
 }
 
-pragma[noinline]
-deprecated private predicate adjacentDefRead(
-  Definition def, BasicBlock bb1, int i1, BasicBlock bb2, int i2, SsaInput::SourceVariable v
-) {
-  Impl::adjacentDefRead(def, bb1, i1, bb2, i2) and
-  v = def.getSourceVariable()
-}
-
-deprecated private predicate adjacentDefReachesRead(
-  Definition def, SsaInput::SourceVariable v, BasicBlock bb1, int i1, BasicBlock bb2, int i2
-) {
-  adjacentDefRead(def, bb1, i1, bb2, i2, v) and
-  (
-    def.definesAt(v, bb1, i1)
-    or
-    SsaInput::variableRead(bb1, i1, v, true)
-  )
-  or
-  exists(BasicBlock bb3, int i3 |
-    adjacentDefReachesRead(def, v, bb1, i1, bb3, i3) and
-    SsaInput::variableRead(bb3, i3, _, false) and
-    Impl::adjacentDefRead(def, bb3, i3, bb2, i2)
-  )
-}
-
-deprecated private predicate adjacentDefReachesUncertainRead(
-  Definition def, BasicBlock bb1, int i1, BasicBlock bb2, int i2
-) {
-  exists(SsaInput::SourceVariable v |
-    adjacentDefReachesRead(def, v, bb1, i1, bb2, i2) and
-    SsaInput::variableRead(bb2, i2, v, false)
-  )
-}
-
-/** Same as `lastRefRedef`, but skips uncertain reads. */
-pragma[nomagic]
-deprecated private predicate lastRefSkipUncertainReads(Definition def, BasicBlock bb, int i) {
-  Impl::lastRef(def, bb, i) and
-  not SsaInput::variableRead(bb, i, def.getSourceVariable(), false)
-  or
-  exists(BasicBlock bb0, int i0 |
-    Impl::lastRef(def, bb0, i0) and
-    adjacentDefReachesUncertainRead(def, bb, i, bb0, i0)
-  )
-}
-
-pragma[nomagic]
-deprecated predicate lastReadSameVar(Definition def, ControlFlowNode cfn) {
-  exists(BasicBlock bb, int i |
-    lastRefSkipUncertainReads(def, bb, i) and
-    variableReadActual(bb, i, _) and
-    cfn = bb.getNode(i)
-  )
-}
-
 cached
 private module Cached {
   cached
