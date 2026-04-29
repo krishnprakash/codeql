@@ -529,6 +529,19 @@ class ExtensionOperatorCall extends OperatorCall {
   ExtensionOperatorCall() { this.getTarget() instanceof ExtensionOperator }
 
   override string getAPrimaryQlClass() { result = "ExtensionOperatorCall" }
+
+  private predicate isOrdinaryStaticCall() {
+    not exists(Expr e | e = this.getChildExpr(-1) | not e instanceof TypeAccess)
+  }
+
+  override Expr getArgument(int i) {
+    exists(int j | result = this.getChildExpr(j) |
+      i >= 0 and
+      if this.isOrdinaryStaticCall() or this.getTarget() instanceof CompoundAssignmentOperator
+      then j = i
+      else j = i - 1
+    )
+  }
 }
 
 /**
@@ -555,6 +568,58 @@ class MutatorOperatorCall extends OperatorCall {
 
   /** Holds if the operator is in postfix position. */
   predicate isPostfix() { mutator_invocation_mode(this, 2) }
+}
+
+/**
+ * A call to a compound assignment operator, for example `this += other`
+ * on line 7 in
+ *
+ * ```csharp
+ * class A {
+ *   public void operator +=(A other) {
+ *     ...
+ *   }
+ *
+ *   public void Add(A other) {
+ *     this += other;
+ *   }
+ * }
+ * ```
+ */
+class CompoundAssignmentOperatorCall extends AssignCallOperation {
+  CompoundAssignmentOperatorCall() { this.getTarget() instanceof CompoundAssignmentOperator }
+
+  override Expr getArgument(int i) { result = this.getChildExpr(i + 1) and i >= 0 }
+
+  /** Gets the qualifier of this compound assignment operator call. */
+  override Expr getQualifier() { result = this.getChildExpr(0) }
+}
+
+/**
+ * A call to a compound assignment extension operator, for example `s1 *= s2` on
+ * line 9 in
+ *
+ * ```csharp
+ * static class MyExtensions {
+ *   extension(string s) {
+ *     public void operator *=(string other) { ... }
+ *   }
+ * }
+ *
+ * class A {
+ *   void M(string s1, string s2) {
+ *     s1 *= s2;
+ *   }
+ * }
+ */
+class ExtensionCompoundAssignmentOperatorCall extends CompoundAssignmentOperatorCall,
+  ExtensionOperatorCall
+{
+  override Expr getArgument(int i) { result = ExtensionOperatorCall.super.getArgument(i) }
+
+  override Expr getQualifier() { none() }
+
+  override string getAPrimaryQlClass() { result = "ExtensionCompoundAssignmentOperatorCall" }
 }
 
 private class DelegateLikeCall_ = @delegate_invocation_expr or @function_pointer_invocation_expr;

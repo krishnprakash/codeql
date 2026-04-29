@@ -99,7 +99,11 @@ private module Internal {
         or
         ac instanceof AssignableWrite and isRead = false
       } or
-      TDispatchOperatorCall(OperatorCall oc) { not oc.isLateBound() } or
+      TDispatchOperatorCall(OperatorCall oc) {
+        not oc.isLateBound() and
+        not oc instanceof CompoundAssignmentOperatorCall
+      } or
+      TDispatchCompoundAssignmentOperatorCall(CompoundAssignmentOperatorCall caoc) or
       TDispatchReflectionCall(MethodCall mc, string name, Expr object, Expr qualifier, int args) {
         isReflectionCall(mc, name, object, qualifier, args)
       } or
@@ -882,6 +886,20 @@ private module Internal {
     override Expr getSyntheticQualifier() { result = this.getCall().getChildExpr(0) }
 
     override Expr getQualifier() { none() }
+
+    override Operator getAStaticTarget() { result = this.getCall().getTarget() }
+  }
+
+  private class DispatchCompoundAssignmentOperatorCall extends DispatchOverridableCall,
+    TDispatchCompoundAssignmentOperatorCall
+  {
+    override CompoundAssignmentOperatorCall getCall() {
+      this = TDispatchCompoundAssignmentOperatorCall(result)
+    }
+
+    override Expr getArgument(int i) { result = this.getCall().getArgument(i) }
+
+    override Expr getQualifier() { result = this.getCall().getQualifier() }
 
     override Operator getAStaticTarget() { result = this.getCall().getTarget() }
   }

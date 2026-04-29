@@ -315,7 +315,8 @@ module AssignableInternal {
       TAddressOfDefinition(AddressOfExpr aoe) or
       TPatternDefinition(TopLevelPatternDecl tlpd) or
       TAssignOperationDefinition(AssignOperation ao) {
-        ao instanceof AssignCallOperation or
+        ao instanceof AssignCallOperation and not ao instanceof CompoundAssignmentOperatorCall
+        or
         ao instanceof AssignCoalesceExpr
       }
 
