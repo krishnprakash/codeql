@@ -24,8 +24,7 @@ private LocalScopeVariableRead getAReachableUncertainRead(
   AssignableDefinitions::ImplicitParameterDefinition p
 ) {
   exists(Ssa::Definition ssaDef |
-    p.getParameter() =
-      ssaDef.getAnUltimateDefinition().(Ssa::ImplicitParameterDefinition).getParameter()
+    p.getParameter() = ssaDef.getAnUltimateDefinition().(Ssa::ParameterDefinition).getParameter()
   |
     result = ssaDef.getARead()
   )

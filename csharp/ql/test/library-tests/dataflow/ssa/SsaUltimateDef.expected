@@ -99,6 +99,15 @@
 | DefUse.cs:184:9:184:14 | this.Field5 | DefUse.cs:191:9:191:11 | SSA call def(this.Field5) | DefUse.cs:184:9:184:18 | SSA def(this.Field5) |
 | DefUse.cs:184:9:184:14 | this.Field5 | DefUse.cs:191:9:191:11 | SSA call def(this.Field5) | DefUse.cs:191:9:191:11 | SSA call def(this.Field5) |
 | DefUse.cs:188:13:188:18 | this.Field5 | DefUse.cs:188:13:188:22 | SSA def(this.Field5) | DefUse.cs:188:13:188:22 | SSA def(this.Field5) |
+| DefaultParam.cs:3:20:3:20 | b | DefaultParam.cs:3:20:3:20 | SSA param(b) | DefaultParam.cs:3:20:3:20 | SSA param(b) |
+| DefaultParam.cs:3:30:3:30 | s | DefaultParam.cs:3:30:3:30 | SSA param(s) | DefaultParam.cs:3:30:3:30 | SSA param(s) |
+| DefaultParam.cs:3:30:3:30 | s | DefaultParam.cs:3:34:3:35 | SSA param_default(s) | DefaultParam.cs:3:34:3:35 | SSA param_default(s) |
+| DefaultParam.cs:3:30:3:30 | s | DefaultParam.cs:3:42:3:42 | SSA phi(s) | DefaultParam.cs:3:30:3:30 | SSA param(s) |
+| DefaultParam.cs:3:30:3:30 | s | DefaultParam.cs:3:42:3:42 | SSA phi(s) | DefaultParam.cs:3:34:3:35 | SSA param_default(s) |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:3:42:3:42 | SSA param(i) | DefaultParam.cs:3:42:3:42 | SSA param(i) |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:3:46:3:46 | SSA param_default(i) | DefaultParam.cs:3:46:3:46 | SSA param_default(i) |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:4:5:6:5 | SSA phi(i) | DefaultParam.cs:3:42:3:42 | SSA param(i) |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:4:5:6:5 | SSA phi(i) | DefaultParam.cs:3:46:3:46 | SSA param_default(i) |
 | Example.cs:6:23:6:23 | i | Example.cs:6:23:6:23 | SSA param(i) | Example.cs:6:23:6:23 | SSA param(i) |
 | Example.cs:8:9:8:18 | this.Field | Example.cs:8:9:8:22 | SSA def(this.Field) | Example.cs:8:9:8:22 | SSA def(this.Field) |
 | Example.cs:8:9:8:18 | this.Field | Example.cs:10:9:13:24 | SSA phi(this.Field) | Example.cs:8:9:8:22 | SSA def(this.Field) |

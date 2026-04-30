@@ -50,6 +50,15 @@ signature module AstSig<LocationSig Location> {
   /** Gets the body of callable `c`, if any. */
   AstNode callableGetBody(Callable c);
 
+  /** A parameter of a callable. */
+  class Parameter extends AstNode {
+    /** Gets the default value of this parameter, if any. */
+    Expr getDefaultValue();
+  }
+
+  /** Gets the `index`th parameter of callable `c`. */
+  Parameter callableGetParameter(Callable c, int index);
+
   /** A statement. */
   class Stmt extends AstNode;
 
@@ -456,11 +465,11 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
     }
 
     /**
-     * An additional context needed to identify the body parts of a callable.
+     * An additional context needed to identify the parameters or body parts of a callable.
      *
      * When not used, instantiate with the `Void` type.
      */
-    class CallableBodyPartContext {
+    class CallableContext {
       /** Gets a textual representation of this context. */
       string toString();
     }
@@ -473,9 +482,13 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
      * of the body parts, in case a singleton `callableGetBody(c)` is inadequate
      * to describe the child nodes of `c`.
      */
-    default AstNode callableGetBodyPart(Callable c, CallableBodyPartContext ctx, int index) {
-      none()
-    }
+    default AstNode callableGetBodyPart(Callable c, CallableContext ctx, int index) { none() }
+
+    /**
+     * Gets the `index`th parameter of `c` in context `ctx`. The indices do not
+     * need to be consecutive nor start from a specific index.
+     */
+    default Parameter callableGetParameter(Callable c, CallableContext ctx, int index) { none() }
   }
 
   /**
@@ -484,6 +497,7 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
    */
   module Make1<InputSig1 Input1> {
     private import codeql.util.DenseRank
+    private import codeql.util.Option
 
     /**
      * Holds if `n` is executed in post-order or in-order. This means that an
@@ -592,9 +606,14 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
       or
       any(ForeachStmt foreachstmt).getCollection() = n and kind.isEmptiness()
       or
-      n instanceof CatchClause and kind.isMatching()
-      or
-      n instanceof Case and kind.isMatching()
+      kind.isMatching() and
+      (
+        n instanceof CatchClause
+        or
+        n instanceof Case
+        or
+        exists(n.(Parameter).getDefaultValue())
+      )
     }
 
     /**
@@ -692,7 +711,7 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
     private module BodyPartDenseRankInput implements DenseRankInputSig2 {
       class C1 = Callable;
 
-      class C2 = Input1::CallableBodyPartContext;
+      class C2 = Input1::CallableContext;
 
       class Ranked = AstNode;
 
@@ -703,21 +722,54 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
 
     private predicate getRankedBodyPart = DenseRank2<BodyPartDenseRankInput>::denseRank/3;
 
-    private AstNode getBodyEntry(Callable c) {
+    private class CallableContextOption = Option<Input1::CallableContext>::Option;
+
+    private AstNode getBodyEntry(Callable c, CallableContextOption ctx) {
       result = callableGetBody(c) and
-      not exists(getRankedBodyPart(c, _, _))
+      not exists(getRankedBodyPart(c, _, _)) and
+      ctx.isNone()
       or
-      result = getRankedBodyPart(c, _, 1)
+      result = getRankedBodyPart(c, ctx.asSome(), 1)
     }
 
     private AstNode getBodyExit(Callable c) {
       result = callableGetBody(c) and
       not exists(getRankedBodyPart(c, _, _))
       or
-      exists(Input1::CallableBodyPartContext ctx, int last |
+      exists(Input1::CallableContext ctx, int last |
         result = getRankedBodyPart(c, ctx, last) and
         not exists(getRankedBodyPart(c, ctx, last + 1))
       )
+    }
+
+    private module ParameterDenseRankInput implements DenseRankInputSig1 {
+      class C = Callable;
+
+      class Ranked = Parameter;
+
+      int getRank(C c, Ranked child) {
+        child = callableGetParameter(c, result) and
+        not exists(Input1::callableGetParameter(c, _, _))
+      }
+    }
+
+    private module ParameterCtxDenseRankInput implements DenseRankInputSig2 {
+      class C1 = Callable;
+
+      class C2 = Input1::CallableContext;
+
+      class Ranked = AstNode;
+
+      int getRank(C1 c, C2 ctx, Ranked child) {
+        child = Input1::callableGetParameter(c, ctx, result)
+      }
+    }
+
+    private Parameter getRankedParameter(Callable c, CallableContextOption ctx, int rnk) {
+      result = DenseRank1<ParameterDenseRankInput>::denseRank(c, rnk) and
+      ctx.isNone()
+      or
+      result = DenseRank2<ParameterCtxDenseRankInput>::denseRank(c, ctx.asSome(), rnk)
     }
 
     cached
@@ -1320,15 +1372,41 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
         )
       }
 
+      pragma[nomagic]
+      private AstNode getParameterOrBodyEntry(Callable c, CallableContextOption ctx, int i) {
+        result = getRankedParameter(c, ctx, i)
+        or
+        (
+          not exists(getRankedParameter(c, _, _)) and
+          i = 1
+          or
+          exists(getRankedParameter(c, ctx, i - 1)) and
+          not exists(getRankedParameter(c, ctx, i))
+        ) and
+        result = getBodyEntry(c, ctx)
+      }
+
       /** Holds if there is a local non-abrupt step from `n1` to `n2`. */
       private predicate explicitStep(PreControlFlowNode n1, PreControlFlowNode n2) {
         Input2::step(n1, n2)
         or
         exists(Callable c |
           n1.(EntryNodeImpl).getEnclosingCallable() = c and
-          n2.isBefore(getBodyEntry(c))
+          n2.isBefore(getParameterOrBodyEntry(c, _, 1))
           or
-          exists(Input1::CallableBodyPartContext ctx, int i |
+          exists(CallableContextOption ctx, Parameter p, int i | p = getRankedParameter(c, ctx, i) |
+            exists(MatchingSuccessor t |
+              n1.isAfterValue(p, t) and
+              if t.isMatch()
+              then n2.isBefore(getParameterOrBodyEntry(c, ctx, i + 1))
+              else n2.isBefore(p.getDefaultValue())
+            )
+            or
+            n1.isAfter(p.getDefaultValue()) and
+            n2.isBefore(getParameterOrBodyEntry(c, ctx, i + 1))
+          )
+          or
+          exists(Input1::CallableContext ctx, int i |
             n1.isAfter(getRankedBodyPart(c, ctx, i)) and
             n2.isBefore(getRankedBodyPart(c, ctx, i + 1))
           )
@@ -2154,7 +2232,10 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
                 any(MatchingSuccessor m | m.getValue() = true))
             ) and
             // allow for functions with multiple bodies
-            not (t instanceof DirectSuccessor and node instanceof ControlFlow::EntryNode)
+            not exists(Callable c |
+              successor.getAstNode() = getBodyEntry(c, _) and
+              strictcount(getBodyEntry(c, _)) > 1
+            )
           }
 
           /**
@@ -2203,10 +2284,28 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
           /**
            * Holds if `c` does not include `callableGetBody` in a non-empty `callableGetBodyPart`.
            */
-          query predicate bodyPartOverlap(Callable c) {
+          query predicate bodyPartNonOverlap(Callable c) {
             exists(callableGetBody(c)) and
             exists(Input1::callableGetBodyPart(c, _, _)) and
             not Input1::callableGetBodyPart(c, _, _) = callableGetBody(c)
+          }
+
+          /**
+           * Holds if `c` does not include `p` in `callableGetParameter` but does in
+           * `Input1::callableGetParameter`.
+           */
+          query predicate parameterNonOverlap(Callable c, Parameter p) {
+            p = Input1::callableGetParameter(c, _, _) and
+            not p = callableGetParameter(c, _)
+          }
+
+          /**
+           * Holds if a parameter `p` of a callable `c` does not have `c` as its
+           * enclosing callable.
+           */
+          query predicate parameterEnclosingCallable(Parameter p, Callable c) {
+            p = callableGetParameter(c, _) and
+            not c = getEnclosingCallable(p)
           }
         }
       }

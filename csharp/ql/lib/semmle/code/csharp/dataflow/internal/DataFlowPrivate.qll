@@ -175,6 +175,18 @@ private module ThisFlow {
     result = strictcount(int primaryParamPos | primaryConstructorThisAccess(_, bb, primaryParamPos))
   }
 
+  private module BodyNearestLocationInput implements NearestLocationInputSig {
+    class C = ControlFlowElement;
+
+    predicate relevantLocations(ControlFlowElement body, Location l1, Location l2) {
+      exists(DataFlowCallable c |
+        any(InstanceParameterNode p).isParameterOf(c, _) and
+        body = c.asCallable(l1).getBody() and
+        l2 = body.getLocation()
+      )
+    }
+  }
+
   private predicate thisAccess(Node n, BasicBlock bb, int i) {
     thisAccess(n, bb.getNode(i))
     or
@@ -183,21 +195,29 @@ private module ThisFlow {
       i = ppos - numberOfPrimaryConstructorParameters(bb)
     )
     or
-    exists(DataFlowCallable c, EntryBasicBlock entry |
-      n.(InstanceParameterNode).isParameterOf(c, _) and
-      exists(ControlFlowNode succ |
-        succ = c.getAControlFlowNode() and
-        succ = entry.getFirstNode().getASuccessor() and
+    exists(Callable c, InstanceParameterNode p, Location l |
+      p = n and
+      c = p.getCallable(l) and
+      (
         // In case `c` has multiple bodies, we want each body to gets its own implicit
-        // entry definition. In case `c` doesn't have multiple bodies, the line below
-        // is simply the same as `bb = entry`, because `entry.getFirstNode().getASuccessor()`
-        // will be in the entry block.
-        bb = succ.getBasicBlock()
-      |
-        i = -1 - numberOfPrimaryConstructorParameters(bb)
+        // entry definition.
+        exists(ControlFlowElement body |
+          body = c.getBody() and
+          bb.getANode().isBefore(body) and
+          NearestLocation<BodyNearestLocationInput>::nearestLocation(body, l, _)
+        )
         or
-        not exists(numberOfPrimaryConstructorParameters(bb)) and i = -1
+        not c.hasBody() and
+        exists(EntryBasicBlock entry, ControlFlowNode succ |
+          succ = p.getEnclosingCallableImpl().getAControlFlowNode() and
+          succ = entry.getFirstNode().getASuccessor() and
+          bb = succ.getBasicBlock()
+        )
       )
+    |
+      i = -1 - numberOfPrimaryConstructorParameters(bb)
+      or
+      not exists(numberOfPrimaryConstructorParameters(bb)) and i = -1
     )
   }
 
@@ -918,8 +938,6 @@ private Gvn::GvnType getANonTypeParameterSubTypeRestricted(RelevantGvnType t) {
 
 /** A callable with an implicit `this` parameter. */
 private class InstanceCallable extends Callable {
-  private Location l;
-
   InstanceCallable() {
     not this.(Modifiable).isStatic() and
     // local functions and delegate capture `this` and should therefore
@@ -927,8 +945,6 @@ private class InstanceCallable extends Callable {
     not this instanceof LocalFunction and
     not this instanceof AnonymousFunctionExpr
   }
-
-  Location getARelevantLocation() { result = l }
 }
 
 /**
@@ -1019,8 +1035,7 @@ private module Cached {
     } or
     TInstanceParameterNode(InstanceCallable c, Location l) {
       c = any(DataFlowCallable dfc).asCallable(l) and
-      c instanceof CallableUsedInSource and
-      l = c.getARelevantLocation()
+      c instanceof CallableUsedInSource
     } or
     TDelegateSelfReferenceNode(Callable c) { lambdaCreationExpr(_, c) } or
     TLocalFunctionCreationNode(ControlFlowNodes::ElementNode cfn, Boolean isPostUpdate) {
@@ -1288,7 +1303,7 @@ private module NearestLocationInputParamAfterCallable implements NearestLocation
 
 private module ParameterNodes {
   pragma[nomagic]
-  private predicate ssaParamDef(Ssa::ImplicitParameterDefinition ssaDef, Parameter p, Location l) {
+  private predicate ssaParamDef(Ssa::ParameterDefinition ssaDef, Parameter p, Location l) {
     p = ssaDef.getParameter() and
     l = ssaDef.getLocation()
   }
@@ -1343,7 +1358,7 @@ private module ParameterNodes {
     }
 
     /** Gets the SSA definition corresponding to this parameter, if any. */
-    Ssa::ImplicitParameterDefinition getSsaDefinition() {
+    Ssa::ParameterDefinition getSsaDefinition() {
       exists(Parameter p, Location l |
         l = this.getParameterLocation(p) and
         ssaParamDef(result, p, l)

@@ -57,6 +57,15 @@ private module Ast implements AstSig<Location> {
 
   AstNode callableGetBody(Callable c) { result = c.getBody() }
 
+  // TODO: Implement in order to include parameters in the CFG
+  class Parameter extends AstNode {
+    Parameter() { none() }
+
+    Expr getDefaultValue() { none() }
+  }
+
+  Parameter callableGetParameter(Callable c, int i) { result = c.getParameter(i) }
+
   class Stmt = J::Stmt;
 
   class Expr = J::Expr;
@@ -534,7 +543,7 @@ private module Input implements InputSig1, InputSig2 {
     l = TYield() and n instanceof SwitchExpr
   }
 
-  class CallableBodyPartContext = Void;
+  class CallableContext = Void;
 
   predicate inConditionalContext(Ast::AstNode n, ConditionKind kind) {
     kind.isBoolean() and

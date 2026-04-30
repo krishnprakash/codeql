@@ -271,6 +271,8 @@ module AssignableInternal {
     def = TPatternDefinition(result)
     or
     def = TAssignOperationDefinition(result)
+    or
+    def = TParameterDefaultDefinition(_, result)
   }
 
   /** A local variable declaration at the top-level of a pattern. */
@@ -308,9 +310,16 @@ module AssignableInternal {
         exists(Callable c | p = c.getAParameter() |
           c.hasBody()
           or
-          // Same as `c.(Constructor).hasInitializer()`, but avoids negative recursion warning
-          c.getAChildExpr() instanceof @constructor_init_expr
+          c.(Constructor).hasInitializer()
         )
+      } or
+      TParameterDefaultDefinition(Parameter p, Expr default) {
+        exists(Callable c | p = c.getAParameter() |
+          c.hasBody()
+          or
+          c.(Constructor).hasInitializer()
+        ) and
+        default = p.getDefaultValue()
       } or
       TAddressOfDefinition(AddressOfExpr aoe) or
       TPatternDefinition(TopLevelPatternDecl tlpd) or
@@ -350,6 +359,8 @@ module AssignableInternal {
         any(AssignableDefinitions::PatternDefinition pd | result = pd.getDeclaration().getVariable())
       or
       def = any(AssignableDefinitions::InitializerDefinition init | result = init.getAssignable())
+      or
+      def = TParameterDefaultDefinition(result, _)
     }
 
     // Not defined by dispatch in order to avoid too conservative negative recursion error
@@ -492,11 +503,6 @@ class AssignableDefinition extends TAssignableDefinition {
     exists(ControlFlowNode cfn | cfn = result.getControlFlowNode() |
       exists(Ssa::ExplicitDefinition def | result = def.getAFirstReadAtNode(cfn) |
         this = def.getADefinition()
-      )
-      or
-      exists(Ssa::ImplicitParameterDefinition def | result = def.getAFirstReadAtNode(cfn) |
-        this.(AssignableDefinitions::ImplicitParameterDefinition).getParameter() =
-          def.getParameter()
       )
     )
   }
@@ -689,7 +695,33 @@ module AssignableDefinitions {
 
     override string toString() { result = p.toString() }
 
-    override Location getLocation() { result = this.getTarget().getLocation() }
+    override Location getLocation() { result = p.getLocation() }
+  }
+
+  /**
+   * A default value assigned to a parameter.
+   */
+  class ParameterDefaultDefinition extends AssignableDefinition, TParameterDefaultDefinition {
+    Parameter p;
+    Expr default;
+
+    ParameterDefaultDefinition() { this = TParameterDefaultDefinition(p, default) }
+
+    /** Gets the underlying parameter. */
+    Parameter getParameter() { result = p }
+
+    /** Gets the default value expression for the parameter. */
+    Expr getDefaultValue() { result = default }
+
+    override Expr getSource() { result = default }
+
+    override Expr getElement() { result = default }
+
+    override Callable getEnclosingCallable() { result = p.getCallable() }
+
+    override string toString() { result = p.toString() + " = ..." }
+
+    override Location getLocation() { result = default.getLocation() }
   }
 
   /**

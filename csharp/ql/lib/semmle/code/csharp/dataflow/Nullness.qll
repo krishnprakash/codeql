@@ -130,7 +130,7 @@ private predicate dereferenceAt(ControlFlowNode node, Ssa::Definition def, Deref
   d = def.getAReadAtNode(node)
 }
 
-private predicate isMaybeNullArgument(Ssa::ImplicitParameterDefinition def, MaybeNullExpr arg) {
+private predicate isMaybeNullArgument(Ssa::ParameterDefinition def, MaybeNullExpr arg) {
   exists(AssignableDefinitions::ImplicitParameterDefinition pdef, Parameter p |
     p = def.getParameter()
   |
@@ -181,16 +181,6 @@ private predicate hasMultipleParamsArguments(Call c) {
   )
 }
 
-private predicate isNullDefaultArgument(Ssa::ImplicitParameterDefinition def, AlwaysNullExpr arg) {
-  exists(AssignableDefinitions::ImplicitParameterDefinition pdef, Parameter p |
-    p = def.getParameter()
-  |
-    p = pdef.getParameter().getUnboundDeclaration() and
-    arg = p.getDefaultValue() and
-    not arg.getEnclosingCallable().getEnclosingCallable*() instanceof TestMethod
-  )
-}
-
 /** Holds if `def` is an SSA definition that may be `null`. */
 private predicate defMaybeNull(Ssa::Definition def, ControlFlowNode node, string msg, Element reason) {
   not nonNullDef(def) and
@@ -215,10 +205,6 @@ private predicate defMaybeNull(Ssa::Definition def, ControlFlowNode node, string
       then msg = "because of $@ null argument"
       else msg = "because of $@ potential null argument"
     )
-    or
-    isNullDefaultArgument(def, reason) and
-    node = def.getControlFlowNode() and
-    msg = "because the parameter has a null default value"
     or
     // If the source of a variable is `null` then the variable may be `null`
     exists(AssignableDefinition adef | adef = def.(Ssa::ExplicitDefinition).getADefinition() |
@@ -337,8 +323,7 @@ class Dereference extends G::DereferenceableExpr {
         or
         p.fromSource() and
         exists(
-          Ssa::ImplicitParameterDefinition def,
-          AssignableDefinitions::ImplicitParameterDefinition pdef
+          Ssa::ParameterDefinition def, AssignableDefinitions::ImplicitParameterDefinition pdef
         |
           p = def.getParameter()
         |

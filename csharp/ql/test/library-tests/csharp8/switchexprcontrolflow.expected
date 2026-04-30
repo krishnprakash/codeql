@@ -1,5 +1,6 @@
-| patterns.cs:98:10:98:20 | Entry | patterns.cs:99:5:121:5 | {...} | semmle.label | successor |
+| patterns.cs:98:10:98:20 | Entry | patterns.cs:98:26:98:26 | x | semmle.label | successor |
 | patterns.cs:98:10:98:20 | Normal Exit | patterns.cs:98:10:98:20 | Exit | semmle.label | successor |
+| patterns.cs:98:26:98:26 | x | patterns.cs:99:5:121:5 | {...} | semmle.label | successor |
 | patterns.cs:99:5:121:5 | After {...} | patterns.cs:98:10:98:20 | Normal Exit | semmle.label | successor |
 | patterns.cs:99:5:121:5 | {...} | patterns.cs:100:9:103:10 | ... ...; | semmle.label | successor |
 | patterns.cs:100:9:103:10 | ... ...; | patterns.cs:100:13:103:9 | Before String size = ... | semmle.label | successor |
@@ -159,9 +160,10 @@
 | patterns.cs:119:33:119:38 | Before (..., ...) | patterns.cs:119:34:119:34 | 0 | semmle.label | successor |
 | patterns.cs:119:34:119:34 | 0 | patterns.cs:119:37:119:37 | 0 | semmle.label | successor |
 | patterns.cs:119:37:119:37 | 0 | patterns.cs:119:33:119:38 | (..., ...) | semmle.label | successor |
-| patterns.cs:123:10:123:21 | Entry | patterns.cs:124:5:149:5 | {...} | semmle.label | successor |
+| patterns.cs:123:10:123:21 | Entry | patterns.cs:123:30:123:30 | o | semmle.label | successor |
 | patterns.cs:123:10:123:21 | Exceptional Exit | patterns.cs:123:10:123:21 | Exit | semmle.label | successor |
 | patterns.cs:123:10:123:21 | Normal Exit | patterns.cs:123:10:123:21 | Exit | semmle.label | successor |
+| patterns.cs:123:30:123:30 | o | patterns.cs:124:5:149:5 | {...} | semmle.label | successor |
 | patterns.cs:124:5:149:5 | After {...} | patterns.cs:123:10:123:21 | Normal Exit | semmle.label | successor |
 | patterns.cs:124:5:149:5 | {...} | patterns.cs:125:9:125:39 | ... ...; | semmle.label | successor |
 | patterns.cs:125:9:125:39 | ... ...; | patterns.cs:125:13:125:38 | Before MyStruct s = ... | semmle.label | successor |

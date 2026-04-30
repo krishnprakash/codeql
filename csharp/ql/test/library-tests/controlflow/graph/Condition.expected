@@ -260,6 +260,10 @@ conditionBlock
 | Conditions.cs:143:10:143:12 | Entry | Conditions.cs:145:17:145:17 | After access to parameter b [true] | true |
 | Conditions.cs:145:17:145:29 | After ... ? ... : ... | Conditions.cs:146:13:146:13 | After access to parameter b [false] | false |
 | Conditions.cs:145:17:145:29 | After ... ? ... : ... | Conditions.cs:146:13:146:13 | After access to parameter b [true] | true |
+| DefaultParam.cs:3:12:3:13 | Entry | DefaultParam.cs:3:30:3:30 | After s [match] | true |
+| DefaultParam.cs:3:12:3:13 | Entry | DefaultParam.cs:3:30:3:30 | After s [no-match] | false |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:3:42:3:42 | After i [match] | true |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:3:42:3:42 | After i [no-match] | false |
 | ExitMethods.cs:38:10:38:11 | Entry | ExitMethods.cs:44:9:47:9 | After catch (...) {...} [match] | true |
 | ExitMethods.cs:38:10:38:11 | Entry | ExitMethods.cs:44:9:47:9 | After catch (...) {...} [no-match] | false |
 | ExitMethods.cs:38:10:38:11 | Entry | ExitMethods.cs:48:9:51:9 | After catch (...) {...} [match] | false |

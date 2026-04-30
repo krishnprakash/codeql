@@ -99,6 +99,9 @@
 | DefUse.cs:184:9:184:14 | this.Field5 | DefUse.cs:184:9:184:18 | SSA def(this.Field5) | DefUse.cs:185:13:185:18 | access to field Field5 |
 | DefUse.cs:184:9:184:14 | this.Field5 | DefUse.cs:191:9:191:11 | SSA call def(this.Field5) | DefUse.cs:192:13:192:18 | access to field Field5 |
 | DefUse.cs:188:13:188:18 | this.Field5 | DefUse.cs:188:13:188:22 | SSA def(this.Field5) | DefUse.cs:189:17:189:22 | access to field Field5 |
+| DefaultParam.cs:3:20:3:20 | b | DefaultParam.cs:3:20:3:20 | SSA param(b) | DefaultParam.cs:5:16:5:16 | access to parameter b |
+| DefaultParam.cs:3:30:3:30 | s | DefaultParam.cs:3:42:3:42 | SSA phi(s) | DefaultParam.cs:5:20:5:20 | access to parameter s |
+| DefaultParam.cs:3:42:3:42 | i | DefaultParam.cs:4:5:6:5 | SSA phi(i) | DefaultParam.cs:5:24:5:24 | access to parameter i |
 | Example.cs:6:23:6:23 | i | Example.cs:6:23:6:23 | SSA param(i) | Example.cs:8:22:8:22 | access to parameter i |
 | Example.cs:6:23:6:23 | i | Example.cs:6:23:6:23 | SSA param(i) | Example.cs:10:13:10:13 | access to parameter i |
 | Example.cs:6:23:6:23 | i | Example.cs:6:23:6:23 | SSA param(i) | Example.cs:11:26:11:26 | access to parameter i |

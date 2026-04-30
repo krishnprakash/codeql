@@ -205,7 +205,7 @@ private module LogicInput implements GuardsImpl::LogicInputSig {
     }
   }
 
-  class SsaParameterInit extends SsaDefinition instanceof Ssa::ImplicitParameterDefinition {
+  class SsaParameterInit extends SsaDefinition instanceof Ssa::ParameterDefinition {
     Parameter getParameter() { result = super.getParameter() }
   }
 

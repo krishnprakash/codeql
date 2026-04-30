@@ -9,7 +9,6 @@ import csharp
  */
 module Ssa {
   private import internal.SsaImpl as SsaImpl
-  private import semmle.code.csharp.internal.Location
 
   pragma[nomagic]
   private predicate assignableDefinitionLocalScopeVariable(
@@ -17,15 +16,6 @@ module Ssa {
   ) {
     ad.getTarget() = v and
     ad.getEnclosingCallable() = c
-  }
-
-  pragma[nomagic]
-  private predicate localScopeSourceVariable(
-    SourceVariables::LocalScopeSourceVariable sv, LocalScopeVariable v, Callable c1, Callable c2
-  ) {
-    sv.getAssignable() = v and
-    sv.getEnclosingCallable() = c1 and
-    v.getCallable() = c2
   }
 
   /**
@@ -54,7 +44,7 @@ module Ssa {
       not exists(result.getTargetAccess()) and
       exists(LocalScopeVariable v, Callable c |
         assignableDefinitionLocalScopeVariable(result, v, c) and
-        localScopeSourceVariable(this, v, c, _)
+        SsaImpl::localScopeSourceVariable(this, v, c, _)
       )
     }
 
@@ -482,8 +472,8 @@ module Ssa {
 
   /**
    * An SSA definition representing the implicit initialization of a variable
-   * at the beginning of a callable. Either a parameter, a local scope variable
-   * captured by the callable, or a field or property accessed inside the callable.
+   * at the beginning of a callable. Either a local scope variable captured by
+   * the callable or a field or property accessed inside the callable.
    */
   class ImplicitEntryDefinition extends ImplicitDefinition {
     ImplicitEntryDefinition() {
@@ -507,51 +497,37 @@ module Ssa {
     override Location getLocation() { result = this.getCallable().getLocation() }
   }
 
-  private module NearestLocationInput implements NearestLocationInputSig {
-    class C = ImplicitParameterDefinition;
+  deprecated class ImplicitParameterDefinition = ParameterDefinition;
 
-    predicate relevantLocations(ImplicitParameterDefinition def, Location l1, Location l2) {
-      not def.getBasicBlock() instanceof EntryBasicBlock and
-      l1 = def.getParameter().getALocation() and
-      l2 = def.getBasicBlock().getLocation()
-    }
-  }
+  final class ParameterDefinition = SsaImpl::ParameterDefinitionImpl;
 
-  pragma[nomagic]
-  private predicate implicitEntryDef(ImplicitEntryDefinition def, SourceVariable v, Callable c) {
-    v = def.getSourceVariable() and
-    c = def.getCallable()
+  private class ExplicitParameterDefinition extends ExplicitDefinition,
+    SsaImpl::ParameterDefinitionImpl
+  {
+    private Parameter p;
+    override AssignableDefinitions::ImplicitParameterDefinition ad;
+
+    ExplicitParameterDefinition() { p = ad.getParameter() }
+
+    override Parameter getParameter() { result = p }
+
+    override string toString() { result = SsaImpl::ParameterDefinitionImpl.super.toString() }
   }
 
   /**
-   * An SSA definition representing the implicit initialization of a parameter
-   * at the beginning of a callable.
+   * An SSA definition representing the default value of a parameter.
    */
-  class ImplicitParameterDefinition extends ImplicitEntryDefinition {
+  class ParameterDefaultDefinition extends ExplicitDefinition {
     private Parameter p;
+    override AssignableDefinitions::ParameterDefaultDefinition ad;
 
-    ImplicitParameterDefinition() {
-      exists(SourceVariable sv, Callable c |
-        implicitEntryDef(this, sv, c) and
-        localScopeSourceVariable(sv, p, _, c)
-      )
-    }
+    ParameterDefaultDefinition() { p = ad.getParameter() }
 
     /** Gets the parameter that this entry definition represents. */
     Parameter getParameter() { result = p }
 
-    override Element getElement() { result = this.getParameter() }
-
     override string toString() {
-      result = "SSA param(" + pragma[only_bind_out](this.getParameter()) + ")"
-    }
-
-    override Location getLocation() {
-      not NearestLocation<NearestLocationInput>::nearestLocation(this, _, _) and
-      result = p.getLocation()
-      or
-      // multi-bodied method: use matching parameter location
-      NearestLocation<NearestLocationInput>::nearestLocation(this, result, _)
+      result = "SSA param_default(" + pragma[only_bind_out](this.getParameter()) + ")"
     }
   }
 
