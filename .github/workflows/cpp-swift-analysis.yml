@@ -35,7 +35,7 @@ jobs:
       uses: github/codeql-action/init@main
       # Override language selection by uncommenting this and choosing your languages
       with:
-        languages: cpp
+        languages: .yml
         config-file: ./.github/codeql/codeql-config.yml
 
     - name: Install dependencies
