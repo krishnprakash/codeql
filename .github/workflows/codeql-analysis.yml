@@ -32,12 +32,12 @@ jobs:
 
     steps:
     - name: Setup dotnet
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 10.0.100
 
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
