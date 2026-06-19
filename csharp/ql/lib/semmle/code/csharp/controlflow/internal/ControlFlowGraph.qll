@@ -145,6 +145,8 @@ module Ast implements AstSig<Location> {
   final private class ParameterFinal = CS::Parameter;
 
   class Parameter extends ParameterFinal {
+    AstNode getPattern() { result = this }
+
     Expr getDefaultValue() {
       // Avoid combinatorial explosions for callables with multiple bodies
       result = unique( | | super.getDefaultValue())
@@ -171,6 +173,10 @@ module Ast implements AstSig<Location> {
   class WhileStmt = CS::WhileStmt;
 
   class DoStmt = CS::DoStmt;
+
+  class UntilStmt extends LoopStmt {
+    UntilStmt() { none() }
+  }
 
   final private class FinalForStmt = CS::ForStmt;
 
