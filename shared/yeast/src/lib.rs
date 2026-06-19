@@ -57,8 +57,13 @@ impl IntoIterator for Id {
 }
 
 /// Field and Kind ids are provided by tree-sitter
-type FieldId = u16;
-type KindId = u16;
+type FieldId = yeast_schema::FieldId;
+type KindId = yeast_schema::KindId;
+
+/// Sentinel field id used to mean "the implicit unfielded slot".
+/// Re-exported from `yeast-schema` so the runtime and the schema share a
+/// single value.
+pub use yeast_schema::CHILD_FIELD;
 
 /// Trait for values that can be appended to a field's id list inside a
 /// `tree!`/`trees!`/`rule!` template (in `{expr}` placeholders).
@@ -156,8 +161,6 @@ impl<T: YeastSourceRange + ?Sized> YeastSourceRange for &T {
         (**self).yeast_source_range(ast)
     }
 }
-
-pub const CHILD_FIELD: u16 = u16::MAX;
 
 #[derive(Debug)]
 pub struct AstCursor<'a> {
@@ -304,7 +307,7 @@ impl std::fmt::Debug for Ast {
 impl Ast {
     /// Construct an AST from a TS tree
     pub fn from_tree(language: tree_sitter::Language, tree: &tree_sitter::Tree) -> Self {
-        let schema = schema::Schema::from_language(&language);
+        let schema = schema::from_language(&language);
         Self::from_tree_with_schema(schema, tree, &language)
     }
 
@@ -1251,7 +1254,7 @@ impl<C> DesugaringConfig<C> {
     pub fn build_schema(&self, language: &tree_sitter::Language) -> Result<schema::Schema, String> {
         match self.output_node_types_yaml {
             Some(yaml) => node_types_yaml::schema_from_yaml_with_language(yaml, language),
-            None => Ok(schema::Schema::from_language(language)),
+            None => Ok(schema::from_language(language)),
         }
     }
 }
@@ -1265,7 +1268,7 @@ pub struct Runner<'a, C = ()> {
 impl<'a, C> Runner<'a, C> {
     /// Create a runner using the input grammar's schema for output.
     pub fn new(language: tree_sitter::Language, phases: &'a [Phase<C>]) -> Self {
-        let schema = schema::Schema::from_language(&language);
+        let schema = schema::from_language(&language);
         Self {
             language,
             schema,
