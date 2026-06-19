@@ -437,3 +437,44 @@ For the dbscheme/QL code generator, set `Language::desugar` to a
 `DesugaringConfig` carrying the same YAML; the generator converts it to
 JSON for downstream code generation. The `phases` field of the config is
 unused at code-generation time.
+
+## The `rules!` macro
+
+The [`rules!`] macro bundles a list of rewrite rules with the input and
+output node-types schema paths. It's a drop-in replacement for the
+hand-written `vec![rule!(...), rule!(...), ...]` form and accepts a
+slightly looser syntax: bare rule bodies don't need an explicit
+`rule!(...)` wrapper.
+
+```rust
+let translation_rules: Vec<yeast::Rule> = yeast::rules! {
+    input: "tree-sitter-swift/node-types.yml",
+    output: "ast_types.yml",
+    [
+        (simple_identifier) @name
+        =>
+        (name_expr identifier: (identifier #{name})),
+
+        (integer_literal) @lit
+        =>
+        (int_literal #{lit}),
+    ]
+};
+```
+
+Each comma-separated item in the bracketed list may be:
+
+- A **bare rule body** `(query) => (template)` — no `rule!(...)` wrapper.
+- An explicit `rule!(...)` invocation, with optional postfix calls such
+  as `rule!(...).repeated()`.
+- Any other expression returning a `Rule` (helper functions, etc.).
+
+Schema paths are resolved relative to the consuming crate's
+`CARGO_MANIFEST_DIR` (the same convention `include_str!` uses for
+relative paths). The resolved paths are emitted as `include_str!`
+references in the expansion so the consuming crate's incremental cache
+invalidates when a schema YAML changes — laying the groundwork for
+schema-aware compile-time checks on the rule bodies.
+
+The `Vec<Rule>` produced by `rules!` flows into `add_phase` exactly as
+before.

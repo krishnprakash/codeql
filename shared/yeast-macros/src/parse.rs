@@ -897,6 +897,219 @@ fn expect_repetition(tokens: &mut Tokens) -> Result<TokenStream> {
     }
 }
 
+// ---------------------------------------------------------------------------
+// rules! parsing — bundle a list of rules with input/output schema paths.
+//
+// The macro accepts both bare rule bodies (`(query) => (template)`) and
+// explicit `rule!(...)` invocations. The schema paths are recorded but
+// not yet consumed; a later change layers compile-time type-checking on
+// top, using these paths to load the input/output schemas.
+// ---------------------------------------------------------------------------
+
+/// Parse `rules! { input: "path", output: "path", [ items, ... ] }`.
+///
+/// Each item in the bracketed list can be:
+/// * a **bare rule body** `(query) => (template)` — wrapped implicitly
+///   in `yeast::rule! { ... }` for codegen;
+/// * an explicit `rule!(...)` (or `rule!(...).repeated()`,
+///   `yeast::rule!(...)`, etc.) — passed through verbatim;
+/// * any other expression returning a `Rule` (helper-function calls,
+///   conditionals) — passed through verbatim.
+///
+/// Returns a `Vec<Rule>` containing the items in order. The expansion
+/// also emits `include_str!` references to the resolved schema paths so
+/// Cargo treats them as inputs to the consuming crate; this validates
+/// path existence at compile time and prepares the ground for later
+/// schema-aware checks.
+pub fn parse_rules_top(input: TokenStream) -> Result<TokenStream> {
+    let mut tokens = input.into_iter().peekable();
+
+    let input_path = parse_named_string_arg(&mut tokens, "input")?;
+    expect_punct(&mut tokens, ',', "expected `,` after input path")?;
+    let output_path = parse_named_string_arg(&mut tokens, "output")?;
+    expect_punct(&mut tokens, ',', "expected `,` after output path")?;
+
+    // Resolve paths relative to the consuming crate's CARGO_MANIFEST_DIR
+    // so callers can write paths like "tree-sitter-swift/node-types.yml"
+    // alongside their other workspace-relative includes (e.g. include_str!).
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").map_err(|_| {
+        syn::Error::new(
+            Span::call_site(),
+            "rules!: CARGO_MANIFEST_DIR is not set; cannot resolve schema paths",
+        )
+    })?;
+    let resolve_path = |raw: &str| -> std::path::PathBuf {
+        let p = std::path::PathBuf::from(raw);
+        if p.is_absolute() {
+            p
+        } else {
+            std::path::PathBuf::from(&manifest_dir).join(p)
+        }
+    };
+    let input_abs = resolve_path(&input_path.value);
+    let output_abs = resolve_path(&output_path.value);
+
+    let list = expect_group(&mut tokens, Delimiter::Bracket)?;
+    if let Some(tok) = tokens.next() {
+        return Err(syn::Error::new_spanned(
+            tok,
+            "unexpected token after `rules!` list",
+        ));
+    }
+
+    let items = split_top_level_commas(list.stream());
+    let emitted_items: Vec<TokenStream> = items
+        .into_iter()
+        .map(|item| {
+            // Bare rule body — wrap in `yeast::rule! { ... }` so the
+            // existing rule-construction macro handles codegen. Other
+            // items pass through unchanged.
+            if has_top_level_arrow(&item) {
+                quote! { yeast::rule! { #item } }
+            } else {
+                item
+            }
+        })
+        .collect();
+
+    // Emit `include_str!` references to both schema files so Cargo
+    // treats them as inputs to the consuming crate's compilation. The
+    // `const _` bindings are unused; rustc/LLVM drop them after the
+    // file-input dependency edge is recorded. Absolute paths are used
+    // because `include_str!` resolves relative paths against the source
+    // file, while `rules!`'s own paths are relative to
+    // `CARGO_MANIFEST_DIR`.
+    let input_abs_str = input_abs.to_string_lossy().into_owned();
+    let output_abs_str = output_abs.to_string_lossy().into_owned();
+    let input_lit = proc_macro2::Literal::string(&input_abs_str);
+    let output_lit = proc_macro2::Literal::string(&output_abs_str);
+
+    Ok(quote! {
+        {
+            const _: &::core::primitive::str = ::core::include_str!(#input_lit);
+            const _: &::core::primitive::str = ::core::include_str!(#output_lit);
+            vec![ #(#emitted_items),* ]
+        }
+    })
+}
+
+/// True iff `item` contains a `=>` operator at the top level (not nested
+/// inside any group). Used to detect bare rule bodies inside `rules!`.
+fn has_top_level_arrow(item: &TokenStream) -> bool {
+    let toks: Vec<TokenTree> = item.clone().into_iter().collect();
+    find_top_level_arrow(&toks).is_some()
+}
+
+/// Find the index of the first token of a top-level `=>` operator (the
+/// `=`), ignoring `=>` inside any group. Returns `None` if not present.
+fn find_top_level_arrow(toks: &[TokenTree]) -> Option<usize> {
+    let mut i = 0;
+    while i + 1 < toks.len() {
+        if let (TokenTree::Punct(p1), TokenTree::Punct(p2)) = (&toks[i], &toks[i + 1]) {
+            if p1.as_char() == '='
+                && p1.spacing() == proc_macro2::Spacing::Joint
+                && p2.as_char() == '>'
+            {
+                return Some(i);
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+/// A string literal argument named `expected_name` parsed from `name: "value"`.
+struct NamedString {
+    value: String,
+    #[allow(dead_code)]
+    span: Span,
+}
+
+fn parse_named_string_arg(tokens: &mut Tokens, expected_name: &str) -> Result<NamedString> {
+    let name = expect_ident(
+        tokens,
+        &format!("expected `{expected_name}:` argument"),
+    )?;
+    if name != expected_name {
+        return Err(syn::Error::new_spanned(
+            name,
+            format!("expected `{expected_name}:` argument"),
+        ));
+    }
+    expect_punct(
+        tokens,
+        ':',
+        &format!("expected `:` after `{expected_name}`"),
+    )?;
+    let lit = expect_literal(tokens)?;
+    let span = lit.span();
+    let value = string_literal_value(&lit).ok_or_else(|| {
+        syn::Error::new(
+            span,
+            format!("`{expected_name}` must be a string literal path"),
+        )
+    })?;
+    Ok(NamedString { value, span })
+}
+
+/// Read a literal as a plain Rust string, stripping the surrounding quotes
+/// and unescaping. Falls back to `None` if the literal isn't a string.
+fn string_literal_value(lit: &Literal) -> Option<String> {
+    let raw = lit.to_string();
+    let bytes = raw.as_bytes();
+    // Match plain `"..."` literals; reject byte strings, raw strings (for
+    // simplicity), char literals, numbers, etc.
+    if bytes.first() != Some(&b'"') || bytes.last() != Some(&b'"') {
+        return None;
+    }
+    let mut out = String::with_capacity(raw.len());
+    let mut chars = raw[1..raw.len() - 1].chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next()? {
+            'n' => out.push('\n'),
+            't' => out.push('\t'),
+            'r' => out.push('\r'),
+            '\\' => out.push('\\'),
+            '\'' => out.push('\''),
+            '"' => out.push('"'),
+            '0' => out.push('\0'),
+            other => {
+                // Unknown escape — give up rather than silently mis-parse.
+                out.push('\\');
+                out.push(other);
+            }
+        }
+    }
+    Some(out)
+}
+
+/// Split a token stream into top-level comma-separated items. Commas inside
+/// any group token (parens, brackets, braces) are ignored so that things
+/// like `rule!(a, b)` aren't accidentally split.
+fn split_top_level_commas(stream: TokenStream) -> Vec<TokenStream> {
+    let mut items = Vec::new();
+    let mut current: Vec<TokenTree> = Vec::new();
+    for tt in stream {
+        if let TokenTree::Punct(p) = &tt {
+            if p.as_char() == ',' && p.spacing() == proc_macro2::Spacing::Alone {
+                if !current.is_empty() {
+                    items.push(current.drain(..).collect());
+                }
+                continue;
+            }
+        }
+        current.push(tt);
+    }
+    if !current.is_empty() {
+        items.push(current.into_iter().collect());
+    }
+    items
+}
+
 fn maybe_wrap_capture(tokens: &mut Tokens, base: TokenStream) -> Result<TokenStream> {
     if peek_is_at(tokens) {
         let name = consume_capture_marker(tokens)?;
@@ -968,5 +1181,35 @@ fn maybe_wrap_list_capture(tokens: &mut Tokens, elem: TokenStream) -> Result<Tok
         })
     } else {
         Ok(elem)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Internal unit tests for the rules! macro shape. Type-checking tests
+// land in the follow-up that wires schema validation in.
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod rules_tests {
+    use super::*;
+    use quote::quote;
+
+    #[test]
+    fn has_top_level_arrow_distinguishes_bare_rules() {
+        // Bare rule body: top-level `=>` is present.
+        let toks = quote! { (a) => (b) };
+        assert!(has_top_level_arrow(&toks));
+        // `rule!((a) => (b))`: the `=>` is INSIDE the macro group, so
+        // it's not at top level. Must NOT be detected as a bare body.
+        let toks = quote! { rule!((a) => (b)) };
+        assert!(!has_top_level_arrow(&toks));
+        // Helper call: no `=>` anywhere.
+        let toks = quote! { make_rule() };
+        assert!(!has_top_level_arrow(&toks));
+        // Match expressions inside a block: `=>` is inside braces.
+        let toks = quote! { { match x { 1 => 2, _ => 3 } } };
+        assert!(!has_top_level_arrow(&toks));
+        // Bare shorthand form: top-level `=>` followed by a bare ident.
+        let toks = quote! { (a) => kind };
+        assert!(has_top_level_arrow(&toks));
     }
 }

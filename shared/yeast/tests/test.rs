@@ -1322,3 +1322,123 @@ fn test_hash_brace_uses_capture_location_for_leaf() {
     assert_eq!(bar.start_byte(), 4);
     assert_eq!(bar.end_byte(), 7);
 }
+
+// ---- `rules!` macro tests (compile-time type-checking) ----
+
+/// `rules!` should accept well-typed rules using the bare-rule-body
+/// syntax (no inner `rule!` invocations) and produce a `Vec<Rule>` that
+/// behaves identically to a plain `vec![rule!(...)]` list.
+#[test]
+fn test_rules_macro_accepts_bare_rule_body() {
+    let rules: Vec<Rule> = yeast::rules! {
+        input: "tests/input-types.yml",
+        output: "tests/node-types.yml",
+        [
+            (assignment
+                left: (_) @left
+                right: (_) @right
+            )
+            =>
+            (assignment
+                left: {right}
+                right: {left}
+            ),
+        ]
+    };
+
+    let dump = run_and_dump("x = 1", rules);
+    assert_dump_eq(
+        &dump,
+        r#"
+        program
+          assignment
+            left: integer "1"
+            right: identifier "x"
+    "#,
+    );
+}
+
+/// The bare-rule-body shorthand `=> output_kind` should also be accepted.
+#[test]
+fn test_rules_macro_accepts_bare_shorthand_form() {
+    let rules: Vec<Rule> = yeast::rules! {
+        input: "tests/input-types.yml",
+        output: "tests/node-types.yml",
+        [
+            (assignment
+                left: (_) @method
+                right: (_) @receiver
+            )
+            => call,
+        ]
+    };
+
+    let dump = run_and_dump("x = 1", rules);
+    assert_dump_eq(
+        &dump,
+        r#"
+        program
+          call
+            method: identifier "x"
+            receiver: integer "1"
+    "#,
+    );
+}
+
+/// Backwards-compat: explicit `rule!(...)` invocations inside `rules!`
+/// should still type-check and behave the same as the bare form.
+#[test]
+fn test_rules_macro_accepts_explicit_rule_macro() {
+    let rules: Vec<Rule> = yeast::rules! {
+        input: "tests/input-types.yml",
+        output: "tests/node-types.yml",
+        [
+            rule!(
+                (assignment
+                    left: (_) @left
+                    right: (_) @right
+                )
+                =>
+                (assignment
+                    left: {right}
+                    right: {left}
+                )
+            ),
+        ]
+    };
+    assert_eq!(rules.len(), 1);
+}
+
+/// `rules!` should pass through items that aren't bare rule bodies or
+/// `rule!(...)` calls (e.g. helper-function calls returning a `Rule`),
+/// without type-checking them. Bare and explicit rules in the same list
+/// still get checked.
+#[test]
+fn test_rules_macro_allows_non_rule_items() {
+    fn extra() -> yeast::Rule {
+        rule!((identifier) => (identifier "extra"))
+    }
+    let rules: Vec<Rule> = yeast::rules! {
+        input: "tests/input-types.yml",
+        output: "tests/node-types.yml",
+        [
+            (integer) => (integer "checked"),
+            extra(),
+        ]
+    };
+    assert_eq!(rules.len(), 2);
+}
+
+/// `rules!` should accept lists that mix bare-rule and explicit-rule items.
+#[test]
+fn test_rules_macro_mixes_bare_and_explicit_forms() {
+    let rules: Vec<Rule> = yeast::rules! {
+        input: "tests/input-types.yml",
+        output: "tests/node-types.yml",
+        [
+            (integer) => (integer "I"),
+            rule!((identifier) => (identifier "S")),
+        ]
+    };
+    assert_eq!(rules.len(), 2);
+}

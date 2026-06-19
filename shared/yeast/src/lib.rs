@@ -15,7 +15,7 @@ pub mod schema;
 pub mod tree_builder;
 mod visitor;
 
-pub use yeast_macros::{query, rule, tree, trees};
+pub use yeast_macros::{query, rule, rules, tree, trees};
 
 use captures::Captures;
 use query::QueryNode;
