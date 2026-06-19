@@ -52,6 +52,15 @@ signature module AstSig<LocationSig Location> {
 
   /** A parameter of a callable. */
   class Parameter extends AstNode {
+    /**
+     * Gets the pattern associated with this parameter.
+     *
+     * The pattern is included in the CFG while the parameter itself is not.
+     * Although, in simple cases that do not involve destructuring, it is
+     * allowed for the pattern to be equal to the parameter.
+     */
+    AstNode getPattern();
+
     /** Gets the default value of this parameter, if any. */
     Expr getDefaultValue();
   }
@@ -116,6 +125,12 @@ signature module AstSig<LocationSig Location> {
   /** A `do-while` loop statement. */
   class DoStmt extends LoopStmt {
     /** Gets the boolean condition of this `do-while` loop. */
+    Expr getCondition();
+  }
+
+  /** An `until` loop statement. */
+  class UntilStmt extends LoopStmt {
+    /** Gets the boolean condition of this `until` loop. */
     Expr getCondition();
   }
 
@@ -608,6 +623,7 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
         any(IfStmt ifstmt).getCondition() = n or
         any(WhileStmt whilestmt).getCondition() = n or
         any(DoStmt dostmt).getCondition() = n or
+        any(UntilStmt untilstmt).getCondition() = n or
         any(ForStmt forstmt).getCondition() = n or
         any(ConditionalExpr condexpr).getCondition() = n or
         any(CatchClause catch).getCondition() = n or
@@ -624,7 +640,7 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
         or
         n = any(Case case).getPattern(_)
         or
-        exists(n.(Parameter).getDefaultValue())
+        exists(Parameter p | exists(p.getDefaultValue()) and n = p.getPattern())
       )
     }
 
@@ -796,24 +812,27 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
       )
     }
 
+    private predicate hasCfg(AstNode n) {
+      exists(getEnclosingCallable(n)) and
+      (n instanceof Parameter implies n = n.(Parameter).getPattern())
+    }
+
     cached
     private newtype TNode =
-      TBeforeNode(AstNode n) { Input1::cfgCachedStageRef() and exists(getEnclosingCallable(n)) } or
-      TAstNode(AstNode n) { postOrInOrder(n) and exists(getEnclosingCallable(n)) } or
+      TBeforeNode(AstNode n) { Input1::cfgCachedStageRef() and hasCfg(n) } or
+      TAstNode(AstNode n) { postOrInOrder(n) and hasCfg(n) } or
       TAfterValueNode(AstNode n, ConditionalSuccessor t) {
         inConditionalContext(n, t.getKind()) and
-        exists(getEnclosingCallable(n)) and
+        hasCfg(n) and
         not constantCondition(n, t.getDual())
       } or
       TAfterNode(AstNode n) {
-        exists(getEnclosingCallable(n)) and
+        hasCfg(n) and
         not inConditionalContext(n, _) and
         not cannotTerminateNormally(n) and
         not simpleLeafNode(n)
       } or
-      TAdditionalNode(AstNode n, string tag) {
-        additionalNode(n, tag, _) and exists(getEnclosingCallable(n))
-      } or
+      TAdditionalNode(AstNode n, string tag) { additionalNode(n, tag, _) and hasCfg(n) } or
       TEntryNode(Callable c) { callableHasBodyPart(c, _) } or
       TAnnotatedExitNode(Callable c, Boolean normal) { callableHasBodyPart(c, _) } or
       TExitNode(Callable c) { callableHasBodyPart(c, _) }
@@ -1383,8 +1402,8 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
       }
 
       pragma[nomagic]
-      private AstNode getParameterOrBodyEntry(Callable c, CallableContextOption ctx, int i) {
-        result = getRankedParameter(c, ctx, i)
+      private AstNode getParameterPatternOrBodyEntry(Callable c, CallableContextOption ctx, int i) {
+        result = getRankedParameter(c, ctx, i).getPattern()
         or
         (
           not exists(getRankedParameter(c, _, _)) and
@@ -1402,18 +1421,18 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
         or
         exists(Callable c |
           n1.(EntryNodeImpl).getEnclosingCallable() = c and
-          n2.isBefore(getParameterOrBodyEntry(c, _, 1))
+          n2.isBefore(getParameterPatternOrBodyEntry(c, _, 1))
           or
           exists(CallableContextOption ctx, Parameter p, int i | p = getRankedParameter(c, ctx, i) |
             exists(MatchingSuccessor t |
-              n1.isAfterValue(p, t) and
+              n1.isAfterValue(p.getPattern(), t) and
               if t.isMatch()
-              then n2.isBefore(getParameterOrBodyEntry(c, ctx, i + 1))
+              then n2.isBefore(getParameterPatternOrBodyEntry(c, ctx, i + 1))
               else n2.isBefore(p.getDefaultValue())
             )
             or
             n1.isAfter(p.getDefaultValue()) and
-            n2.isBefore(getParameterOrBodyEntry(c, ctx, i + 1))
+            n2.isBefore(getParameterPatternOrBodyEntry(c, ctx, i + 1))
           )
           or
           exists(Input1::CallableContext ctx, int i |
@@ -1513,7 +1532,12 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
           n2.isBefore(ifstmt.getCondition())
           or
           n1.isAfterTrue(ifstmt.getCondition()) and
-          n2.isBefore(ifstmt.getThen())
+          (
+            n2.isBefore(ifstmt.getThen())
+            or
+            not exists(ifstmt.getThen()) and
+            n2.isAfter(ifstmt)
+          )
           or
           n1.isAfterFalse(ifstmt.getCondition()) and
           (
@@ -1530,9 +1554,9 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
           n2.isAfter(ifstmt)
         )
         or
-        exists(WhileStmt whilestmt |
-          n1.isBefore(whilestmt) and
-          n2.isAdditional(whilestmt, loopHeaderTag())
+        exists(LoopStmt loopstmt | loopstmt instanceof WhileStmt or loopstmt instanceof UntilStmt |
+          n1.isBefore(loopstmt) and
+          n2.isAdditional(loopstmt, loopHeaderTag())
         )
         or
         exists(DoStmt dostmt |
@@ -1540,16 +1564,20 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
           n2.isBefore(dostmt.getBody())
         )
         or
-        exists(LoopStmt loopstmt, AstNode cond |
-          loopstmt.(WhileStmt).getCondition() = cond or loopstmt.(DoStmt).getCondition() = cond
+        exists(LoopStmt loopstmt, AstNode cond, boolean while |
+          loopstmt.(WhileStmt).getCondition() = cond and while = true
+          or
+          loopstmt.(DoStmt).getCondition() = cond and while = true
+          or
+          loopstmt.(UntilStmt).getCondition() = cond and while = false
         |
           n1.isAdditional(loopstmt, loopHeaderTag()) and
           n2.isBefore(cond)
           or
-          n1.isAfterTrue(cond) and
+          n1.isAfterValue(cond, any(BooleanSuccessor b | b.getValue() = while)) and
           n2.isBefore(loopstmt.getBody())
           or
-          n1.isAfterFalse(cond) and
+          n1.isAfterValue(cond, any(BooleanSuccessor b | b.getValue() = while.booleanNot())) and
           n2.isAfter(loopstmt)
           or
           n1.isAfter(loopstmt.getBody()) and
@@ -1780,6 +1808,7 @@ module Make0<LocationSig Location, AstSig<Location> Ast> {
        * and therefore should use default left-to-right evaluation.
        */
       private predicate defaultCfg(AstNode ast) {
+        hasCfg(ast) and
         not explicitStep(any(PreControlFlowNode n | n.isBefore(ast)), _)
       }
 

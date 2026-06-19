@@ -61,6 +61,8 @@ private module Ast implements AstSig<Location> {
   class Parameter extends AstNode {
     Parameter() { none() }
 
+    AstNode getPattern() { none() }
+
     Expr getDefaultValue() { none() }
   }
 
@@ -83,6 +85,10 @@ private module Ast implements AstSig<Location> {
   class WhileStmt = J::WhileStmt;
 
   class DoStmt = J::DoStmt;
+
+  class UntilStmt extends LoopStmt {
+    UntilStmt() { none() }
+  }
 
   final private class FinalForStmt = J::ForStmt;
 
