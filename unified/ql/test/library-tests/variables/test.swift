@@ -307,3 +307,30 @@ func t34() {
         print(x) // $ access=x2
     }
 }
+
+// While-let optional binding
+func t35(optional: Int?) { // name=optional1
+    while let x = optional { // $ access=optional1 // name=x1
+        print(x) // $ MISSING: access=x1
+    }
+}
+
+// While with a sequence of variable bindings in the condition
+func t36(a: Int?, b: Int?) {
+    while let x = a, // $ access=a
+          let y = b, // $ access=b
+          x < y { // $ $ access=x access=y
+        print(x) // $ MISSING: access=x
+        print(y) // $ MISSING: access=y
+    }
+}
+
+// While-let with a sequence of shadowing variable declarations
+func t37() {
+    let x = 1 // name=x1
+    while let x = x, // $ access=x1 // name=x2
+          let x = x, // $ access=x2 // name=x3
+          x > 0 { // $ access=x3
+        print(x) // $ MISSING: access=x3 SPURIOUS: access=x1
+    }
+}
