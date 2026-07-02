@@ -311,7 +311,7 @@ func t34() {
 // While-let optional binding
 func t35(optional: Int?) { // name=optional1
     while let x = optional { // $ access=optional1 // name=x1
-        print(x) // $ MISSING: access=x1
+        print(x) // $ access=x1
     }
 }
 
@@ -320,8 +320,8 @@ func t36(a: Int?, b: Int?) {
     while let x = a, // $ access=a
           let y = b, // $ access=b
           x < y { // $ $ access=x access=y
-        print(x) // $ MISSING: access=x
-        print(y) // $ MISSING: access=y
+        print(x) // $ access=x
+        print(y) // $ access=y
     }
 }
 
@@ -331,6 +331,6 @@ func t37() {
     while let x = x, // $ access=x1 // name=x2
           let x = x, // $ access=x2 // name=x3
           x > 0 { // $ access=x3
-        print(x) // $ MISSING: access=x3 SPURIOUS: access=x1
+        print(x) // $ access=x3
     }
 }

@@ -121,6 +121,14 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
     override AstNode getElse() { result = IfExpr.super.getElse() }
   }
 
+  private class WhileStmtConditional extends Conditional instanceof WhileStmt {
+    override AstNode getCondition() { result = WhileStmt.super.getCondition() }
+
+    override AstNode getThen() { result = WhileStmt.super.getBody() }
+
+    override AstNode getElse() { none() }
+  }
+
   abstract class SiblingShadowingDecl extends AstNode {
     /**
      * Gets the right-hand side of this declaration.
