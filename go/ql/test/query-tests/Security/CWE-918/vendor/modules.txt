@@ -1,15 +1,35 @@
+# github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee
+## explicit
+github.com/gobwas/httphead
+# github.com/gobwas/pool v0.2.0
+## explicit
+github.com/gobwas/pool
+github.com/gobwas/pool/internal/pmath
+github.com/gobwas/pool/pbufio
 # github.com/gobwas/ws v1.0.3
 ## explicit
 github.com/gobwas/ws
+# github.com/google/go-cmp v0.6.0
+## explicit; go 1.13
 # github.com/gorilla/websocket v1.4.2
-## explicit
+## explicit; go 1.12
 github.com/gorilla/websocket
+# github.com/klauspost/compress v1.10.3
+## explicit; go 1.13
+github.com/klauspost/compress/flate
+# github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d
+## explicit
+github.com/sacOO7/go-logger
 # github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e
 ## explicit
 github.com/sacOO7/gowebsocket
-# golang.org/x/net v0.0.0-20200421231249-e086a090c8fd
-## explicit
+# golang.org/x/net v0.55.0
+## explicit; go 1.25.0
 golang.org/x/net/websocket
 # nhooyr.io/websocket v1.8.5
-## explicit
+## explicit; go 1.13
 nhooyr.io/websocket
+nhooyr.io/websocket/internal/bpool
+nhooyr.io/websocket/internal/errd
+nhooyr.io/websocket/internal/wsjs
+nhooyr.io/websocket/internal/xsync
