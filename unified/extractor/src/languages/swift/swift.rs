@@ -1215,8 +1215,15 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         // Preprocessor conditionals — unsupported
         rule!((diagnostic) => (unsupported_node)),
         // ---- Fallbacks ----
+        // Bare `_` (rather than `(_)`) so this matches both named nodes
+        // and unnamed tokens. Any unnamed token that escapes the
+        // input-schema-specific rules (e.g. captured operators in
+        // `additive_expression op: @op`) has its auto-translated value
+        // replaced with an `unsupported_node` whose source range is
+        // inherited from the original token, so `#{op}` still reads the
+        // original text.
         rule!(
-            (_)
+            _
             =>
             (unsupported_node)
         ),
