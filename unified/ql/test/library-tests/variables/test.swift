@@ -40,9 +40,9 @@ func t6(x: Int) -> Int { // name=x1
 
 // Nested blocks
 func t7() {
-    let x = 1 // name=x1
-    {
-        print(x) // $ MISSING: access=x1
+    let x = 1; // name=x1
+    do {
+        print(x) // $ access=x1
         let x = 2 // name=x2
         print(x) // $ access=x2
     }
