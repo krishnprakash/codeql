@@ -82,9 +82,6 @@ signature module LocalNameBindingInputSig<LocationSig Location> {
    * ```
    */
   class SiblingShadowingDecl extends AstNode {
-    /** Gets the left-hand side of this declaration. */
-    AstNode getLhs();
-
     /**
      * Gets the right-hand side of this declaration.
      *

@@ -91,9 +91,6 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
   }
 
   abstract class SiblingShadowingDecl extends AstNode {
-    /** Gets the left-hand side of this declaration. */
-    abstract AstNode getLhs();
-
     /**
      * Gets the right-hand side of this declaration.
      *
@@ -113,8 +110,6 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
 
   private class LocalVariableDeclarationSiblingShadowingDecl extends SiblingShadowingDecl instanceof LocalVariableDeclaration
   {
-    override AstNode getLhs() { result = LocalVariableDeclaration.super.getPattern() }
-
     override AstNode getRhs() { result = LocalVariableDeclaration.super.getValue() }
 
     override AstNode getElse() { none() }
@@ -122,16 +117,12 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
 
   private class PatternGuardExprSiblingShadowingDecl extends SiblingShadowingDecl instanceof PatternGuardExpr
   {
-    override AstNode getLhs() { result = PatternGuardExpr.super.getPattern() }
-
     override AstNode getRhs() { result = PatternGuardExpr.super.getValue() }
 
     override AstNode getElse() { none() }
   }
 
   private class GuardIfStmtSiblingShadowingDecl extends SiblingShadowingDecl instanceof GuardIfStmt {
-    override AstNode getLhs() { result = GuardIfStmt.super.getCondition() }
-
     override AstNode getRhs() { none() }
 
     override AstNode getElse() { result = GuardIfStmt.super.getElse() }
