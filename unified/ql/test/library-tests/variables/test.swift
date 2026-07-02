@@ -241,9 +241,9 @@ func t27(opt: Int?) { // name=opt1
 }
 
 // if with multiple let bindings and a boolean condition
-func t28(a: Int?, b: Int?) { // name=a1 // name=b1
-    if let x = a, // $ access=a1 SPURIOUS: access=b1
-       let y = b, // $ access=b1 SPURIOUS: access=a1
+func t28(a: Int?, b: Int?) {
+    if let x = a, // $ access=a
+       let y = b, // $ access=b
        x < y { // $ $ access=x access=y
         print(x) // $ access=x
         print(y) // $ access=y
@@ -270,9 +270,9 @@ func t30(opt: Int?) { // name=opt1
 }
 
 // guard with multiple let bindings and a boolean condition
-func t31(a: Int?, b: Int?) { // name=a1 // name=b1
-    guard let x = a, // $ access=a1 SPURIOUS: access=b1
-          let y = b, // $ access=b1 SPURIOUS: access=a1
+func t31(a: Int?, b: Int?) {
+    guard let x = a, // $ access=a
+          let y = b, // $ access=b
           x < y else { // $ $ access=x access=y
         return
     }
@@ -292,7 +292,7 @@ func t32(opt: Int?) { // name=opt1
 func t33() {
     let x = 1 // name=x1
     guard x > 0, // $ access=x1
-          let x = x, // $ MISSING: access=x2 SPURIOUS: access=x1 // name=x2
+          let x = x, // $ access=x1 // name=x2
           x > 0 else { // $ access=x2
         return
     }
