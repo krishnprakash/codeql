@@ -1183,39 +1183,12 @@ fn parse_named_string_arg(tokens: &mut Tokens, expected_name: &str) -> Result<Na
     Ok(NamedString { value, span })
 }
 
-/// Read a literal as a plain Rust string, stripping the surrounding quotes
-/// and unescaping. Falls back to `None` if the literal isn't a string.
+/// Read a literal as a plain Rust string, respecting Rust's own escape
+/// rules (via `syn::LitStr`). Falls back to `None` if the literal
+/// isn't a string.
 fn string_literal_value(lit: &Literal) -> Option<String> {
-    let raw = lit.to_string();
-    let bytes = raw.as_bytes();
-    // Match plain `"..."` literals; reject byte strings, raw strings (for
-    // simplicity), char literals, numbers, etc.
-    if bytes.first() != Some(&b'"') || bytes.last() != Some(&b'"') {
-        return None;
-    }
-    let mut out = String::with_capacity(raw.len());
-    let mut chars = raw[1..raw.len() - 1].chars();
-    while let Some(c) = chars.next() {
-        if c != '\\' {
-            out.push(c);
-            continue;
-        }
-        match chars.next()? {
-            'n' => out.push('\n'),
-            't' => out.push('\t'),
-            'r' => out.push('\r'),
-            '\\' => out.push('\\'),
-            '\'' => out.push('\''),
-            '"' => out.push('"'),
-            '0' => out.push('\0'),
-            other => {
-                // Unknown escape — give up rather than silently mis-parse.
-                out.push('\\');
-                out.push(other);
-            }
-        }
-    }
-    Some(out)
+    let tokens = TokenStream::from(TokenTree::Literal(lit.clone()));
+    syn::parse2::<syn::LitStr>(tokens).ok().map(|s| s.value())
 }
 
 /// Split a token stream into top-level comma-separated items. Commas inside
