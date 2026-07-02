@@ -617,6 +617,76 @@ fn extract_captures_inner(
     }
 }
 
+/// A rule's return-type annotation, when the body is a Rust block. Written
+/// between `=>` and the block body using the schema's own vocabulary:
+///
+/// ```text
+///   => kind        { … }   // single node of that kind
+///   => kind?       { … }   // Option<KindId> (0 or 1)
+///   => kind*       { … }   // Vec<KindId>    (0+)
+/// ```
+///
+/// Template bodies (`=> (kind …)`) never carry an annotation — the
+/// output kind is the template root. The shorthand `=> kind` (no
+/// body) also carries no annotation. See `parse_rule_top` for dispatch.
+#[derive(Clone, Debug)]
+struct ReturnAnnotation {
+    kind: Ident,
+    multiplicity: AnnotationMultiplicity,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum AnnotationMultiplicity {
+    Single,
+    Optional,
+    Repeated,
+}
+
+/// Peek at the token stream to decide whether the transform following
+/// `=>` is a **new** annotation form (`kind [? | *] { … }`). If so,
+/// consume the annotation and return it, leaving the `{ … }` body in
+/// the stream for the caller to parse. Otherwise leave the stream
+/// untouched and return `None`.
+///
+/// The lookahead distinguishes:
+///   `kind {`   → annotation (single)
+///   `kind? {`  → annotation (optional)
+///   `kind* {`  → annotation (repeated)
+///   `kind`     → shorthand form (no `{` follows) — NOT an annotation
+///   anything else → template or bare block — NOT an annotation
+fn try_consume_return_annotation(tokens: &mut Tokens) -> Result<Option<ReturnAnnotation>> {
+    // Must start with an identifier (the kind name).
+    let mut lookahead = tokens.clone();
+    let Some(TokenTree::Ident(_)) = lookahead.next() else {
+        return Ok(None);
+    };
+    // Then optionally `?` or `*`, then a `{` group.
+    let after_suffix = match lookahead.peek() {
+        Some(TokenTree::Punct(p)) if p.as_char() == '?' || p.as_char() == '*' => {
+            lookahead.next();
+            lookahead.peek()
+        }
+        other => other,
+    };
+    if !matches!(after_suffix, Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace) {
+        return Ok(None);
+    }
+    // Commit: consume the ident + suffix from the real stream.
+    let kind = expect_ident(tokens, "expected output-kind name in annotation")?;
+    let multiplicity = match tokens.peek() {
+        Some(TokenTree::Punct(p)) if p.as_char() == '?' => {
+            tokens.next();
+            AnnotationMultiplicity::Optional
+        }
+        Some(TokenTree::Punct(p)) if p.as_char() == '*' => {
+            tokens.next();
+            AnnotationMultiplicity::Repeated
+        }
+        _ => AnnotationMultiplicity::Single,
+    };
+    Ok(Some(ReturnAnnotation { kind, multiplicity }))
+}
+
 /// Parse `rule!( query => transform )`.
 pub fn parse_rule_top(input: TokenStream) -> Result<TokenStream> {
     let mut tokens = input.into_iter().peekable();
@@ -688,8 +758,52 @@ pub fn parse_rule_top(input: TokenStream) -> Result<TokenStream> {
         })
         .collect();
 
-    // Parse transform: either shorthand `=> kind_name` or full `=> (template ...)`
-    let transform_body = if peek_is_field(&mut tokens) && {
+    // Parse transform: the token(s) after `=>` fall into one of three
+    // shapes, dispatched in order:
+    //
+    //   1. `kind [? | *] { rust_body }` — annotated Rust body (NEW).
+    //      Static-analysis-ready: the annotation declares the output
+    //      kind and multiplicity in the schema's own vocabulary.
+    //   2. `kind` alone — shorthand: emit `(kind field: {@cap})…` from
+    //      the query's captures.
+    //   3. anything else — full template form (`(kind …)` or bare
+    //      `{ … }` splice via `parse_direct_list`).
+    let annotation = try_consume_return_annotation(&mut tokens)?;
+
+    let transform_body = if let Some(annotation) = annotation {
+        // Annotation form: `=> kind [? | *] { rust_body }`.
+        let body_group = expect_group(&mut tokens, Delimiter::Brace)?;
+        if let Some(tok) = tokens.next() {
+            return Err(syn::Error::new_spanned(
+                tok,
+                "unexpected token after annotated rule body",
+            ));
+        }
+        let body = body_group.stream();
+        // The annotation is not yet consumed by codegen — it will drive
+        // typed handles once the schema-driven codegen lands. For now,
+        // emit a self-documenting reference to the annotated kind and
+        // preserve today's `Vec<yeast::Id>` closure return so behavior
+        // is unchanged.
+        let kind_str = annotation.kind.to_string();
+        let mult_str = match annotation.multiplicity {
+            AnnotationMultiplicity::Single => "single",
+            AnnotationMultiplicity::Optional => "optional",
+            AnnotationMultiplicity::Repeated => "repeated",
+        };
+        let _ = (kind_str, mult_str); // silence unused warnings until wired
+
+        // For now, adapt the user's typed return value to the framework's
+        // `Vec<yeast::Id>` closure result. This uses `IntoFieldIds`, which
+        // already accepts a bare `Id`, an iterable of ids, or `Option<Id>`
+        // — matching the three annotation multiplicities.
+        quote! {
+            let __value = { #body };
+            let mut __ids: Vec<yeast::Id> = Vec::new();
+            yeast::IntoFieldIds::extend_into(__value, &mut __ids);
+            __ids
+        }
+    } else if peek_is_field(&mut tokens) && {
         // Shorthand form: bare identifier = output node kind.
         // Auto-generate template from captures.
         let mut lookahead = tokens.clone();
@@ -749,6 +863,26 @@ pub fn parse_rule_top(input: TokenStream) -> Result<TokenStream> {
             vec![__id]
         }
     } else {
+        // Reject bare `{ ... }` transforms — they used to be accepted
+        // as either a Rust body producing a `Vec<Id>` or a template
+        // consisting of a single `{cap}` splice. Both patterns lost
+        // static-analysis information (no visible output kind), so we
+        // now require rules with block bodies to use the annotation
+        // form `=> kind [? | *] { ... }`. Templates must start with a
+        // parenthesized node (e.g. `(if_expr ...)`).
+        if let Some(TokenTree::Group(g)) = tokens.peek() {
+            if g.delimiter() == Delimiter::Brace {
+                let span = g.span();
+                return Err(syn::Error::new(
+                    span,
+                    "bare `{...}` rule bodies are no longer accepted; \
+                     use the annotation form `=> kind [? | *] { ... }` \
+                     (where the kind names the output node's schema kind, \
+                     optionally suffixed with `?` or `*` for multiplicity)",
+                ));
+            }
+        }
+
         // Full template form
         let transform_items = parse_direct_list(&mut tokens, &ctx_ident)?;
 
@@ -1026,10 +1160,7 @@ struct NamedString {
 }
 
 fn parse_named_string_arg(tokens: &mut Tokens, expected_name: &str) -> Result<NamedString> {
-    let name = expect_ident(
-        tokens,
-        &format!("expected `{expected_name}:` argument"),
-    )?;
+    let name = expect_ident(tokens, &format!("expected `{expected_name}:` argument"))?;
     if name != expected_name {
         return Err(syn::Error::new_spanned(
             name,
