@@ -72,9 +72,11 @@ module HardcodedCryptographicValue {
     isConstant(e.(ArrayRepeatExpr).getRepeatOperand()) // e.g. `[0; 10]`
     or
     // e.g. `const MY_CONST: u64 = ...`
+    // the constant initializer / body is the preferred source location for flow paths, when available.
     e = any(Const c).getBody()
     or
     // e.g. `u64::MAX`
+    // when the constant initializer is not available as a source location (case above), use the access instead.
     e instanceof ConstAccess and
     not exists(e.(ConstAccess).getConst().getBody())
     or
