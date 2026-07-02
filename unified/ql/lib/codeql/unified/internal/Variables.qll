@@ -34,8 +34,38 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
     Expr getLastLeaf() { result = max(int n | | this.getNthLeaf(n) order by n) }
   }
 
+  private class BlockWithGuardStmts extends Block {
+    BlockWithGuardStmts() { this.getStmt(_) instanceof GuardIfStmt }
+
+    AstNode getTranslatedChild(int n) {
+      result =
+        rank[n](AstNode stmt, AstNode child, int i1, int i2 |
+          stmt = this.getStmt(i1) and
+          (
+            child = stmt.(GuardIfStmt).getCondition().(LogicalAndRoot).getNthLeaf(i2)
+            or
+            child = stmt.(GuardIfStmt).getCondition() and
+            not child instanceof LogicalAndExpr and
+            i2 = 0
+            or
+            child = stmt.(GuardIfStmt).getElse() and
+            i2 = -1 // place before condition so its variables are not seen
+            or
+            not stmt instanceof GuardIfStmt and
+            child = stmt and
+            i2 = 0
+          )
+        |
+          child order by i1, i2
+        )
+    }
+  }
+
   private AstNode getChild1(AstNode n, int index) {
-    result = n.(Block).getStmt(index)
+    result = n.(Block).getStmt(index) and
+    not n instanceof BlockWithGuardStmts
+    or
+    result = n.(BlockWithGuardStmts).getTranslatedChild(index)
     or
     result = n.(LogicalAndRoot).getNthLeaf(index)
     or
@@ -67,6 +97,7 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
     or
     not exists(getChild1(n, _)) and
     not n instanceof LogicalAndExpr and // also ignore intermediate nodes within a 'logical and' tree
+    not n instanceof GuardIfStmt and
     index = 0 and
     result = n.getAFieldOrChild()
   }
@@ -120,12 +151,6 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
     override AstNode getRhs() { result = PatternGuardExpr.super.getValue() }
 
     override AstNode getElse() { none() }
-  }
-
-  private class GuardIfStmtSiblingShadowingDecl extends SiblingShadowingDecl instanceof GuardIfStmt {
-    override AstNode getRhs() { none() }
-
-    override AstNode getElse() { result = GuardIfStmt.super.getElse() }
   }
 
   private predicate bindingContext(AstNode pattern, AstNode scope) {

@@ -16,7 +16,7 @@ func t3() -> Int {
     guard let x = foo() else { // name=x1
         return 0
     }
-    print(x) // $ MISSING: access=x1
+    print(x) // $ access=x1
 }
 
 // Function parameters
@@ -229,7 +229,7 @@ func t26() -> Int {
     guard let x = foo() else { // name=x2
         return x // $ access=x1
     }
-    print(x) // $ MISSING: access=x2 SPURIOUS: access=x1
+    print(x) // $ access=x2
 }
 
 // if with multiple conditions, mixing boolean and optional binding
@@ -266,7 +266,7 @@ func t30(opt: Int?) { // name=opt1
           let x = opt else { // $ access=opt1
         return
     }
-    print(x) // $ MISSING: access=x
+    print(x) // $ access=x
 }
 
 // guard with multiple let bindings and a boolean condition
@@ -276,8 +276,8 @@ func t31(a: Int?, b: Int?) { // name=a1 // name=b1
           x < y else { // $ $ access=x access=y
         return
     }
-    print(x) // $ MISSING: access=x
-    print(y) // $ MISSING: access=y
+    print(x) // $ access=x
+    print(y) // $ access=y
 }
 
 // guard with multiple conditions where bound variable is used in later condition
@@ -286,7 +286,7 @@ func t32(opt: Int?) { // name=opt1
           x > 0 else { // $ access=x
         return
     }
-    print(x) // $ MISSING: access=x
+    print(x) // $ access=x
 }
 
 func t33() {
@@ -296,7 +296,7 @@ func t33() {
           x > 0 else { // $ access=x2
         return
     }
-    print(x) // $ MISSING: access=x2 SPURIOUS: access=x1
+    print(x) // $ access=x2
 }
 
 func t34() {
