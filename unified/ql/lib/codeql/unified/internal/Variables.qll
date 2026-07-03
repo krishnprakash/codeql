@@ -213,12 +213,39 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
     )
   }
 
-  predicate declInScope(AstNode definingNode, string name, AstNode scope) {
-    bindingContext(definingNode, scope) and
-    (
-      definingNode.(NamePattern).getIdentifier().getValue() = name
+  /**
+   * Gets the nearest enclosing `OrPattern` to which variable bindings in `p` should be lifted.
+   *
+   * To ensure that `case .foo(let x), .bar(let x)` result in a single definition for
+   * the variable `x`, the `OrPattern` becomes the `definingNode` for `x`.
+   *
+   * At the moment no further checks are needed since the Swift compiler enforces that
+   * variable names bound in any branch are bound in all branches.
+   */
+  private OrPattern getEnclosingOrPattern(Pattern p) {
+    p = result.getPattern(_)
+    or
+    exists(Pattern parent | result = getEnclosingOrPattern(parent) |
+      p = parent.(ConstructorPattern).getElement(_).getPattern()
       or
-      definingNode.(Identifier).getValue() = name
+      p = parent.(TuplePattern).getElement(_).getPattern()
+    )
+  }
+
+  predicate declInScope(AstNode definingNode, string name, AstNode scope) {
+    exists(AstNode pattern |
+      bindingContext(pattern, scope) and
+      (
+        pattern.(NamePattern).getIdentifier().getValue() = name
+        or
+        pattern.(Identifier).getValue() = name
+      ) and
+      (
+        definingNode = getEnclosingOrPattern(pattern)
+        or
+        not exists(getEnclosingOrPattern(pattern)) and
+        definingNode = pattern
+      )
     )
   }
 
