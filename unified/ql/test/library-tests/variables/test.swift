@@ -92,8 +92,8 @@ func t12() {
     let tuple = (1, 2) // name=tuple1
     let (x, // name=x1
          y) = tuple // $ access=tuple1 // name=y1
-    print(x) // $ MISSING: access=x1 // because x,y are incorrectly mapped to expr_equality_pattern
-    print(y) // $ MISSING: access=y1
+    print(x) // $ access=x1
+    print(y) // $ access=y1
 }
 
 // Tuple unpacking with underscore
@@ -102,8 +102,8 @@ func t13() {
     let (x, // name=x1
          _,
          y) = tuple // $ access=tuple1 // name=y1
-    print(x) // $ MISSING: access=x1
-    print(y) // $ MISSING: access=y1
+    print(x) // $ access=x1
+    print(y) // $ access=y1
 }
 
 // Optional binding (if let)

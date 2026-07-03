@@ -177,6 +177,37 @@ impl<C: Clone> BuildCtx<'_, C> {
             None => Err("translate() called on a BuildCtx without a translator handle".into()),
         }
     }
+
+    /// Translate every node in an iterator with a **fresh** user context
+    /// (reset to `C::default()`), restoring the previous context afterwards.
+    ///
+    /// Use when descending into a subtree — a body, expression, or statement
+    /// list — that must not inherit any of the surrounding translation
+    /// context (for example an enclosing binding modifier). Accepts single
+    /// (`Id`), optional (`Option<Id>`), and repeated (`Vec<Id>`) captures,
+    /// since all of them are `IntoIterator<Item = Id>`.
+    pub fn translate_reset<I: Into<Id>>(
+        &mut self,
+        ids: impl IntoIterator<Item = I>,
+    ) -> Result<Vec<Id>, String>
+    where
+        C: Default,
+    {
+        let saved = std::mem::take(&mut *self.user_ctx);
+        let mut out = Vec::new();
+        let mut result = Ok(());
+        for id in ids {
+            match self.translate(id) {
+                Ok(v) => out.extend(v),
+                Err(e) => {
+                    result = Err(e);
+                    break;
+                }
+            }
+        }
+        *self.user_ctx = saved;
+        result.map(|()| out)
+    }
 }
 
 impl<C> std::ops::Deref for BuildCtx<'_, C> {
