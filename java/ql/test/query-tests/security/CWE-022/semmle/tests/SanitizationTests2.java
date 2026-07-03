@@ -21,8 +21,8 @@ public class SanitizationTests2 {
 
     @GetMapping("/product/vuln/path-injection-fix")
     public ResponseEntity<String> vulnerablePathInjectionFix(@RequestParam("path")
-                                                                 @javax.validation.constraints.Pattern(regexp = "[a-zA-Z0-9]*") String path) throws IOException { // $ SPURIOUS: Source
-        try (FileInputStream stream = new FileInputStream(path)) { // $ SPURIOUS: Alert
+                                                                 @javax.validation.constraints.Pattern(regexp = "[a-zA-Z0-9]*") String path) throws IOException {
+        try (FileInputStream stream = new FileInputStream(path)) {
             byte[] fileContents = stream.readNBytes(1024);
             return ResponseEntity.ok(new String(fileContents, StandardCharsets.UTF_8));
         }

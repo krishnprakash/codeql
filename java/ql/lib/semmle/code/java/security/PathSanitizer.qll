@@ -470,7 +470,12 @@ private class DirectoryCharactersGuard extends PathGuard {
   Expr checkedExpr;
   boolean branch;
 
-  DirectoryCharactersGuard() { isMatchesCall(this, checkedExpr, branch) }
+  DirectoryCharactersGuard() {
+    // Annotations are handled directly as barriers in `DirectoryCharactersSanitizer`,
+    // since they don't dominate the sanitized expression and so can't act as barrier guards.
+    not this instanceof Annotation and
+    isMatchesCall(this, checkedExpr, branch)
+  }
 
   override Expr getCheckedExpr() { result = checkedExpr }
 
@@ -493,7 +498,15 @@ private predicate directoryCharactersGuard(Guard g, Expr e, boolean branch) {
  */
 private class DirectoryCharactersSanitizer extends PathInjectionSanitizer {
   DirectoryCharactersSanitizer() {
-    this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer or
+    this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer
+    or
     this = DataFlow::BarrierGuard<directoryCharactersGuard/3>::getABarrierNode()
+    or
+    // Annotations don't fit into the model of barrier guards because the
+    // annotation doesn't dominate the sanitized expression, so we instead
+    // treat them as barriers directly.
+    exists(RegexMatch rm | rm instanceof Annotation and isMatchesCall(rm, _, true) |
+      this.asExpr() = rm.getString()
+    )
   }
 }
