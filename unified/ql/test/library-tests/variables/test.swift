@@ -244,7 +244,7 @@ func t27(opt: Int?) { // name=opt1
 func t28(a: Int?, b: Int?) {
     if let x = a, // $ access=a
        let y = b, // $ access=b
-       x < y { // $ $ access=x access=y
+       x < y { // $ access=x access=y
         print(x) // $ access=x
         print(y) // $ access=y
     }
@@ -273,7 +273,7 @@ func t30(opt: Int?) { // name=opt1
 func t31(a: Int?, b: Int?) {
     guard let x = a, // $ access=a
           let y = b, // $ access=b
-          x < y else { // $ $ access=x access=y
+          x < y else { // $ access=x access=y
         return
     }
     print(x) // $ access=x
@@ -303,7 +303,7 @@ func t34() {
     let x = 1 // name=x1
     if x > 0, // $ access=x1
        let x = x, // $ access=x1 // name=x2
-       x > 0 else { // $ access=x2
+       x > 0 { // $ access=x2
         print(x) // $ access=x2
     }
 }
@@ -319,7 +319,7 @@ func t35(optional: Int?) { // name=optional1
 func t36(a: Int?, b: Int?) {
     while let x = a, // $ access=a
           let y = b, // $ access=b
-          x < y { // $ $ access=x access=y
+          x < y { // $ access=x access=y
         print(x) // $ access=x
         print(y) // $ access=y
     }

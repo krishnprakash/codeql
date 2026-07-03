@@ -12,10 +12,10 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
   private class LogicalAndRoot extends LogicalAndExpr {
     LogicalAndRoot() { not this = any(LogicalAndExpr e).getAnOperand() }
 
-    private Expr getDescendent(string path) {
+    private Expr getDescendant(string path) {
       path = "" and result = this
       or
-      exists(LogicalAndExpr mid, string midPath | mid = this.getDescendent(midPath) |
+      exists(LogicalAndExpr mid, string midPath | mid = this.getDescendant(midPath) |
         result = mid.getLeft() and path = midPath + "A"
         or
         result = mid.getRight() and path = midPath + "B"
@@ -25,7 +25,7 @@ private module LocalNameBindingInput implements LocalNameBindingInputSig<Locatio
     Expr getNthLeaf(int n) {
       result =
         rank[n](Expr e, string path |
-          e = this.getDescendent(path) and not e instanceof LogicalAndExpr
+          e = this.getDescendant(path) and not e instanceof LogicalAndExpr
         |
           e order by path
         )

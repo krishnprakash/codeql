@@ -183,9 +183,9 @@ impl<C: Clone> BuildCtx<'_, C> {
     ///
     /// Use when descending into a subtree — a body, expression, or statement
     /// list — that must not inherit any of the surrounding translation
-    /// context (for example an enclosing binding modifier). Accepts single
-    /// (`Id`), optional (`Option<Id>`), and repeated (`Vec<Id>`) captures,
-    /// since all of them are `IntoIterator<Item = Id>`.
+    /// context (for example an enclosing binding modifier). Accepts optional
+    /// (`Option<Id>`) and repeated (`Vec<Id>`) captures (both `IntoIterator`);
+    /// for a single `Id`, wrap it in `std::iter::once(id)`.
     pub fn translate_reset<I: Into<Id>>(
         &mut self,
         ids: impl IntoIterator<Item = I>,

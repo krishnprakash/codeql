@@ -44,7 +44,7 @@ module Public {
   class Comment extends TriviaToken {
     // At the moment, comments are the only type trivia token we extract
     /**
-     * Gets the text inside this comment, not counting the delimeters.
+     * Gets the text inside this comment, not counting the delimiters.
      */
     string getCommentText() {
       result = this.getValue().regexpCapture("//(.*)", 1)
