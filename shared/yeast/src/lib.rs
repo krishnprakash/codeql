@@ -741,6 +741,16 @@ pub struct TranslatorHandle<'a, C> {
     inner: TranslatorImpl<'a, C>,
 }
 
+// Manual `Copy` / `Clone` so `TranslatorHandle<'_, C>: Copy` holds
+// regardless of whether `C: Copy`. `TranslatorImpl` contains only
+// shared references, which are `Copy` unconditionally.
+impl<C> Copy for TranslatorHandle<'_, C> {}
+impl<C> Clone for TranslatorHandle<'_, C> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
 /// Internal phase-specific translation state. Kept private — callers
 /// interact with [`TranslatorHandle`] only.
 enum TranslatorImpl<'a, C> {
@@ -759,6 +769,16 @@ enum TranslatorImpl<'a, C> {
     /// [`auto_translate_captures`] is a no-op so the macro's auto-prefix
     /// works unchanged for Repeating rules.
     Repeating,
+}
+
+// Manual `Copy` / `Clone` so `TranslatorImpl<'_, C>: Copy` holds
+// regardless of whether `C: Copy`. All variants hold only shared
+// references and small `Copy` scalars.
+impl<C> Copy for TranslatorImpl<'_, C> {}
+impl<C> Clone for TranslatorImpl<'_, C> {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl<'a, C: Clone> TranslatorHandle<'a, C> {
