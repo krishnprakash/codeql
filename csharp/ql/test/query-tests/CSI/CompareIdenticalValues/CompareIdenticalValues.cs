@@ -11,8 +11,8 @@ class CompareIdenticalValues : Super
 {
     public void M()
     {
-        if (this.Foo == Foo) ;
-        if (base.Foo == Foo) ;
+        if (this.Foo == Foo) ; // $ Alert
+        if (base.Foo == Foo) ; // $ Alert
         if (Foo == new CompareIdenticalValues().Foo) ;
 
         var x = "Abc";
@@ -20,45 +20,45 @@ class CompareIdenticalValues : Super
         var temp = x == x; // BAD: but flagged by cs/constant-comparison
 
         double d = double.NaN;
-        if (d == d) ; // !double.IsNan(d)
-        if (d <= d) ; // !double.IsNan(d), but unlikely to be intentional
-        if (d >= d) ; // !double.IsNan(d), but unlikely to be intentional
-        if (d != d) ; // double.IsNan(d)
-        if (d > d) ; // always false
-        if (d < d) ; // always false
+        if (d == d) ; // $ Alert // !double.IsNan(d)
+        if (d <= d) ; // $ Alert // !double.IsNan(d), but unlikely to be intentional
+        if (d >= d) ; // $ Alert // !double.IsNan(d), but unlikely to be intentional
+        if (d != d) ; // $ Alert // double.IsNan(d)
+        if (d > d) ; // $ Alert // always false
+        if (d < d) ; // $ Alert // always false
 
         float f = float.NaN;
-        if (f == f) ; // !float.IsNan(f)
-        if (f <= f) ; // !float.IsNan(f), but unlikely to be intentional
-        if (f >= f) ; // !float.IsNan(f), but unlikely to be intentional
-        if (f != f) ; // float.IsNan(f)
-        if (f > f) ; // always false
-        if (f < f) ; // always false
+        if (f == f) ; // $ Alert // !float.IsNan(f)
+        if (f <= f) ; // $ Alert // !float.IsNan(f), but unlikely to be intentional
+        if (f >= f) ; // $ Alert // !float.IsNan(f), but unlikely to be intentional
+        if (f != f) ; // $ Alert // float.IsNan(f)
+        if (f > f) ; // $ Alert // always false
+        if (f < f) ; // $ Alert // always false
 
         int i = 0;
         if (i == i) ;  // BAD: but flagged by cs/constant-condition
         if (i != i) ;  // BAD: but flagged by cs/constant-condition
 
         CompareIdenticalValues c = null;
-        c.Prop.Equals(c.Prop);
-        Equals(c.Prop.Prop.Prop.Foo + 2, c.Prop.Prop.Prop.Foo + 2);
+        c.Prop.Equals(c.Prop); // $ Alert
+        Equals(c.Prop.Prop.Prop.Foo + 2, c.Prop.Prop.Prop.Foo + 2); // $ Alert
         Equals(c.Prop.Prop.Prop.Foo, c.Prop.Prop.Foo);
 
         if (base.Bar == Bar) ;
-        if (Bar == this.Bar) ;
-        Equals(this);
+        if (Bar == this.Bar) ; // $ Alert
+        Equals(this); // $ Alert
 
         if (1 + 1 == 2) ;  // BAD: but flagged by cs/constant-condition
         if (1 + 1 == 3) ;
         if (0 == 1) ;
 
         var a = new int[0];
-        if (a[0] == a[0]) ;
+        if (a[0] == a[0]) ; // $ Alert
 
-        if (this.Bar[0] == Bar[1 - 1]) ;
+        if (this.Bar[0] == Bar[1 - 1]) ; // $ Alert
         if (this.Bar[0] == Bar[1]) ;
 
-        if (this.Prop[Foo] == Prop[this.Foo]) ;
+        if (this.Prop[Foo] == Prop[this.Foo]) ; // $ Alert
         if (this.Prop[0] == Prop[1]) ;
     }
 
@@ -73,17 +73,17 @@ class CompareIdenticalValues : Super
 
     public void IsBoxedWrong1<T>(T x) where T : struct
     {
-        ReferenceEquals(x, x);
+        ReferenceEquals(x, x); // $ Alert
     }
 
     public void IsBoxedWrong2<T>(T x) where T : class
     {
-        ReferenceEquals(x, x);
+        ReferenceEquals(x, x); // $ Alert
     }
 
     public void IsBoxedWrong3<T>(T x) where T : Super
     {
-        ReferenceEquals(x, x);
+        ReferenceEquals(x, x); // $ Alert
     }
 
     public int this[int i] { get { return 0; } }

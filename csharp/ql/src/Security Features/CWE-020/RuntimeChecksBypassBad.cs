@@ -16,6 +16,6 @@ public class PersonBad : ISerializable
     [OnDeserializing]
     void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
     {
-        Age = info.GetInt32("age");  // BAD - write is unsafe
+        Age = info.GetInt32("age");  // $ Alert // BAD - write is unsafe
     }
 }
