@@ -26,6 +26,12 @@ use query::QueryNode;
 /// without colliding with the impls for plain integers.
 ///
 /// Use `id.0` (or `id.into()`) to obtain the raw arena index.
+///
+/// Implements [`IntoIterator`] as a singleton (`iter::once(self)`)
+/// so that a bare `Id` can be used interchangeably with `Option<Id>`
+/// / `Vec<Id>` in places that expect an iterable of ids (e.g.
+/// [`crate::build::BuildCtx::translate`] and the field-splice
+/// interpolation via [`IntoFieldIds`]).
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize)]
 pub struct Id(pub usize);
@@ -42,6 +48,14 @@ impl From<Id> for usize {
     }
 }
 
+impl IntoIterator for Id {
+    type Item = Id;
+    type IntoIter = std::iter::Once<Id>;
+    fn into_iter(self) -> Self::IntoIter {
+        std::iter::once(self)
+    }
+}
+
 /// Field and Kind ids are provided by tree-sitter
 type FieldId = u16;
 type KindId = u16;
@@ -49,21 +63,16 @@ type KindId = u16;
 /// Trait for values that can be appended to a field's id list inside a
 /// `tree!`/`trees!`/`rule!` template (in `{expr}` placeholders).
 ///
-/// `Id` pushes a single id; the blanket impl for
-/// `IntoIterator<Item: Into<Id>>` handles `Vec<Id>`, `Option<Id>`,
-/// arbitrary iterators yielding `Id`, etc.
+/// The blanket impl for `IntoIterator<Item: Into<Id>>` handles all
+/// current shapes: `Vec<Id>`, `Option<Id>`, arbitrary iterators
+/// yielding `Id`, and a bare `Id` itself (which is `IntoIterator`
+/// via a singleton).
 ///
 /// This lets `{expr}` interpolate any of these shapes without a
 /// dedicated splice syntax — the macro emits the same trait-dispatched
 /// call regardless of the value's type.
 pub trait IntoFieldIds {
     fn extend_into(self, out: &mut Vec<Id>);
-}
-
-impl IntoFieldIds for Id {
-    fn extend_into(self, out: &mut Vec<Id>) {
-        out.push(self);
-    }
 }
 
 impl<I, T> IntoFieldIds for I
