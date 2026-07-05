@@ -13,7 +13,7 @@ app.get('/check-with-axios', req => {
     axios.get("test.com/" + req.query.tainted); // OK
   }
   if (req.query.tainted.match(/^.*$/)) { // anything
-    axios.get("test.com/" + req.query.tainted); // SSRF - False Negative
+    axios.get("test.com/" + req.query.tainted); // $ Alert // SSRF - False Negative
   }
 
   const baseURL = "test.com/"
@@ -21,24 +21,24 @@ app.get('/check-with-axios', req => {
     axios.get(baseURL + req.params.tainted); // OK
   }
   if (!isValidPath(req.params.tainted) ) {
-    axios.get(baseURL + req.params.tainted); // SSRF
+    axios.get(baseURL + req.params.tainted); // $ Alert // SSRF
   } else {
     axios.get(baseURL + req.params.tainted); // OK
   }
 
   // Blacklists are not safe
   if (!req.query.tainted.match(/^[/\.%]+$/)) {
-    axios.get("test.com/" + req.query.tainted); // SSRF
+    axios.get("test.com/" + req.query.tainted); // $ Alert // SSRF
   }
   if (!isInBlacklist(req.params.tainted) ) {
-    axios.get(baseURL + req.params.tainted); // SSRF
+    axios.get(baseURL + req.params.tainted); // $ Alert // SSRF
   }
 
   if (!isValidPath(req.params.tainted)) {
     return;
   }
 
-  axios.get("test.com/" + req.query.tainted); // OK - False Positive
+  axios.get("test.com/" + req.query.tainted); // $ Alert // OK - False Positive
 
   if (req.query.tainted.matchAll(/^[0-9a-z]+$/g)) { // letters and numbers
     axios.get("test.com/" + req.query.tainted); // OK
@@ -58,7 +58,7 @@ app.get('/check-with-axios', req => {
     axios.get(baseURL + req.params.tainted); // OK
   }
   if (!isValidPathMatchAll(req.params.tainted) ) {
-    axios.get(baseURL + req.params.tainted); // NOT OK - SSRF
+    axios.get(baseURL + req.params.tainted); // $ Alert // NOT OK - SSRF
   } else {
     axios.get(baseURL + req.params.tainted); // OK
   }
