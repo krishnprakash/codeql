@@ -200,8 +200,9 @@ impl<C: Clone> BuildCtx<'_, C> {
     /// Use for the rare rule that needs to translate a subtree under a
     /// modified context *and then continue using its own (unmodified)
     /// context afterwards*. For rules where the modified translation
-    /// is the last use of `ctx`, mutate `ctx` in place — the
-    /// framework's rule-boundary save/restore cleans up on rule exit.
+    /// is the last use of `ctx`, mutate `ctx` in place — the framework
+    /// invokes each rule with a private clone of the user context, so
+    /// mutations are discarded on rule exit anyway.
     ///
     /// Example: an outer rule that translates one child subtree with a
     /// reset context, then continues with the outer context intact:

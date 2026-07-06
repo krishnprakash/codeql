@@ -60,10 +60,11 @@ impl SwiftContext {
     /// clearing here per-field.
     ///
     /// Called before recursively translating a body / initializer
-    /// slot. Most rules mutate `ctx` in place — the framework's
-    /// rule-boundary snapshot/restore cleans up on exit. Rules that
-    /// need the outer context intact *after* the reset-and-translate
-    /// (see e.g. the `property_binding` willSet/didSet rule) wrap the
+    /// slot. Most rules mutate `ctx` in place — the framework invokes
+    /// each rule with a private clone of the user context, so
+    /// mutations are discarded on rule exit anyway. Rules that need
+    /// the outer context intact *after* the reset-and-translate (see
+    /// e.g. the `property_binding` willSet/didSet rule) wrap the
     /// mutation in `ctx.scoped(...)` instead.
     fn reset(&mut self) {
         *self = SwiftContext::default();

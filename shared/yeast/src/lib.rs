@@ -999,10 +999,13 @@ fn apply_repeating_rules_inner<C: Clone>(
         if Some(rule_ptr) == skip_rule {
             continue;
         }
-        // Snapshot the user context before invoking the rule so that any
-        // mutations the rule makes are visible during recursive translation
-        // of its result, but not leaked to the parent's siblings.
-        let snapshot = user_ctx.clone();
+        // Give each rule attempt a private clone of the user context.
+        // Any mutations the rule makes are visible to its transform and
+        // to the recursive translation of its result, but never leak
+        // back to the parent — the clone is simply dropped when we
+        // return. This is also `?`-safe: an error return drops `local`
+        // without touching the caller's `user_ctx`.
+        let mut local = user_ctx.clone();
         // Repeating rules don't need a real translator: their captures
         // aren't auto-translated (Repeating preserves the input schema),
         // and `ctx.translate(id)` errors if invoked from a Repeating
@@ -1010,7 +1013,7 @@ fn apply_repeating_rules_inner<C: Clone>(
         let translator = TranslatorHandle {
             inner: TranslatorImpl::Repeating,
         };
-        let try_result = rule.try_rule(ast, id, fresh, user_ctx, translator)?;
+        let try_result = rule.try_rule(ast, id, fresh, &mut local, translator)?;
         if let Some(result_node) = try_result {
             // For non-repeated rules, suppress further application of *this*
             // rule on the result root, so a rule whose output matches its own
@@ -1022,19 +1025,17 @@ fn apply_repeating_rules_inner<C: Clone>(
                 results.extend(apply_repeating_rules_inner(
                     index,
                     ast,
-                    user_ctx,
+                    &mut local,
                     node,
                     fresh,
                     rewrite_depth + 1,
                     next_skip,
                 )?);
             }
-            *user_ctx = snapshot;
             return Ok(results);
         }
-        // Rule didn't match; restore any speculative changes (none expected
-        // since try_rule only mutates on match, but be defensive).
-        *user_ctx = snapshot;
+        // Rule didn't match; `local` is dropped as we loop to the next
+        // rule.
     }
 
     // Take the parent's fields by ownership: the recursion will rewrite
@@ -1116,11 +1117,13 @@ fn apply_one_shot_rules_inner<C: Clone>(
 
     for rule in index.rules_for_kind(node_kind) {
         if let Some(captures) = rule.try_match(ast, id)? {
-            // Snapshot the user context before invoking the rule so that any
-            // mutations the rule (or its transitively-translated captures)
-            // make are visible during this rule's transform, but not leaked
-            // to the parent's siblings.
-            let snapshot = user_ctx.clone();
+            // Give the rule a private clone of the user context. Any
+            // mutations the rule (or its transitively-translated
+            // captures) make are visible during this rule's transform,
+            // but never leak back — the clone is dropped when we
+            // return. `?`-safe: an error return drops `local` without
+            // touching the caller's `user_ctx`.
+            let mut local = user_ctx.clone();
             // Build the translator handle the transform will use to
             // recursively translate captures (or, for macro-generated
             // rules, the auto-translate prefix uses it to translate every
@@ -1133,8 +1136,7 @@ fn apply_one_shot_rules_inner<C: Clone>(
                     matched_root: id,
                 },
             };
-            let result = rule.run_transform(ast, captures, id, fresh, user_ctx, translator)?;
-            *user_ctx = snapshot;
+            let result = rule.run_transform(ast, captures, id, fresh, &mut local, translator)?;
             return Ok(result);
         }
     }
