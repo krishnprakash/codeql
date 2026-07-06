@@ -1,0 +1,55 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@rules_swift//swift:swift.bzl", "swift_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The pinned Swift version, shared with the local `cargo` build and
+# `swift/Package.swift`. Referenced by the `swift.toolchain` extension in
+# //:MODULE.bazel via `swift_version_file`.
+exports_files([".swift-version"])
+
+# The Swift FFI shim: wraps swift-syntax and exposes a small C ABI
+# (`ssr_parse_json` / `ssr_string_free`). Built with the hermetic Swift
+# toolchain registered in //:MODULE.bazel; provides a `CcInfo` that the Rust
+# targets below link against.
+swift_library(
+    name = "swift_syntax_ffi",
+    srcs = ["swift/Sources/SwiftSyntaxFFI/SwiftSyntaxFFI.swift"],
+    module_name = "SwiftSyntaxFFI",
+    deps = [
+        "@swift-syntax//:SwiftParser",
+        "@swift-syntax//:SwiftSyntax",
+    ],
+)
+
+# Safe Rust bindings on top of the C ABI. `build.rs` is intentionally *not*
+# wired up here (no `cargo_build_script`): under Bazel the Swift side is
+# provided by `:swift_syntax_ffi`, whereas `build.rs` only exists to build the
+# Swift shim in the local `cargo` workflow.
+rust_library(
+    name = "swift_syntax_rs",
+    srcs = ["src/lib.rs"],
+    edition = "2024",
+    deps = [":swift_syntax_ffi"],
+)
+
+rust_binary(
+    name = "swift-syntax-parse",
+    srcs = ["src/main.rs"],
+    # The Swift toolchain propagates a runfiles-relative RPATH to its runtime
+    # `.so`s via `swift_syntax_ffi`'s `CcInfo`, but (unlike `swift_binary`)
+    # `rust_binary` does not copy those libraries into runfiles. Add the
+    # toolchain files as `data` so the runtime is found at execution time.
+    # (rules_swift does not yet support statically linking the runtime.)
+    data = ["@swift_toolchain_ubuntu24.04//:files"],
+    edition = "2024",
+    deps = [":swift_syntax_rs"],
+)
+
+rust_test(
+    name = "swift_syntax_rs_test",
+    size = "small",
+    crate = ":swift_syntax_rs",
+    data = ["@swift_toolchain_ubuntu24.04//:files"],
+    edition = "2024",
+)

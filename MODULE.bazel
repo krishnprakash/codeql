@@ -24,13 +24,15 @@ bazel_dep(name = "rules_python", version = "1.9.0")
 bazel_dep(name = "rules_shell", version = "0.7.1")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "abseil-cpp", version = "20260107.1", repo_name = "absl")
-bazel_dep(name = "nlohmann_json", version = "3.11.3", repo_name = "json")
+bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.1", repo_name = "json")
 bazel_dep(name = "fmt", version = "12.1.0-codeql.1")
 bazel_dep(name = "rules_kotlin", version = "2.2.2-codeql.1")
 bazel_dep(name = "gazelle", version = "0.50.0")
 bazel_dep(name = "rules_dotnet", version = "0.21.5-codeql.1")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "rules_rust", version = "0.69.0")
+bazel_dep(name = "rules_swift", version = "4.0.0-rc4")
+bazel_dep(name = "swift-syntax", version = "602.0.0.bcr.2")
 bazel_dep(name = "zstd", version = "1.5.7.bcr.1")
 
 bazel_dep(name = "buildifier_prebuilt", version = "6.4.0", dev_dependency = True)
@@ -217,6 +219,37 @@ use_repo(
     "swift-prebuilt-macos-download-only",
     "swift-resource-dir-linux",
     "swift-resource-dir-macos",
+)
+
+# Hermetic Swift toolchain (from swift.org) for building the `swift-syntax`
+# based Rust wrapper in `unified/swift-syntax-rs`. This is the official
+# `rules_swift` standalone-toolchain extension and is independent of the
+# patched prebuilt toolchain wired up via `swift_deps` above.
+#
+# Bazel cannot auto-select between Linux distributions, so the toolchain is
+# registered explicitly for the distribution our CI runs on (ubuntu24.04,
+# x86_64). Add further platforms here if CI grows to cover them.
+#
+# We register the `exec` toolchain (normal host compilation, targeting
+# linux/x86_64) rather than the `embedded` one, which targets `os:none`
+# (Embedded Swift) and would not match a normal host build.
+#
+# The Swift version is read from `unified/swift-syntax-rs/.swift-version`, which
+# is the single source of truth shared with the local `cargo` build (via
+# swiftly / any Swift install) and `swift/Package.swift`.
+swift = use_extension("@rules_swift//swift:extensions.bzl", "swift")
+swift.toolchain(
+    name = "swift_toolchain",
+    swift_version_file = "//unified/swift-syntax-rs:.swift-version",
+)
+use_repo(
+    swift,
+    "swift_toolchain",
+    "swift_toolchain_ubuntu24.04",
+)
+
+register_toolchains(
+    "@swift_toolchain//:swift_toolchain_exec_ubuntu24.04",
 )
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
