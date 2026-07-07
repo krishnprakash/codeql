@@ -333,6 +333,28 @@ impl Ast {
         ast
     }
 
+    /// Construct an empty AST backed by `schema`, for building a tree
+    /// programmatically from a source other than a tree-sitter parse (e.g. an
+    /// external parser's output). Populate it with [`Ast::create_node`] /
+    /// [`Ast::create_node_with_range`] and then designate the root with
+    /// [`Ast::set_root`]. The `schema` must already have every node kind and
+    /// field name registered (see [`schema::Schema`]).
+    pub fn with_schema(schema: schema::Schema) -> Self {
+        Self {
+            root: Id(0),
+            nodes: Vec::new(),
+            schema,
+            source: Vec::new(),
+        }
+    }
+
+    /// Set the original source bytes, used to resolve `NodeContent::Range`
+    /// nodes to text. Nodes built with inline `NodeContent::DynamicString`
+    /// content do not require this.
+    pub fn set_source(&mut self, source: Vec<u8>) {
+        self.source = source;
+    }
+
     /// Returns the source text for `id`, resolving `NodeContent::Range`
     /// against the stored source bytes when available.
     pub fn source_text(&self, id: Id) -> String {
@@ -461,6 +483,24 @@ impl Ast {
             source_range,
         });
         Id(id)
+    }
+
+    /// Register a named node kind, returning its id (idempotent). Lets callers
+    /// build an AST in a single pass, registering kinds as nodes are created
+    /// rather than pre-populating the schema.
+    pub fn register_kind(&mut self, name: &str) -> KindId {
+        self.schema.register_kind(name)
+    }
+
+    /// Register an anonymous (unnamed) token kind, returning its id
+    /// (idempotent). Anonymous tokens are keyed by their text (e.g. `"func"`).
+    pub fn register_unnamed_kind(&mut self, name: &str) -> KindId {
+        self.schema.register_unnamed_kind(name)
+    }
+
+    /// Register a field name, returning its id (idempotent).
+    pub fn register_field(&mut self, name: &str) -> FieldId {
+        self.schema.register_field(name)
     }
 
     fn union_source_range_of_children(
@@ -604,7 +644,7 @@ impl Ast {
         }
     }
 
-    fn id_for_unnamed_node_kind(&self, kind: &str) -> Option<KindId> {
+    pub fn id_for_unnamed_node_kind(&self, kind: &str) -> Option<KindId> {
         let id = self.schema.id_for_unnamed_node_kind(kind).unwrap_or(0);
         if id == 0 {
             None

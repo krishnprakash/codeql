@@ -28,9 +28,16 @@ swift_library(
 # Swift shim in the local `cargo` workflow.
 rust_library(
     name = "swift_syntax_rs",
-    srcs = ["src/lib.rs"],
+    srcs = glob(
+        ["src/**/*.rs"],
+        exclude = ["src/main.rs"],
+    ),
     edition = "2024",
-    deps = [":swift_syntax_ffi"],
+    deps = [
+        ":swift_syntax_ffi",
+        "//shared/yeast",
+        "@vendor_ts__serde_json-1.0.145//:serde_json",
+    ],
 )
 
 rust_binary(

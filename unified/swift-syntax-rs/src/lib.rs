@@ -5,6 +5,8 @@
 //! against `SwiftSyntax`/`SwiftParser` and exposes a tiny C ABI. This module
 //! provides safe Rust bindings on top of that ABI.
 
+pub mod yeast_adapter;
+
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
