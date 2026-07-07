@@ -1,4 +1,3 @@
-# Copyright © 2026 Apple Inc.
 extensions:
   - addsTo:
       pack: codeql/java-all
