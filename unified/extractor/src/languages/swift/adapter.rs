@@ -1,6 +1,10 @@
-//! Adapter that converts the swift-syntax JSON tree (see [`crate::parse_to_json`])
-//! into a [`yeast::Ast`], the in-memory format the CodeQL desugaring rules
-//! operate on.
+//! Converts the swift-syntax JSON syntax tree into a [`yeast::Ast`], the
+//! in-memory format the CodeQL desugaring rules operate on.
+//!
+//! The JSON tree is produced by the `swift-syntax-rs` crate's Swift FFI shim
+//! (`parse_to_json`). This module is pure Rust (only `yeast` + `serde_json`),
+//! so the extractor consumes swift-syntax output without pulling in the Swift
+//! toolchain (the JSON is produced out-of-process).
 //!
 //! The mapping mirrors tree-sitter's node model, which is what yeast (and the
 //! extractor's rewrite rules) expect:
@@ -15,9 +19,8 @@
 //!   list-valued field maps directly to that field holding several children.
 //!
 //! Note: this preserves swift-syntax's own kind/field names. Aligning those
-//! names with the tree-sitter-swift schema (so the existing rewrite rules fire)
-//! is a separate, later step; this module is only concerned with getting the
-//! tree into yeast's format.
+//! names with the tree-sitter-swift schema (so the rewrite rules in
+//! [`super::swift`] fire) is done incrementally in the rules.
 
 use std::collections::BTreeMap;
 
@@ -407,42 +410,6 @@ mod tests {
                 .iter()
                 .all(|n| n.kind_name() != "lineComment"),
             "comment should not appear as an AST node"
-        );
-    }
-
-    /// End-to-end: real Swift source parsed by the shim, then adapted into a
-    /// `yeast::Ast`. Requires the Swift toolchain (like the crate's FFI tests).
-    #[test]
-    fn end_to_end_from_swift_source() {
-        let json = crate::parse_to_json("func f(n: Int) -> Int { return n } // trailing")
-            .expect("parsing should succeed");
-        let adapted = json_to_ast(&json).expect("adapter should succeed");
-        let ast = &adapted.ast;
-
-        let root = ast.get_node(ast.get_root()).expect("root exists");
-        assert_eq!(root.kind_name(), "sourceFile");
-
-        // The tree contains a `functionDecl` layout node and an anonymous
-        // `func` keyword token keyed by its text.
-        let mut kinds: Vec<&str> = ast.nodes().iter().map(|n| n.kind_name()).collect();
-        kinds.sort_unstable();
-        assert!(
-            kinds.contains(&"functionDecl"),
-            "expected a functionDecl node, got kinds: {kinds:?}"
-        );
-        assert!(
-            kinds.contains(&"func"),
-            "expected an anonymous `func` token, got kinds: {kinds:?}"
-        );
-
-        // The trailing comment is recovered into the side channel.
-        assert!(
-            adapted
-                .trivia
-                .iter()
-                .any(|t| t.kind == "lineComment" && t.text == "// trailing"),
-            "expected the trailing comment in the trivia side channel, got: {:?}",
-            adapted.trivia
         );
     }
 }

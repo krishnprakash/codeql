@@ -524,10 +524,15 @@ impl Ast {
         self.schema.register_field(name)
     }
 
-    fn union_source_range_of_children(
-        &self,
-        fields: &BTreeMap<FieldId, Vec<Id>>,
-    ) -> Option<Range> {
+    /// Register every kind and field name from `schema` into this AST's schema
+    /// (idempotent). Used before desugaring an externally-built AST so that
+    /// rules can build output nodes whose kind/field names come from the
+    /// desugarer's output schema.
+    pub fn register_names_from_schema(&mut self, schema: &schema::Schema) {
+        self.schema.register_names_from(schema);
+    }
+
+    fn union_source_range_of_children(&self, fields: &BTreeMap<FieldId, Vec<Id>>) -> Option<Range> {
         let mut start_byte: Option<usize> = None;
         let mut end_byte: Option<usize> = None;
         let mut start_point = Point { row: 0, column: 0 };
@@ -1448,6 +1453,18 @@ impl<'a, C: Clone + Default> Runner<'a, C> {
         let mut user_ctx = C::default();
         self.run_with_ctx(input, &mut user_ctx)
     }
+
+    /// Run all phases over an already-built `ast`, using the default context
+    /// (`C::default()`). Unlike [`run_from_tree`](Self::run_from_tree), the AST
+    /// is supplied by the caller (e.g. built from an external parser's output)
+    /// rather than constructed from a tree-sitter tree. The caller is
+    /// responsible for ensuring the AST's schema knows any output kind/field
+    /// names the rules will build (see [`Ast::register_names_from_schema`]).
+    pub fn run_from_ast(&self, mut ast: Ast) -> Result<Ast, String> {
+        let mut user_ctx = C::default();
+        self.run_phases(&mut ast, &mut user_ctx)?;
+        Ok(ast)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1470,6 +1487,12 @@ pub trait Desugarer: Send + Sync {
     /// Parse `tree` against `source` and run the desugaring pipeline.
     /// Each call constructs a fresh default user context internally.
     fn run_from_tree(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Result<Ast, String>;
+
+    /// Run the desugaring pipeline over an already-built `ast` (e.g. produced
+    /// by an external parser rather than tree-sitter). The desugarer ensures
+    /// the AST's schema knows its output kind/field names before running the
+    /// rules. Each call constructs a fresh default user context internally.
+    fn run_from_ast(&self, ast: Ast) -> Result<Ast, String>;
 }
 
 /// A concrete [`Desugarer`] backed by a [`DesugaringConfig<C>`] for a
@@ -1506,5 +1529,13 @@ impl<C: Default + Clone + Send + Sync + 'static> Desugarer for ConcreteDesugarer
     fn run_from_tree(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Result<Ast, String> {
         let runner = Runner::with_schema(self.language.clone(), &self.schema, &self.config.phases);
         runner.run_from_tree(tree, source)
+    }
+
+    fn run_from_ast(&self, mut ast: Ast) -> Result<Ast, String> {
+        // The AST was built against its own (external) schema; make sure the
+        // output kind/field names the rules build are resolvable in it.
+        ast.register_names_from_schema(&self.schema);
+        let runner = Runner::with_schema(self.language.clone(), &self.schema, &self.config.phases);
+        runner.run_from_ast(ast)
     }
 }

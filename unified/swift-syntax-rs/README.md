@@ -171,26 +171,12 @@ echo 'let x = 1' | cargo run --bin swift-syntax-parse
 
 ## Converting to a yeast AST
 
-For use in the CodeQL extractor, the JSON tree can be converted into a
-[`yeast::Ast`](../../shared/yeast) — the in-memory format the extractor's
-rewrite rules operate on — via [`yeast_adapter::json_to_ast`](src/yeast_adapter.rs):
-
-```rust
-let json = swift_syntax_rs::parse_to_json("let x = 1")?;
-let adapted = swift_syntax_rs::yeast_adapter::json_to_ast(&json)?;
-let ast = adapted.ast; // the yeast::Ast
-let comments = adapted.trivia; // side-channel comment/unexpectedText tokens
-```
-
-The adapter mirrors tree-sitter's node model, which is what yeast expects:
-layout nodes and varying tokens (identifiers, literals, operators) become
-**named** nodes; fixed tokens (keywords, punctuation) become **anonymous**
-nodes keyed by their text. Comments (and `unexpectedText`) are harvested into a
-side channel (`adapted.trivia`) during the same traversal rather than embedded
-in the tree, matching how the extractor treats tree-sitter `extra` nodes. It
-preserves swift-syntax's own kind/field names — aligning them with the
-tree-sitter-swift schema so the existing rewrite rules fire is a separate,
-later step.
+The JSON tree is consumed by the CodeQL extractor, which converts it into a
+[`yeast::Ast`](../../shared/yeast) — the in-memory format its rewrite rules
+operate on. That adapter is a pure-Rust module living in the extractor
+(`unified/extractor/src/languages/swift/adapter.rs`), so the extractor never
+needs the Swift toolchain: it consumes the JSON produced out-of-process by this
+crate's `parse_to_json` / the `swift-syntax-parse` binary.
 
 ## Layout
 
@@ -198,5 +184,4 @@ later step.
 - `build.rs` — builds the Swift package and emits link/rpath flags (local `cargo` only).
 - `BUILD.bazel` — Bazel targets for the hermetic CI build (swift_library + rust targets).
 - `src/lib.rs` — safe Rust bindings (`parse_to_json`).
-- `src/yeast_adapter.rs` — converts the JSON tree into a `yeast::Ast`.
 - `src/main.rs` — demo CLI.

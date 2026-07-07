@@ -3,9 +3,12 @@
 //!
 //! The heavy lifting is done by a small Swift shim (see `swift/`) that links
 //! against `SwiftSyntax`/`SwiftParser` and exposes a tiny C ABI. This module
-//! provides safe Rust bindings on top of that ABI.
-
-pub mod yeast_adapter;
+//! provides safe Rust bindings on top of that ABI, exposing [`parse_to_json`]
+//! which turns Swift source into a JSON syntax tree.
+//!
+//! Converting that JSON into a `yeast::Ast` (for the CodeQL extractor) is done
+//! by the extractor's own pure-Rust adapter module, keeping the Swift toolchain
+//! out of the extractor's build.
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
