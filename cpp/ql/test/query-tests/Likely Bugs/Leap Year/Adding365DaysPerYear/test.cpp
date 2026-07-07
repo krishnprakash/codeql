@@ -214,8 +214,8 @@ void checkedExample()
 	qwLongTime += 365 * 24 * 60 * 60 * 10000000LLU;
 
 	// copy back to a FILETIME
-	ft.dwLowDateTime = (DWORD)(qwLongTime & 0xFFFFFFFF); // $ Alert // GOOD [FALSE POSITIVE]
-	ft.dwHighDateTime = (DWORD)(qwLongTime >> 32); // $ Alert // GOOD [FALSE POSITIVE]
+	ft.dwLowDateTime = (DWORD)(qwLongTime & 0xFFFFFFFF); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
+	ft.dwHighDateTime = (DWORD)(qwLongTime >> 32); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 
 	// convert back to SYSTEMTIME for display or other usage
 	if (FileTimeToSystemTime(&ft, &st) == 0)

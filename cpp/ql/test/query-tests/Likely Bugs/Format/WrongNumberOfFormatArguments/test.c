@@ -29,7 +29,7 @@ void test(int i, const char *str)
 		printf("%2$*1$d", width); // $ Alert[cpp/wrong-number-format-arguments] // BAD (too few format arguments)
 
 		printf("%1$*2$d", 0, num, width); // $ Alert[cpp/too-many-format-arguments] // BAD (too many format arguments) [INCORRECT MESSAGE]
-		printf("%1$*2$d", num, width); // $ Alert[cpp/too-many-format-arguments] // GOOD [FALSE POSITIVE]
+		printf("%1$*2$d", num, width); // $ SPURIOUS: Alert[cpp/too-many-format-arguments] // GOOD [FALSE POSITIVE]
 		printf("%1$*2$d", width); // BAD (too few format arguments) [NOT DETECTED]
 	}
 	{
@@ -37,7 +37,7 @@ void test(int i, const char *str)
 		float num;
 
 		printf("%2$.*4$f", 0, 0, num, 0, precision); // $ Alert[cpp/too-many-format-arguments] // BAD (too many format arguments) [INCORRECT MESSAGE]
-		printf("%2$.*4$f", 0, num, 0, precision); // $ Alert[cpp/too-many-format-arguments] // GOOD [FALSE POSITIVE]
+		printf("%2$.*4$f", 0, num, 0, precision); // $ SPURIOUS: Alert[cpp/too-many-format-arguments] // GOOD [FALSE POSITIVE]
 		printf("%2$.*4$f", num, 0, precision); // $ Alert[cpp/too-many-format-arguments] // BAD (too few format arguments) [INCORRECT MESSAGE]
 	}
 

@@ -261,7 +261,7 @@ int overeager_wraparound(unsigned int u32bound, unsigned long long u64bound) {
 
 int negative_zero(double dbl) {
   if (dbl >= 0) {
-    return dbl >= -dbl; // $ Alert[cpp/constant-comparison] // GOOD [FALSE POSITIVE]
+    return dbl >= -dbl; // $ SPURIOUS: Alert[cpp/constant-comparison] // GOOD [FALSE POSITIVE]
   }
   return 0;
 }

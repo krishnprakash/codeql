@@ -135,7 +135,7 @@ char testStrncmp2(char *arr) {
     if(strncmp(arr, "<test>", 6) == 0) {
         arr += 6; // $ Alert
     }
-    return *arr; // $ Sink // GOOD [FALSE POSITIVE]
+    return *arr; // $ SPURIOUS: Sink // GOOD [FALSE POSITIVE]
 }
 
 void testStrncmp1() {
@@ -144,7 +144,7 @@ void testStrncmp1() {
 }
 
 void countdownBuf1(int **p) {
-  *--(*p) = 1; // $ Sink // GOOD [FALSE POSITIVE]
+  *--(*p) = 1; // $ SPURIOUS: Sink // GOOD [FALSE POSITIVE]
   *--(*p) = 2; // GOOD
   *--(*p) = 3; // GOOD
   *--(*p) = 4; // GOOD
@@ -258,7 +258,7 @@ void call_use(unsigned char* p, int n) {
     if(n == 3) {
         unsigned char x = p[0];
         unsigned char y = p[1];
-        unsigned char z = p[2]; // $ Alert // GOOD [FALSE POSITIVE]: `call_use(buffer2, 2)` won't reach this point.
+        unsigned char z = p[2]; // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]: `call_use(buffer2, 2)` won't reach this point.
         use(x, y, z);
     }
 }
@@ -296,7 +296,7 @@ int guardingCallee(int *arr, int size) {
 
     int sum;
     for (int i = 0; i < size; i++) {
-        sum += arr[i]; // $ Alert // GOOD [FALSE POSITIVE] - guarded by size
+        sum += arr[i]; // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE] - guarded by size
     }
     return sum;
 }
@@ -319,7 +319,7 @@ void correlatedCondition(int num) {
             end = temp + 56;
         }
         else if (num < 64) {
-            end = temp + 64; // $ Alert // GOOD [FALSE POSITVE]
+            end = temp + 64; // $ SPURIOUS: Alert // GOOD [FALSE POSITVE]
         }
         char *temp2 = temp + num;
         while(temp2 != end) { // $ Sink

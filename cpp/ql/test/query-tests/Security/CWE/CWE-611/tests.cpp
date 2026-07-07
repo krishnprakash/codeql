@@ -101,7 +101,7 @@ void test9(InputSource &data) {
 		XercesDOMParser &q = *p;
 
 		p->setDisableDefaultEntityResolution(true);
-		q.parse(data); // $ Alert // GOOD [FALSE POSITIVE]
+		q.parse(data); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	}
 }
 

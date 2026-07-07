@@ -163,7 +163,7 @@ int Foo::test(int (*baz)(int))
 
 	if (1) foo(
 		i++
-	), j++; // $ Alert // GOOD? [FALSE POSITIVE]
+	), j++; // $ SPURIOUS: Alert // GOOD? [FALSE POSITIVE]
 
 	if (1) baz(
 		i++

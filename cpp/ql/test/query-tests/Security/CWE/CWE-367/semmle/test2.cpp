@@ -206,7 +206,7 @@ void test2_11(const char *path, int arg)
 
 	if (stat(path, &buf))
 	{
-		f = open(path, arg); // $ Alert // GOOD (here stat is just a redundant check that the file exists / path is valid, confirmed by the return value of open) [FALSE POSITIVE]
+		f = open(path, arg); // $ SPURIOUS: Alert // GOOD (here stat is just a redundant check that the file exists / path is valid, confirmed by the return value of open) [FALSE POSITIVE]
 		if (f == -1)
 		{
 			// handle error

@@ -73,7 +73,7 @@ public:
 	char getChar();
 };
 
-AlsoGood::AlsoGood()								// $ Alert // compliant [FALSE POSITIVE]
+AlsoGood::AlsoGood()								// $ SPURIOUS: Alert // compliant [FALSE POSITIVE]
 {
 	cp = 0;
 }

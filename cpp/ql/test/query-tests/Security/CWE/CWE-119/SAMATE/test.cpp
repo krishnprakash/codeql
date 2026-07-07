@@ -263,7 +263,7 @@ void test7(unsigned n) {
     if(!p) {
         p = (char*)malloc(++n);
     }
-    memset(p, 0, n); // $ Alert[cpp/overrun-write] // GOOD [FALSE POSITIVE]
+    memset(p, 0, n); // $ SPURIOUS: Alert[cpp/overrun-write] // GOOD [FALSE POSITIVE]
 }
 
 void test8(unsigned size, unsigned src_pos)

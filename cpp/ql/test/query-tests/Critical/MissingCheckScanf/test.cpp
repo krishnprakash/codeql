@@ -269,7 +269,7 @@ int main()
 
 		set_by_ref(i);
 		scanf("%d", &i); // $ Source[cpp/missing-check-scanf]
-		use(i); // $ Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]
+		use(i); // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]
 	}
 
 	{
@@ -277,7 +277,7 @@ int main()
 
 		set_by_ptr(&i);
 		scanf("%d", &i); // $ Source[cpp/missing-check-scanf]
-		use(i); // $ Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]
+		use(i); // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]
 	}
 
 	{
@@ -401,7 +401,7 @@ char *my_string_copy() {
     for (int i = 0; i < len; i += 2) {
 		unsigned int u;
 	    sscanf(src + i, "%2x", &u); // $ Source[cpp/missing-check-scanf]
-        *ptr++ = (char) u; // $ Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]? src+i+{0,1} are always valid %x digits, so this should be OK.
+        *ptr++ = (char) u; // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]? src+i+{0,1} are always valid %x digits, so this should be OK.
     }
 	*ptr++ = 0;
 	return DST_STRING;
@@ -413,14 +413,14 @@ void scan_and_write() {
 		if (scanf("%d", &i) < 1) { // $ Source[cpp/missing-check-scanf]
 			i = 0;
 		}
-		use(i);  // $ Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]: variable is overwritten with a default value when scanf fails
+		use(i);  // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]: variable is overwritten with a default value when scanf fails
 	}
 	{
 		int i;
 		if (scanf("%d", &i) != 1) { // $ Source[cpp/missing-check-scanf]
 			i = 0;
 		}
-		use(i);  // $ Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]: variable is overwritten with a default value when scanf fails
+		use(i);  // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD [FALSE POSITIVE]: variable is overwritten with a default value when scanf fails
 	}
 }
 
@@ -481,7 +481,7 @@ void multiple_checks() {
 
 		if (res >= 0) {
 			if (res != 0) {
-				use(i); // $ Alert[cpp/missing-check-scanf] // GOOD: checks return value [FALSE POSITIVE]
+				use(i); // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD: checks return value [FALSE POSITIVE]
 			}
 		}
 	}
@@ -492,7 +492,7 @@ void multiple_checks() {
 
 		if (res < 0) return;
 		if (res != 0) {
-			use(i); // $ Alert[cpp/missing-check-scanf] // GOOD: checks return value [FALSE POSITIVE]
+			use(i); // $ SPURIOUS: Alert[cpp/missing-check-scanf] // GOOD: checks return value [FALSE POSITIVE]
 		}
 	}
 

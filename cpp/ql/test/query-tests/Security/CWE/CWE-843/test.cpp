@@ -156,7 +156,7 @@ void test13(bool b, Cat* c) {
   // because we don't find a flow path from `a = c` to `static_cast<Cat*>(a)` because
   // the "source" (i.e., `a = c`) doesn't have an allocation.
   if(b) {
-    Cat* d = static_cast<Cat*>(a); // $ Alert // GOOD [FALSE POSITIVE]
+    Cat* d = static_cast<Cat*>(a); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
   }
 }
 

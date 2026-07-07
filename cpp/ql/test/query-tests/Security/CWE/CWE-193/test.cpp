@@ -193,23 +193,23 @@ void test11(unsigned size) {
 void test12(unsigned len, unsigned index) {
     char* p = (char *)malloc(len);
     char* end = p + len; // $ alloc=L194
-    
+
     if(p + index > end) {
         return;
     }
-    
+
     p[index] = '\0'; // $ MISSING: deref=L195->L201 // BAD [NOT DETECTED]
 }
 
 void test13(unsigned len, unsigned index) {
     char* p = (char *)malloc(len); // $ Source[cpp/invalid-pointer-deref]=r7
     char* end = p + len; // $ alloc=L205
-    
+
     char* q = p + index;
     if(q > end) {
         return;
     }
-    
+
     *q = '\0'; // $ deref=L206->L213 Alert[cpp/invalid-pointer-deref]=r7 // BAD
 }
 
@@ -764,12 +764,12 @@ void test38(unsigned size) {
     case '0':
       if (n != 1)
         error("");
-      char x = alloc[pos + 1]; // $ alloc=L754 deref=L767 Alert[cpp/invalid-pointer-deref]=r22 Alert[cpp/invalid-pointer-deref]=r23 // GOOD [FALSE POSITIVE]
+      char x = alloc[pos + 1]; // $ SPURIOUS: alloc=L754 deref=L767 Alert[cpp/invalid-pointer-deref]=r22 Alert[cpp/invalid-pointer-deref]=r23 // GOOD [FALSE POSITIVE]
       break;
     case '1':
       if (n != 2)
         error("");
-      char a = alloc[pos + 1]; // $ alloc=L754 deref=L772 Alert[cpp/invalid-pointer-deref]=r24 Alert[cpp/invalid-pointer-deref]=r25 // GOOD [FALSE POSITIVE]
+      char a = alloc[pos + 1]; // $ SPURIOUS: alloc=L754 deref=L772 Alert[cpp/invalid-pointer-deref]=r24 Alert[cpp/invalid-pointer-deref]=r25 // GOOD [FALSE POSITIVE]
       char b = alloc[pos + 2];
       break;
     }
@@ -783,7 +783,7 @@ void test38_simple(unsigned size, unsigned pos, unsigned numParams) {
   if (pos < size) {
     if (pos + numParams < size) {
       if (numParams == 1) {
-        char x = p[pos + 1]; // $ alloc=L781 deref=L786 Alert[cpp/invalid-pointer-deref]=r26 // GOOD [FALSE POSITIVE]
+        char x = p[pos + 1]; // $ SPURIOUS: alloc=L781 deref=L786 Alert[cpp/invalid-pointer-deref]=r26 // GOOD [FALSE POSITIVE]
       }
     }
   }

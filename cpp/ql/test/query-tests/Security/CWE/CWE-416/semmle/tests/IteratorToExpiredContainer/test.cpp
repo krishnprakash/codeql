@@ -854,7 +854,7 @@ struct PlusPlusReturnByValueIterator
 void test7()
 {
   PlusPlusReturnByValueIterator it;
-  it.operator++(); // $ Alert // GOOD [FALSE POSITIVE]
+  it.operator++(); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 
   it.begin();
 }

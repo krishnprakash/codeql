@@ -17,5 +17,5 @@ void test()
 
 	funPtr1(); // $ Alert // BAD
 	funPtr2(); // $ Alert // BAD
-	funPtr3(); // $ Alert // GOOD [FALSE POSITIVE]
+	funPtr3(); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 }

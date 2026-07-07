@@ -36,7 +36,7 @@ void test(char *buffer, int bufferSize)
 
 	// look for 'ab'
 	for (i = 0; i < bufferSize; i++) {
-		if ((buffer[i] == 'a') && (i < bufferSize - 1) && (buffer[i + 1] == 'b')) // $ Alert // GOOD [FALSE POSITIVE]
+		if ((buffer[i] == 'a') && (i < bufferSize - 1) && (buffer[i + 1] == 'b')) // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 			break;
 	}
 

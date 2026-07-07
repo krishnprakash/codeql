@@ -88,7 +88,7 @@ void strncat_test6() {
   char dest[60];
   dest[0] = '\0';
   // Will write `dest[0 .. 5]`
-  strncat(dest, "small", sizeof(dest)); // $ Alert // GOOD [FALSE POSITIVE]
+  strncat(dest, "small", sizeof(dest)); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
   }
 
   {
@@ -96,6 +96,6 @@ void strncat_test6() {
   memset(dest, 'a', sizeof(dest));
   dest[54] = '\0';
   // Will write `dest[54 .. 59]`
-  strncat(dest, "small", sizeof(dest)); // $ Alert // GOOD [FALSE POSITIVE]
+  strncat(dest, "small", sizeof(dest)); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
   }
 }

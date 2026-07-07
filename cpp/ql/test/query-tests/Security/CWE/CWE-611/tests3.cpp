@@ -53,7 +53,7 @@ void test3_5_init() {
 
 void test3_5(InputSource &data) {
 	test3_5_init();
-	p_3_5->parse(data); // $ Alert // GOOD [FALSE POSITIVE]
+	p_3_5->parse(data); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 }
 
 void test3_6(InputSource &data) {

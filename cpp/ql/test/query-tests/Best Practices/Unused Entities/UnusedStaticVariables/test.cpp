@@ -9,7 +9,7 @@ static int staticVar6 = 6; // $ Alert // BAD (unused)
 static __attribute__((__unused__)) int staticVar7; // GOOD (unused but this is expected)
 const int constVar8 = 8; // $ Alert // BAD (const defaults to static)
 extern const int constVar9 = 9; // GOOD
-static int staticVar10 = 10; // $ Alert // GOOD [FALSE POSITIVE] (referenced in a never instantiated template)
+static int staticVar10 = 10; // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE] (referenced in a never instantiated template)
 
 void f()
 {

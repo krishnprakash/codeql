@@ -300,7 +300,7 @@ void interproc_test_09() {
 void test_10()
 {
 	std::mutex mtx;
-	if (!mtx.try_lock()) { // $ Alert[cpp/unreleased-lock] // [FALSE POSITIVE]
+	if (!mtx.try_lock()) { // $ SPURIOUS: Alert[cpp/unreleased-lock] // [FALSE POSITIVE]
 	} else {
 		mtx.unlock();
 	}
@@ -310,7 +310,7 @@ void test_10()
 void test_11()
 {
 	std::mutex mtx;
-	if (!mtx.try_lock()) { // $ Alert[cpp/unreleased-lock] // [FALSE POSITIVE]
+	if (!mtx.try_lock()) { // $ SPURIOUS: Alert[cpp/unreleased-lock] // [FALSE POSITIVE]
 		return;
 	}
 
@@ -439,7 +439,7 @@ struct data_t {
 
 bool test_mutex(data_t *data)
 {
-	CHECK(mutex_lock(&(data->mutex))); // $ Alert[cpp/unreleased-lock] // GOOD [FALSE POSITIVE]
+	CHECK(mutex_lock(&(data->mutex))); // $ SPURIOUS: Alert[cpp/unreleased-lock] // GOOD [FALSE POSITIVE]
 	data->val = 1;
 	CHECK(mutex_unlock(&(data->mutex)));
 

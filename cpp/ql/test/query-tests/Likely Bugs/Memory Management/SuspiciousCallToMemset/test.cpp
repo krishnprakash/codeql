@@ -126,7 +126,7 @@ void myFunc(myStruct paramArray[80], myStruct &refStruct)
 	memset(&localArray, 0, sizeof(localArray)); // GOOD
 
 	memset(paramArray, 0, sizeof(myStruct) * 80); // GOOD
-	memset(paramArray, 0, sizeof(paramArray)); // $ Alert // GOOD [FALSE POSITIVE]
+	memset(paramArray, 0, sizeof(paramArray)); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	memset(&paramArray, 0, sizeof(myStruct) * 80); // $ Alert // BAD
 	memset(&paramArray, 0, sizeof(paramArray)); // BAD [NOT DETECTED]
 

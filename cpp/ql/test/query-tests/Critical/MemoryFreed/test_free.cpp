@@ -233,17 +233,17 @@ void test_loop3(char ** a, char ** b) {
         free(*a); // $ Source[cpp/use-after-free]
         a++;
     }
-    use(*a); // $ Alert[cpp/use-after-free] // GOOD [FALSE POSITIVE]
+    use(*a); // $ SPURIOUS: Alert[cpp/use-after-free] // GOOD [FALSE POSITIVE]
 
     for (;*b; b++) {
         free(*b); // $ Source[cpp/use-after-free]
     }
-    use(*b); // $ Alert[cpp/use-after-free] // GOOD [FALSE POSITIVE]
+    use(*b); // $ SPURIOUS: Alert[cpp/use-after-free] // GOOD [FALSE POSITIVE]
 }
 
 void test_deref(char **a) {
     free(*a); // $ Source[cpp/use-after-free]
-    use(*a); // $ Alert[cpp/use-after-free] // GOOD [FALSE POSITIVE]
+    use(*a); // $ SPURIOUS: Alert[cpp/use-after-free] // GOOD [FALSE POSITIVE]
 }
 
 // Refs

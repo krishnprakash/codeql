@@ -186,7 +186,7 @@ int g22() {
 }
 
 int g23() {
-	Aborting().a(); // $ Alert // GOOD [FALSE POSITIVE]
+	Aborting().a(); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 }
 
 [[__noreturn__]]

@@ -52,9 +52,9 @@ template<class T>
 class AutoContainer2
 {
 public:
-	AutoContainer2() : v(new T) // $ Alert[cpp/memory-never-freed] // GOOD [FALSE POSITIVE]
+	AutoContainer2() : v(new T) // $ SPURIOUS: Alert[cpp/memory-never-freed] // GOOD [FALSE POSITIVE]
 	{
-		ns::my_auto_ptr<T> ap(new T); // $ Alert[cpp/memory-never-freed] // GOOD [FALSE POSITIVE]
+		ns::my_auto_ptr<T> ap(new T); // $ SPURIOUS: Alert[cpp/memory-never-freed] // GOOD [FALSE POSITIVE]
 	}
 
 	ns::my_auto_ptr<T> v;
@@ -68,7 +68,7 @@ public:
 	AutoCloner(AutoCloner &from) : val(from.val) {};
 
 	ns::my_auto_ptr<AutoCloner> clone() {
-		return ns::my_auto_ptr<AutoCloner>(new AutoCloner(*this)); // $ Alert[cpp/memory-never-freed] // GOOD [FALSE POSITIVE]
+		return ns::my_auto_ptr<AutoCloner>(new AutoCloner(*this)); // $ SPURIOUS: Alert[cpp/memory-never-freed] // GOOD [FALSE POSITIVE]
 	}
 
 private:

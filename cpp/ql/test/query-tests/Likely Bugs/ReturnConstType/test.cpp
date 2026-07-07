@@ -43,10 +43,10 @@ template<typename T> class myWrapper {
 myWrapper<const char> testTemplateClass{t: 'a'};
 
 #define MYCHAR const char
-MYCHAR getAMYCHAR(); // $ Alert // FALSE POSITIVE
+MYCHAR getAMYCHAR(); // $ SPURIOUS: Alert // FALSE POSITIVE
 
 #define ID(T) T id_ (T x) {return x;}
-ID(const char); // $ Alert // FALSE POSITIVE
+ID(const char); // $ SPURIOUS: Alert // FALSE POSITIVE
 
 const float pi = 3.14159626f;
 const float &getPiRef() { return pi; } // GOOD

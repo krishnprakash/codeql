@@ -26,7 +26,7 @@ void test1(int *myIntPtr)
 	return 0;
 }
 
-union myUnion4 { // $ Alert // GOOD? [FALSE POSITIVE]
+union myUnion4 { // $ SPURIOUS: Alert // GOOD? [FALSE POSITIVE]
 	char myChar;
 	int myInt;
 };

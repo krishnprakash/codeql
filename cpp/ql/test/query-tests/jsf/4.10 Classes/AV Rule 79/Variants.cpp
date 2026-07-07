@@ -23,7 +23,7 @@ public:
 		c = d = new int; // GOOD (d is deleted)
 		e = local = new int; // BAD (e is not deleted) [NOT REPORTED]
 
-		f = new int; // $ Alert // GOOD (ID(f) is deleted) [FALSE POSITIVE]
+		f = new int; // $ SPURIOUS: Alert // GOOD (ID(f) is deleted) [FALSE POSITIVE]
 		g = ID(new int); // GOOD (g is deleted)
 	}
 

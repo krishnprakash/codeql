@@ -62,7 +62,7 @@ unsigned int test_remainder_subtract_unsigned()
 	unsigned int x = rand(); // $ Source
 	unsigned int y = x % 100; // y <= x
 
-	return x - y; // $ Alert // GOOD (as y <= x) [FALSE POSITIVE]
+	return x - y; // $ SPURIOUS: Alert // GOOD (as y <= x) [FALSE POSITIVE]
 }
 
 typedef unsigned long size_t;
@@ -143,7 +143,7 @@ int test_conditional_assignment_3()
 		y = x;
 	}
 
-	return y * c; // $ Alert // GOOD (as y <= 100) [FALSE POSITIVE]
+	return y * c; // $ SPURIOUS: Alert // GOOD (as y <= 100) [FALSE POSITIVE]
 }
 
 int test_underflow()
@@ -193,7 +193,7 @@ void test_if_const_bounded()
 	if (x < 1000)
 	{
 		x = x * 2; // GOOD
-		x = x * c; // $ Alert // GOOD [FALSE POSITIVE]
+		x = x * c; // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	} else {
 		x = x * 2; // $ Alert // BAD
 		x = x * c; // $ Alert // BAD
@@ -205,7 +205,7 @@ void test_if_const_bounded()
 		y = y * c; // $ Alert // BAD
 	} else {
 		y = y * 2; // GOOD
-		y = y * c; // $ Alert // GOOD [FALSE POSITIVE]
+		y = y * c; // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	}
 }
 

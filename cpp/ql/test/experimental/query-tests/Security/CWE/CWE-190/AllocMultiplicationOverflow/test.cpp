@@ -16,7 +16,7 @@ void test()
 
 	if ((x <= 1000) && (y <= 1000))
 	{
-		char *buffer5 = (char *)malloc(x * y); // $ Alert // GOOD [FALSE POSITIVE]
+		char *buffer5 = (char *)malloc(x * y); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	}
 
 	size_t size1 = x * y; // $ Source

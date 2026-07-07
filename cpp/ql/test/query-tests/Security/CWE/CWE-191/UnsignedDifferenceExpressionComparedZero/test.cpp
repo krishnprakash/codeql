@@ -59,7 +59,7 @@ void test(unsigned x, unsigned y, bool unknown) {
 		if(unknown) { ++y; }
 	}
 
-	if(x - y > 0) { } // $ Alert // GOOD [FALSE POSITIVE]
+	if(x - y > 0) { } // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 
 	x = y;
 	while(cond()) {
@@ -72,7 +72,7 @@ void test(unsigned x, unsigned y, bool unknown) {
 	if (n > x - y) { n = x - y; }
 	if (n > 0) {
   	y += n; // NOTE: `n` is at most `x - y` at this point.
-  	if (x - y > 0) {} // $ Alert // GOOD [FALSE POSITIVE]
+  	if (x - y > 0) {} // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	}
 }
 
@@ -179,7 +179,7 @@ void test9() {
 		b = 0;
 	}
 
-	if (a - b > 0) { // $ Alert // GOOD (as a >= b) [FALSE POSITIVE]
+	if (a - b > 0) { // $ SPURIOUS: Alert // GOOD (as a >= b) [FALSE POSITIVE]
 		// ...
 	}
 }

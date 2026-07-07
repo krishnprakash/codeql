@@ -102,7 +102,7 @@ void incBefore() {
   int i = -1;
   i++; // not understood by data flow
   for (; i < 2; i++) {
-    alloca(100); // $ Alert // GOOD [FALSE POSITIVE]
+    alloca(100); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
   }
 }
 

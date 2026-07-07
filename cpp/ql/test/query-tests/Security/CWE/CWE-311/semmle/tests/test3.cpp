@@ -417,7 +417,7 @@ void test_member_password()
 	{
 		packet p;
 
-		recv(val(), p.password, 256, val()); // $ Alert[cpp/cleartext-transmission] // GOOD: password is encrypted [FALSE POSITIVE]
+		recv(val(), p.password, 256, val()); // $ SPURIOUS: Alert[cpp/cleartext-transmission] // GOOD: password is encrypted [FALSE POSITIVE]
 		decrypt_inplace(p.password); // proof that `password` was in fact encrypted
 	}
 }
@@ -428,7 +428,7 @@ void test_stdin_param(FILE *stream)
 {
 	char password[128];
 
-	fgets(password, 128, stream); // $ Alert[cpp/cleartext-transmission] // GOOD: from standard input (see call below) [FALSE POSITIVE]
+	fgets(password, 128, stream); // $ SPURIOUS: Alert[cpp/cleartext-transmission] // GOOD: from standard input (see call below) [FALSE POSITIVE]
 }
 
 void test_stdin()

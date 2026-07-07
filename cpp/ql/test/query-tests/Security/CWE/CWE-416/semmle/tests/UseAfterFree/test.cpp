@@ -194,7 +194,7 @@ void test13()
 	{
 		data = NULL;
 	}
-	use(data); // $ Alert // GOOD [FALSE POSITIVE]
+	use(data); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 }
 
 void test14()
@@ -245,12 +245,12 @@ void malloc_after_free(myStruct *s) {
 	if (s->i1.data == 0) {
 		return;
 	}
-	use(s->i1.data); // $ Alert // GOOD [FALSE POSITIVE]
+	use(s->i1.data); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 
 	free(s->i2->data); // $ Source
 	s->i2->data = (char *)malloc(100*sizeof(char));
 	if (s->i2->data == 0) {
 		return;
 	}
-	use(s->i2->data); // $ Alert // GOOD [FALSE POSITIVE]
+	use(s->i2->data); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 }
