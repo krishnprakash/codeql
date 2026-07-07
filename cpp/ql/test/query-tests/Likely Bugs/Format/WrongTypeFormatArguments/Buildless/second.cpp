@@ -23,10 +23,10 @@ void test_size_t() {
     printf("%zi", &buffer[1023] - buffer); // GOOD
     printf("%zu", &buffer[1023] - buffer); // GOOD
     printf("%zx", &buffer[1023] - buffer); // GOOD
-    printf("%d", &buffer[1023] - buffer); // BAD
+    printf("%d", &buffer[1023] - buffer); // $ Alert // BAD
     printf("%ld", &buffer[1023] - buffer); // DUBIOUS [NOT DETECTED]
     printf("%lld", &buffer[1023] - buffer); // DUBIOUS [NOT DETECTED]
-    printf("%u", &buffer[1023] - buffer); // BAD
+    printf("%u", &buffer[1023] - buffer); // $ Alert // BAD
     // (for the `%ld` and `%lld` cases, the signedness and type sizes match, `%zd` would be most correct
     //  and robust but the developer may know enough to make this safe)
 }

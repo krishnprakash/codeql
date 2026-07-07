@@ -46,7 +46,7 @@ void encrypt_bad(char *data, size_t amount, keytype key, int algo)
 	{
 	case ALGO_DES:
 		{
-			my_des_implementation(data, amount, key); // BAD
+			my_des_implementation(data, amount, key); // $ Alert // BAD
 		} break;
 
 	case ALGO_AES:

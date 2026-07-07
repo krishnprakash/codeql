@@ -35,7 +35,7 @@ void my_implementation6(const char *str);
 
 void test_macros(void *data, size_t amount, const char *str)
 {
-	ENCRYPT_WITH_DES(data, amount); // BAD
+	ENCRYPT_WITH_DES(data, amount); // $ Alert // BAD
 	ENCRYPT_WITH_RC2(data, amount); // BAD
 	ENCRYPT_WITH_AES(data, amount); // GOOD (good algorithm)
 	ENCRYPT_WITH_3DES(data, amount); // BAD
@@ -120,6 +120,6 @@ void test_macros2()
 {
 	INIT_ENCRYPT_WITH_DES(); // BAD [NOT DETECTED]
 	INIT_ENCRYPT_WITH_AES(); // GOOD (good algorithm)
-	
+
 	// ...
 }

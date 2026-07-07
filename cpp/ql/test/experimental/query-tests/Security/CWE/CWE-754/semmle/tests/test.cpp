@@ -49,9 +49,9 @@ int functionWork1b(int retIndex) {
   char a[10];
   int b;
   int *p = &b;
-  scanf("%i", &i); // BAD
-  scanf("%s", a); // BAD
-  scanf("%i", p); // BAD
+  scanf("%i", &i); // $ Alert // BAD
+  scanf("%s", a); // $ Alert // BAD
+  scanf("%i", p); // $ Alert // BAD
   if(retIndex == 0)
     return (int)*a;
   if(retIndex == 1)
@@ -102,9 +102,9 @@ int functionWork2b() {
   char a[10];
   int b;
   int *p = &b;
-  scanf("%i", &i); // BAD
-  scanf("%s", a); // BAD
-  scanf("%i", p); // BAD
+  scanf("%i", &i); // $ Alert // BAD
+  scanf("%s", a); // $ Alert // BAD
+  scanf("%i", p); // $ Alert // BAD
   globalVal = i;
   globalVala = a;
   globalValp = p;
@@ -112,12 +112,12 @@ int functionWork2b() {
 }
 int functionWork2b_() {
   char a[10];
-  scanf("%s", a); // BAD
+  scanf("%s", a); // $ Alert // BAD
   globalVala2 = a[0];
   return 0;
 }
 int functionWork3b(int * i) {
-  scanf("%i", i); // BAD
+  scanf("%i", i); // $ Alert // BAD
   return 0;
 }
 int functionWork3() {

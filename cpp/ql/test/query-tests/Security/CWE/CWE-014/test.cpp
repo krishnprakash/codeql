@@ -42,10 +42,10 @@ char *func2(char buff[128], unsigned long long sz) {
 // x86-64 gcc 9.2: deleted
 // x86-64 clang 9.0.0: deleted
 // x64 msvc v19.22: deleted
-void func3(unsigned long long sz) { 
+void func3(unsigned long long sz) {
     char buff[128];
 		gets(buff);
-    memset(buff, 0, PW_SIZE); // BAD
+    memset(buff, 0, PW_SIZE); // $ Alert // BAD
 }
 
 // x86-64 gcc 9.2: deleted
@@ -76,15 +76,15 @@ void func5(unsigned long long sz) {
 void func6(unsigned long long sz) {
     struct mem m;
 		gets(m.b);
-    memset(&m, 0, PW_SIZE); // BAD
+    memset(&m, 0, PW_SIZE); // $ Alert // BAD
 }
 
 // x86-64 gcc 9.2: deleted
 // x86-64 clang 9.0.0: deleted
 // x64 msvc v19.22: deleted
-void func7(unsigned long long sz) { 
+void func7(unsigned long long sz) {
     struct mem m;
-		gets(m.b); 
+		gets(m.b);
     memset(&m, 0, PW_SIZE); // BAD [NOT DETECTED]
     m.a = 15;
 }
@@ -116,7 +116,7 @@ void func10(unsigned long long sz) {
 		gets(m->b);
     memset(m, 0, PW_SIZE); // BAD [NOT DETECTED]
     m->a = sz;
-    m->c = m->a + 1; 
+    m->c = m->a + 1;
 }
 
 // x86-64 gcc 9.2: deleted
@@ -205,7 +205,7 @@ void badFunc0_0(){
 	for(int i = 0; i < PW_SIZE; i++) {
 		buff1[i] = 13;
 	}
-	memset(buff1, 0, PW_SIZE); // BAD
+	memset(buff1, 0, PW_SIZE); // $ Alert // BAD
 }
 
 void nobadFunc1_0() {
@@ -222,7 +222,7 @@ void badFunc1_0(){
 void badFunc1_1(){
 	unsigned char buff1[PW_SIZE];
 	for(int i = 0; i < PW_SIZE; i++) {
-		buff1[i] = 'a' + i;	
+		buff1[i] = 'a' + i;
 	}
 	memset(buff1, 0, PW_SIZE); // BAD [NOT DETECTED]
 	free(buff1);

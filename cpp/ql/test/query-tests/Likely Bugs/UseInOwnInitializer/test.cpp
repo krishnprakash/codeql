@@ -1,11 +1,11 @@
 typedef long size_t;
 
 void test1() {
-	int x = x; // BAD
+	int x = x; // $ Alert // BAD
 }
 
 void test2() {
-	int x = x = 2; // BAD
+	int x = x = 2; // $ Alert // BAD
 }
 
 void test3() {
@@ -54,11 +54,11 @@ void test9() {
 }
 
 void test10() {
-	int x = x + 1; // BAD: x is evaluated on the right hand side
+	int x = x + 1; // $ Alert // BAD: x is evaluated on the right hand side
 }
 
 void test11() {
-	int x = uninitialized(x) + 1; // BAD: x is evaluated on the right hand side
+	int x = uninitialized(x) + 1; // $ Alert // BAD: x is evaluated on the right hand side
 }
 
 #define self_initialize(t, x) t x = x

@@ -14,7 +14,7 @@ bool compareValues() {
   return
     T1::value < T2::value || // GOOD
     T1::value < T1::value || // BAD [NOT DETECTED]
-    C1::value < C1::value ; // BAD
+    C1::value < C1::value ; // $ Alert[cpp/comparison-of-identical-expressions] // BAD
 }
 
 bool callCompareValues() {

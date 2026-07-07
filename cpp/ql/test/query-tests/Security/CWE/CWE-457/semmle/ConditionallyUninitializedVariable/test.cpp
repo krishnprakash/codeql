@@ -19,14 +19,14 @@ void test1()
 	int a, b, c, d, e, f;
 	int result1, result2;
 
-	maybeInitialize1(&a); // BAD (initialization not checked)
+	maybeInitialize1(&a); // $ Alert // BAD (initialization not checked)
 	use(a);
-	
+
 	if (maybeInitialize1(&b) == 1) // GOOD
 	{
 		use(b);
 	}
-	
+
 	if (maybeInitialize1(&c) == 0) // BAD (initialization check is wrong) [NOT DETECTED]
 	{
 		use(c);
@@ -65,9 +65,9 @@ void test2()
 {
 	int a, b;
 
-	maybeInitialize2(&a); // BAD (initialization not checked)
+	maybeInitialize2(&a); // $ Alert // BAD (initialization not checked)
 	use(a);
-	
+
 	if (maybeInitialize2(&b)) // GOOD
 	{
 		use(b);
@@ -88,7 +88,7 @@ void test3()
 
 	alwaysInitialize(&a); // GOOD (initialization never fails)
 	use(a);
-	
+
 	if (alwaysInitialize(&b) == 1) // GOOD
 	{
 		use(b);

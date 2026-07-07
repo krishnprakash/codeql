@@ -36,5 +36,5 @@ void call_add_numbers()
   int accum = 0;
   add_numbers(accum, 4); // GOOD
   add_numbers(accum, 10); // GOOD
-  pointless_add_numbers(accum, 20); // BAD
+  pointless_add_numbers(accum, 20); // $ Alert // BAD
 }

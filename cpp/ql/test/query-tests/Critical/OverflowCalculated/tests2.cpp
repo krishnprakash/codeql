@@ -31,7 +31,7 @@ void tests2(int case_num)
 		case 1:
 			buffer = (char *)malloc(strlen(str1) + 1); // BAD
 			strcpy(buffer, str1);
-			strcat(buffer, str2);
+			strcat(buffer, str2); // $ Alert[cpp/overflow-calculated]
 			break;
 
 		case 2:
@@ -49,7 +49,7 @@ void tests2(int case_num)
 		case 4:
 			buffer = (char *)malloc((strlen(str1) + 1) * sizeof(char)); // BAD
 			strcpy(buffer, str1);
-			strcat(buffer, str2);
+			strcat(buffer, str2); // $ Alert[cpp/overflow-calculated]
 			break;
 
 		case 5:

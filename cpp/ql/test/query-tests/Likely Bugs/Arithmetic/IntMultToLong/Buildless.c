@@ -3,7 +3,7 @@
 void test_float_double1(float f, double d) {
     float r1 = f * f; // GOOD
     float r2 = f * d; // GOOD
-    double r3 = f * f; // BAD
+    double r3 = f * f; // $ Alert // BAD
     double r4 = f * d; // GOOD
 
     float f1 = fabsf(f * f); // GOOD
@@ -18,7 +18,7 @@ float fabsf(float f);
 void test_float_double2(float f, double d) {
     float r1 = f * f; // GOOD
     float r2 = f * d; // GOOD
-    double r3 = f * f; // BAD
+    double r3 = f * f; // $ Alert // BAD
     double r4 = f * d; // GOOD
 
     float f1 = fabsf(f * f); // GOOD

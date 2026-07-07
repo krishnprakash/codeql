@@ -17,11 +17,11 @@ const char *currentUser;
 
 void processRequest() 
 {
-     const char *userName = getenv("USER_NAME");
+     const char *userName = getenv("USER_NAME"); // $ Source
 
      // BAD: the condition is controllable by the user, and
      // the body of the if makes a security decision.
-     if (!strcmp(userName, "admin")) {
+     if (!strcmp(userName, "admin")) { // $ Alert
         adminPrivileges = 1;
      }
 

@@ -13,7 +13,7 @@ int fclose(FILE *stream);
 int funcTest1()
 {
   FILE *fp;
-  char *filename = tmpnam(NULL); // BAD
+  char *filename = tmpnam(NULL); // $ Alert // BAD
   fp = fopen(filename,"w");
   fprintf(fp,"%s\n","data to file");
   fclose(fp);

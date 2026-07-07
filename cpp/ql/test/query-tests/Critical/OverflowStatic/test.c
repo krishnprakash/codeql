@@ -11,14 +11,14 @@ void f(void) {
     c = xs[-1]; // BAD [NOT DETECTED]
     c = xs[0]; // GOOD
     c = xs[4]; // GOOD
-    c = xs[5]; // BAD
-    c = xs[6]; // BAD
+    c = xs[5]; // $ Alert // BAD
+    c = xs[6]; // $ Alert // BAD
 
     c = stru.ys[-1]; // BAD [NOT DETECTED]
     c = stru.ys[0]; // GOOD
     c = stru.ys[4]; // GOOD
-    c = stru.ys[5]; // BAD
-    c = stru.ys[6]; // BAD
+    c = stru.ys[5]; // $ Alert // BAD
+    c = stru.ys[6]; // $ Alert // BAD
 
     c = stru.zs[-1]; // BAD [NOT DETECTED]
     c = stru.zs[0]; // GOOD (zs is variable size)
