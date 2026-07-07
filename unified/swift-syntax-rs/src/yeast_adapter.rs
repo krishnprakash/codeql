@@ -23,7 +23,7 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 use yeast::schema::Schema;
-use yeast::{Ast, Id, NodeContent};
+use yeast::{Ast, Id, NodeContent, Point, Range};
 
 /// swift-syntax `TokenKind` cases whose text is *not* determined by the kind
 /// (i.e. `TokenKind.defaultText == nil`). These carry varying information and
@@ -167,8 +167,37 @@ fn build(node: &Value, ast: &mut Ast) -> Result<Id, String> {
         NodeContent::DynamicString(info.text),
         fields,
         info.is_named,
-        None,
+        parse_range(node),
     ))
+}
+
+/// Parse a node's `range` into a [`yeast::Range`].
+///
+/// The JSON carries, for `start` and `end`, a 0-based UTF-8 file byte `offset`,
+/// a 1-based `line`, and a 1-based UTF-8 byte `column`. yeast (like tree-sitter)
+/// uses byte offsets with 0-based rows/columns and an exclusive end, so the
+/// line/column are shifted down by one. swift-syntax's end position is already
+/// exclusive, so the byte offsets map across directly.
+fn parse_range(node: &Value) -> Option<Range> {
+    let range = node.get("range")?;
+    let point = |key: &str| -> Option<(usize, Point)> {
+        let p = range.get(key)?;
+        let offset = p.get("offset")?.as_u64()? as usize;
+        let line = p.get("line")?.as_u64()? as usize;
+        let column = p.get("column")?.as_u64()? as usize;
+        Some((
+            offset,
+            Point::new(line.saturating_sub(1), column.saturating_sub(1)),
+        ))
+    };
+    let (start_byte, start_point) = point("start")?;
+    let (end_byte, end_point) = point("end")?;
+    Some(Range {
+        start_byte,
+        end_byte,
+        start_point,
+        end_point,
+    })
 }
 
 /// Convert a swift-syntax JSON tree (as produced by [`crate::parse_to_json`])
@@ -253,6 +282,22 @@ mod tests {
             .map(|(i, _)| Id(i))
             .expect("identifier node exists");
         assert_eq!(ast.source_text(ident), "x");
+    }
+
+    #[test]
+    fn maps_source_locations() {
+        let ast = json_to_ast(sample_json()).expect("adapter should succeed");
+        let ident = ast
+            .nodes()
+            .iter()
+            .find(|n| n.kind_name() == "identifier")
+            .expect("identifier node exists");
+        // `x` is at file offset 4..5, line 1, column 5 (1-based) in the JSON,
+        // which maps to 0-based row 0, column 4 and byte range 4..5.
+        assert_eq!(ident.start_byte(), 4);
+        assert_eq!(ident.end_byte(), 5);
+        assert_eq!(ident.start_position(), Point::new(0, 4));
+        assert_eq!(ident.end_position(), Point::new(0, 5));
     }
 
     /// End-to-end: real Swift source parsed by the shim, then adapted into a

@@ -15,10 +15,31 @@ pub mod schema;
 pub mod tree_builder;
 mod visitor;
 
+pub use range::{Point, Range};
 pub use yeast_macros::{query, rule, rules, tree, trees};
 
 use captures::Captures;
 use query::QueryNode;
+
+impl From<tree_sitter::Point> for Point {
+    fn from(p: tree_sitter::Point) -> Self {
+        Point {
+            row: p.row,
+            column: p.column,
+        }
+    }
+}
+
+impl From<tree_sitter::Range> for Range {
+    fn from(r: tree_sitter::Range) -> Self {
+        Range {
+            start_byte: r.start_byte,
+            end_byte: r.end_byte,
+            start_point: r.start_point.into(),
+            end_point: r.end_point.into(),
+        }
+    }
+}
 
 /// Node id: an index into the [`Ast`] arena. A newtype around `usize`
 /// rather than a bare alias so that it can carry its own
@@ -106,7 +127,7 @@ pub trait YeastDisplay {
 /// rule's source range. `Id` returns the referenced node's range, letting
 /// `(kind #{capture})` carry the captured node's location.
 pub trait YeastSourceRange {
-    fn yeast_source_range(&self, ast: &Ast) -> Option<tree_sitter::Range>;
+    fn yeast_source_range(&self, ast: &Ast) -> Option<Range>;
 }
 
 impl YeastDisplay for Id {
@@ -116,9 +137,9 @@ impl YeastDisplay for Id {
 }
 
 impl YeastSourceRange for Id {
-    fn yeast_source_range(&self, ast: &Ast) -> Option<tree_sitter::Range> {
+    fn yeast_source_range(&self, ast: &Ast) -> Option<Range> {
         ast.get_node(*self).and_then(|n| match &n.content {
-            NodeContent::Range(r) => Some(r.clone()),
+            NodeContent::Range(r) => Some(*r),
             _ => n.source_range,
         })
     }
@@ -134,7 +155,7 @@ macro_rules! impl_yeast_display_via_display {
             }
 
             impl YeastSourceRange for $t {
-                fn yeast_source_range(&self, _ast: &Ast) -> Option<tree_sitter::Range> {
+                fn yeast_source_range(&self, _ast: &Ast) -> Option<Range> {
                     None
                 }
             }
@@ -157,7 +178,7 @@ impl<T: YeastDisplay + ?Sized> YeastDisplay for &T {
 }
 
 impl<T: YeastSourceRange + ?Sized> YeastSourceRange for &T {
-    fn yeast_source_range(&self, ast: &Ast) -> Option<tree_sitter::Range> {
+    fn yeast_source_range(&self, ast: &Ast) -> Option<Range> {
         (**self).yeast_source_range(ast)
     }
 }
@@ -361,7 +382,7 @@ impl Ast {
         let Some(node) = self.get_node(id) else {
             return String::new();
         };
-        let read_range = |range: &tree_sitter::Range| {
+        let read_range = |range: &Range| {
             let start = range.start_byte;
             let end = range.end_byte;
             if end <= self.source.len() && start <= end {
@@ -459,7 +480,7 @@ impl Ast {
         content: NodeContent,
         fields: BTreeMap<FieldId, Vec<Id>>,
         is_named: bool,
-        source_range: Option<tree_sitter::Range>,
+        source_range: Option<Range>,
     ) -> Id {
         let source_range = match &content {
             // Parsed nodes already carry an exact source range in their content.
@@ -506,11 +527,11 @@ impl Ast {
     fn union_source_range_of_children(
         &self,
         fields: &BTreeMap<FieldId, Vec<Id>>,
-    ) -> Option<tree_sitter::Range> {
+    ) -> Option<Range> {
         let mut start_byte: Option<usize> = None;
         let mut end_byte: Option<usize> = None;
-        let mut start_point = tree_sitter::Point { row: 0, column: 0 };
-        let mut end_point = tree_sitter::Point { row: 0, column: 0 };
+        let mut start_point = Point { row: 0, column: 0 };
+        let mut end_point = Point { row: 0, column: 0 };
 
         for child_ids in fields.values() {
             for &child_id in child_ids {
@@ -553,7 +574,7 @@ impl Ast {
         }
 
         match (start_byte, end_byte) {
-            (Some(start_byte), Some(end_byte)) => Some(tree_sitter::Range {
+            (Some(start_byte), Some(end_byte)) => Some(Range {
                 start_byte,
                 end_byte,
                 start_point,
@@ -571,7 +592,7 @@ impl Ast {
         &mut self,
         kind: &'static str,
         content: String,
-        source_range: Option<tree_sitter::Range>,
+        source_range: Option<Range>,
     ) -> Id {
         let kind_id = self.schema.id_for_node_kind(kind).unwrap_or_else(|| {
             panic!("create_named_token: node kind '{kind}' not found in schema")
@@ -664,7 +685,7 @@ pub struct Node {
     /// For synthetic nodes, the source range of the original node they
     /// were desugared from. Used for location information in TRAP output.
     #[serde(skip)]
-    source_range: Option<tree_sitter::Range>,
+    source_range: Option<Range>,
     is_named: bool,
     is_missing: bool,
     is_extra: bool,
@@ -692,11 +713,11 @@ impl Node {
         self.is_error
     }
 
-    fn fake_point(&self) -> tree_sitter::Point {
-        tree_sitter::Point { row: 0, column: 0 }
+    fn fake_point(&self) -> Point {
+        Point { row: 0, column: 0 }
     }
 
-    pub fn start_position(&self) -> tree_sitter::Point {
+    pub fn start_position(&self) -> Point {
         match self.content {
             NodeContent::Range(range) => range.start_point,
             _ => self
@@ -705,7 +726,7 @@ impl Node {
         }
     }
 
-    pub fn end_position(&self) -> tree_sitter::Point {
+    pub fn end_position(&self) -> Point {
         match self.content {
             NodeContent::Range(range) => range.end_point,
             _ => self
@@ -754,7 +775,7 @@ impl Node {
 /// or a new string if the node is synthesized.
 #[derive(PartialEq, Eq, Debug, Clone, Serialize)]
 pub enum NodeContent {
-    Range(#[serde(with = "range::Range")] tree_sitter::Range),
+    Range(Range),
     String(&'static str),
     DynamicString(String),
 }
@@ -767,7 +788,7 @@ impl From<&'static str> for NodeContent {
 
 impl From<tree_sitter::Range> for NodeContent {
     fn from(value: tree_sitter::Range) -> Self {
-        NodeContent::Range(value)
+        NodeContent::Range(value.into())
     }
 }
 
@@ -894,7 +915,7 @@ pub type Transform<C = ()> = Box<
             &mut Ast,
             Captures,
             &tree_builder::FreshScope,
-            Option<tree_sitter::Range>,
+            Option<Range>,
             &mut C,
             TranslatorHandle<'_, C>,
         ) -> Result<Vec<Id>, String>
