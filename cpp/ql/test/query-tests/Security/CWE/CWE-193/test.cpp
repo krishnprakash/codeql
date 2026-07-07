@@ -1,11 +1,11 @@
 using size_t = decltype(sizeof 0); void* malloc(size_t size);
 
 void test1(int size) {
-    char* p = (char*)malloc(size); // $ Source[cpp/invalid-pointer-deref]=r1 Source[cpp/invalid-pointer-deref]=r2
+    char* p = (char*)malloc(size); // $ Source[cpp/invalid-pointer-deref]=r1
     char* q = p + size; // $ alloc=L4
     char a = *q; // $ deref=L5->L6 Alert[cpp/invalid-pointer-deref]=r1 // BAD
     char b = *(q - 1); // GOOD
-    char c = *(q + 1); // $ deref=L5->L8+1 Alert[cpp/invalid-pointer-deref]=r2 // BAD
+    char c = *(q + 1); // $ deref=L5->L8+1 Alert[cpp/invalid-pointer-deref]=r1 // BAD
     char d = *(q + size); // $ MISSING: Alert // BAD [NOT DETECTED]
     char e = *(q - size); // GOOD
     char f = *(q + size + 1); // $ MISSING: Alert // BAD [NOT DETECTED]
@@ -25,11 +25,11 @@ void test2(int size) {
 }
 
 void test3(int size) {
-    char* p = (char*)malloc(size + 1); // $ Source[cpp/invalid-pointer-deref]=r4 Source[cpp/invalid-pointer-deref]=r5
+    char* p = (char*)malloc(size + 1); // $ Source[cpp/invalid-pointer-deref]=r4
     char* q = p + (size + 1); // $ alloc=L28+1
     char a = *q; // $ deref=L29->L30 Alert[cpp/invalid-pointer-deref]=r4 // BAD
     char b = *(q - 1); // GOOD
-    char c = *(q + 1); // $ deref=L29->L32+1 Alert[cpp/invalid-pointer-deref]=r5 // BAD
+    char c = *(q + 1); // $ deref=L29->L32+1 Alert[cpp/invalid-pointer-deref]=r4 // BAD
     char d = *(q + size); // $ MISSING: Alert // BAD [NOT DETECTED]
     char e = *(q - size); // GOOD
     char f = *(q + size + 1); // $ MISSING: Alert // BAD [NOT DETECTED]
@@ -352,11 +352,11 @@ void test24(unsigned size) {
 }
 
 void test25(unsigned size) {
-  char *xs = new char[size]; // $ Source[cpp/invalid-pointer-deref]=r10 Source[cpp/invalid-pointer-deref]=r11
+  char *xs = new char[size]; // $ Source[cpp/invalid-pointer-deref]=r10
   char *end = xs + size; // $ alloc=L355
   char *end_plus_one = end + 1;
   int val1 = *end_plus_one; // $ deref=L356->L358+1 Alert[cpp/invalid-pointer-deref]=r10 // BAD
-  int val2 = *(end_plus_one + 1); // $ deref=L356->L359+2 Alert[cpp/invalid-pointer-deref]=r11 // BAD
+  int val2 = *(end_plus_one + 1); // $ deref=L356->L359+2 Alert[cpp/invalid-pointer-deref]=r10 // BAD
 }
 
 void test26(unsigned size) {
@@ -751,7 +751,7 @@ void error(const char * msg) {
 }
 
 void test38(unsigned size) {
-  char * alloc = new char[size]; // $ Source[cpp/invalid-pointer-deref]=r22 Source[cpp/invalid-pointer-deref]=r23 Source[cpp/invalid-pointer-deref]=r24 Source[cpp/invalid-pointer-deref]=r25
+  char * alloc = new char[size]; // $ Source[cpp/invalid-pointer-deref]=r22
 
   unsigned pos = 0;
   while (pos < size) {
@@ -764,12 +764,12 @@ void test38(unsigned size) {
     case '0':
       if (n != 1)
         error("");
-      char x = alloc[pos + 1]; // $ SPURIOUS: alloc=L754 deref=L767 Alert[cpp/invalid-pointer-deref]=r22 Alert[cpp/invalid-pointer-deref]=r23 // GOOD [FALSE POSITIVE]
+      char x = alloc[pos + 1]; // $ SPURIOUS: alloc=L754 deref=L767 Alert[cpp/invalid-pointer-deref]=r22 // GOOD [FALSE POSITIVE]
       break;
     case '1':
       if (n != 2)
         error("");
-      char a = alloc[pos + 1]; // $ SPURIOUS: alloc=L754 deref=L772 Alert[cpp/invalid-pointer-deref]=r24 Alert[cpp/invalid-pointer-deref]=r25 // GOOD [FALSE POSITIVE]
+      char a = alloc[pos + 1]; // $ SPURIOUS: alloc=L754 deref=L772 Alert[cpp/invalid-pointer-deref]=r22 // GOOD [FALSE POSITIVE]
       char b = alloc[pos + 2];
       break;
     }
@@ -790,7 +790,7 @@ void test38_simple(unsigned size, unsigned pos, unsigned numParams) {
 }
 
 void mk_array_no_field_flow(int size, char** begin, char** end) {
-    *begin = (char*)malloc(size); // $ Source[cpp/invalid-pointer-deref]=r27 Source[cpp/invalid-pointer-deref]=r28
+    *begin = (char*)malloc(size); // $ Source[cpp/invalid-pointer-deref]=r27
     *end = *begin + size; // $ alloc=L793
 }
 
@@ -818,7 +818,7 @@ void test7_callee_no_field_flow(char* begin, char* end) {
   }
 
   for (char* p = begin; p <= end; ++p) {
-      *p = 0; // $ deref=L794->L815->L821 deref=L794->L816->L821 deref=L794->L820->L821 Alert[cpp/invalid-pointer-deref]=r28 // BAD
+      *p = 0; // $ deref=L794->L815->L821 deref=L794->L816->L821 deref=L794->L820->L821 Alert[cpp/invalid-pointer-deref]=r27 // BAD
   }
 
   for (char* p = begin; p < end; ++p) {
