@@ -96,7 +96,7 @@ void test4_8(const char *fileName) {
 	xmlDoc *p;
 	int flags = XML_PARSE_OPTION_HARMLESS;
 
-	p = xmlReadFile(fileName, NULL, flags | XML_PARSE_NOENT); // BAD (parser not correctly configured) [NOT DETECTED]
+	p = xmlReadFile(fileName, NULL, flags | XML_PARSE_NOENT); // $ MISSING: Alert // BAD (parser not correctly configured) [NOT DETECTED]
 	if (p != NULL)
 	{
 		xmlFreeDoc(p);
@@ -107,7 +107,7 @@ void test4_9(const char *fileName) {
 	xmlDoc *p;
 	int flags = XML_PARSE_NOENT;
 
-	p = xmlReadFile(fileName, NULL, flags | XML_PARSE_OPTION_HARMLESS); // BAD (parser not correctly configured) [NOT DETECTED]
+	p = xmlReadFile(fileName, NULL, flags | XML_PARSE_OPTION_HARMLESS); // $ MISSING: Alert // BAD (parser not correctly configured) [NOT DETECTED]
 	if (p != NULL)
 	{
 		xmlFreeDoc(p);

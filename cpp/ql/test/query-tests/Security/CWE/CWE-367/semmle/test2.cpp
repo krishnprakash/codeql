@@ -180,7 +180,7 @@ void test2_9(const char *path, int arg)
 
 	if (stat(path, &buf))
 	{
-		f = creat(path, arg); // BAD [NOT DETECTED]
+		f = creat(path, arg); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	// ...
@@ -193,7 +193,7 @@ void test2_10(int dir, const char *path, int arg)
 
 	if (fstatat(dir, path, &buf))
 	{
-		f = openat(dir, path, arg); // BAD [NOT DETECTED]
+		f = openat(dir, path, arg); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	// ...
@@ -259,7 +259,7 @@ void test3_1(const char *path, int arg)
 	int f;
 
 	f = open(path, arg);
-	if (stat(path, &buf)) // BAD [NOT DETECTED]
+	if (stat(path, &buf)) // $ MISSING: Alert // BAD [NOT DETECTED]
 	{
 		// ...
 	}
@@ -314,7 +314,7 @@ void test5_2(const char *path1, const char *path2)
 
 	if (!rename(path1, path2))
 	{
-		f = fopen(path2, "r"); // BAD [NOT DETECTED]
+		f = fopen(path2, "r"); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 }
 

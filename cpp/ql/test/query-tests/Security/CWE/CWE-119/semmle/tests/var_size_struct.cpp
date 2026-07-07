@@ -51,8 +51,8 @@ void testVarString(int n) {
     s1->str[1] = '?'; // GOOD
     s2->str[1] = '?'; // GOOD
     s3->str[1] = '?'; // GOOD
-    s4->str[1] = '?'; // BAD [NOT DETECTED]
-    s5->str[1] = '?'; // BAD [NOT DETECTED]
+    s4->str[1] = '?'; // $ MISSING: Alert // BAD [NOT DETECTED]
+    s5->str[1] = '?'; // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 }
 

@@ -190,7 +190,7 @@ void test6(bool do_array_delete)
 
 	if (do_array_delete)
 	{
-		delete [] c_ptr_array[5]; // BAD [NOT DETECTED]
+		delete [] c_ptr_array[5]; // $ MISSING: Alert // BAD [NOT DETECTED]
 	} else {
 		delete c_ptr_array[5]; // GOOD
 	}

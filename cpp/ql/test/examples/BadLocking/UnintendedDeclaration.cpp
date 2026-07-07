@@ -86,7 +86,7 @@ public:
 
 	void test7()
 	{
-		Lock<Mutex>(memberMutex); // BAD (creates an uninitialized variable called `memberMutex`, probably not intended) [NOT DETECTED]
+		Lock<Mutex>(memberMutex); // $ MISSING: Alert // BAD (creates an uninitialized variable called `memberMutex`, probably not intended) [NOT DETECTED]
 
 		// ...
 	}

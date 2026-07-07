@@ -60,7 +60,7 @@ int functionWork1b(int retIndex) {
 }
 int functionWork1_() {
   int i;
-  scanf("%i",&i); // BAD [NOT DETECTED]
+  scanf("%i",&i); // $ MISSING: Alert // BAD [NOT DETECTED]
   if(i<10)
     return -1;
   return i;

@@ -42,7 +42,7 @@ void test3(unsigned size, char *buf, unsigned anotherSize) {
     strncpy(str->string, buf, str->size + 1); // $ Alert[cpp/overrun-write] // BAD
 
     strncpy(str->string, buf, size); // GOOD
-    strncpy(str->string, buf, size + 1); // BAD [NOT DETECTED]
+    strncpy(str->string, buf, size + 1); // $ MISSING: Alert // BAD [NOT DETECTED]
 
     if(anotherSize < str->size) {
         strncpy(str->string, buf, anotherSize); // GOOD
@@ -73,7 +73,7 @@ void test3(unsigned size, char *buf, unsigned anotherSize) {
     }
 
     if(anotherSize <= size + 1) {
-        strncpy(str->string, buf, anotherSize); // BAD [NOT DETECTED]
+        strncpy(str->string, buf, anotherSize); // $ MISSING: Alert // BAD [NOT DETECTED]
     }
 
     if(anotherSize <= str->size + 2) {
@@ -81,7 +81,7 @@ void test3(unsigned size, char *buf, unsigned anotherSize) {
     }
 
     if(anotherSize <= size + 2) {
-        strncpy(str->string, buf, anotherSize); // BAD [NOT DETECTED]
+        strncpy(str->string, buf, anotherSize); // $ MISSING: Alert // BAD [NOT DETECTED]
     }
 }
 
@@ -138,7 +138,7 @@ void test4(unsigned size, char *buf, unsigned anotherSize) {
     }
 
     if(anotherSize <= size + 2) {
-        strncpy(str->string, buf, anotherSize); // BAD [NOT DETECTED]
+        strncpy(str->string, buf, anotherSize); // $ MISSING: Alert // BAD [NOT DETECTED]
     }
 }
 
@@ -229,7 +229,7 @@ void repeated_alerts(unsigned size, unsigned offset) {
   while(unknown()) {
     ++size;
   }
-  memset(buffer, 0, size); // BAD [NOT DETECTED]
+  memset(buffer, 0, size); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void set_string(string_t* p_str, char* buffer) {

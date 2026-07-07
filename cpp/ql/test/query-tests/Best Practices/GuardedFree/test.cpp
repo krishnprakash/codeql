@@ -52,7 +52,7 @@ void test6(char *x) {
 }
 
 void test7(char *x) {
-  if (x || x) { // BAD [NOT DETECTED]
+  if (x || x) { // $ MISSING: Alert // BAD [NOT DETECTED]
     free(x);
   }
 }
@@ -91,7 +91,7 @@ void test10(char *x) {
   if (x) free(x);
 
 void test11(char *x) {
-  TRY_FREE(x) // BAD [NOT DETECTED]
+  TRY_FREE(x) // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 bool test12(char *x) {

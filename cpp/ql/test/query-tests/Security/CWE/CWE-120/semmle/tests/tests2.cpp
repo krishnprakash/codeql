@@ -60,5 +60,5 @@ void test3() {
   dest2 = (char*)malloc(3);
   if (!dest2)
     return;
-  snprintf(dest2, sizeof(src), "%s", src); // BAD [NOT DETECTED]
+  snprintf(dest2, sizeof(src), "%s", src); // $ MISSING: Alert // BAD [NOT DETECTED]
 }

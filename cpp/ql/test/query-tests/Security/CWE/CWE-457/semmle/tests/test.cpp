@@ -27,7 +27,7 @@ void test4(bool b) {
 	if (b) {
 		foo = 1;
 	}
-	use(foo); // BAD [NOT DETECTED]
+	use(foo); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test5() {
@@ -43,7 +43,7 @@ void test5(int count) {
 	for (int i = 0; i < count; i++) {
 		foo = i;
 	}
-	use(foo); // BAD [NOT DETECTED]
+	use(foo); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test6(bool b) {
@@ -523,7 +523,7 @@ int non_exhaustive_switch(State s) {
 			y = 2;
 			break;
 	}
-	return y; // BAD [NOT DETECTED] (y is not initialized when s = StateC)
+	return y; // $ MISSING: Alert // BAD [NOT DETECTED] (y is not initialized when s = StateC)
 }
 
 int non_exhaustive_switch_2(State s) {

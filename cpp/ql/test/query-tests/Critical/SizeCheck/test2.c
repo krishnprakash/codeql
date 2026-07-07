@@ -50,8 +50,8 @@ void *MyMalloc2(size_t size);
 
 void customAllocatorTests()
 {
-    double *dptr1 = MyMalloc1(33); // BAD -- Not a multiple of sizeof(double) [NOT DETECTED]
-    double *dptr2 = MyMalloc2(33); // BAD -- Not a multiple of sizeof(double) [NOT DETECTED]
+    double *dptr1 = MyMalloc1(33); // $ MISSING: Alert // BAD -- Not a multiple of sizeof(double) [NOT DETECTED]
+    double *dptr2 = MyMalloc2(33); // $ MISSING: Alert // BAD -- Not a multiple of sizeof(double) [NOT DETECTED]
 }
 
 // --- variable length data structures ---

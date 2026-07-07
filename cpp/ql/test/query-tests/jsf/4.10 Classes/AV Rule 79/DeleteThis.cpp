@@ -125,8 +125,8 @@ public:
 		c = new MyClass6(); // GOOD
 
 		d = new MyClass7(); // $ Alert // BAD
-		e = new MyClass7(); // BAD [NOT DETECTED]
-		f = new MyClass8(); // BAD [NOT DETECTED]
+		e = new MyClass7(); // $ MISSING: Alert // BAD [NOT DETECTED]
+		f = new MyClass8(); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
  	~MyClass9()
 	{

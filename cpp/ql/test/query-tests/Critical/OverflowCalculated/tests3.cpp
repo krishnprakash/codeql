@@ -59,7 +59,7 @@ void test3b()
 
 void test3c()
 {
-	char *buffer = new char[10]; // BAD [NOT DETECTED]
+	char *buffer = new char[10]; // $ MISSING: Alert // BAD [NOT DETECTED]
 
 	strcpy(buffer, "123456");
 	strcat(buffer, "123456");

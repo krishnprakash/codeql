@@ -77,8 +77,8 @@ void testReferencePointer2()
 	{
 		system(buffer); // $ Alert // BAD
 		system(data); // BAD
-		system(dataref); // BAD [NOT DETECTED]
-		system(data2); // BAD [NOT DETECTED]
+		system(dataref); // $ MISSING: Alert // BAD [NOT DETECTED]
+		system(data2); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 }
 

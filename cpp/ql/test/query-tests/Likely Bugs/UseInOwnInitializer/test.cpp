@@ -87,5 +87,5 @@ namespace ns3
 {
 	const int v5 = ns1::v6 + 1; // GOOD
 	const int v6 = ns1::v6 + 1; // GOOD  [produces INVALID_KEY trap warning]
-	const int v7 = ns3::v7; // BAD [NOT DETECTED]
+	const int v7 = ns3::v7; // $ MISSING: Alert // BAD [NOT DETECTED]
 };

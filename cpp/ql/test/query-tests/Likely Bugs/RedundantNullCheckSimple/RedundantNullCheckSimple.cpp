@@ -39,7 +39,7 @@ void test_no_single_dominator(int *p, bool b) {
   } else {
     x = *p;
   }
-  if (p == nullptr) { // BAD [NOT DETECTED]
+  if (p == nullptr) { // $ MISSING: Alert // BAD [NOT DETECTED]
     return;
   }
 }
@@ -52,7 +52,7 @@ int test_postdominator_same_bb(int *p) {
 }
 
 int test_postdominator(int *p) {
-  int b = (p == nullptr); // BAD [NOT DETECTED]
+  int b = (p == nullptr); // $ MISSING: Alert // BAD [NOT DETECTED]
 
   if (b) b++; // This line breaks up the basic block
 
@@ -62,7 +62,7 @@ int test_postdominator(int *p) {
 }
 
 int test_inverted_logic(int *p) {
-  if (p == nullptr) { // BAD [NOT DETECTED]
+  if (p == nullptr) { // $ MISSING: Alert // BAD [NOT DETECTED]
     // The check above should probably have been `!=` instead of `==`.
     return *p;
   } else {
@@ -95,7 +95,7 @@ void test_field_local(bool boolvar) {
     }
   } else {
     int *x = sp->p;
-    if (sp == nullptr) { // BAD [NOT DETECTED]
+    if (sp == nullptr) { // $ MISSING: Alert // BAD [NOT DETECTED]
       return;
     }
   }

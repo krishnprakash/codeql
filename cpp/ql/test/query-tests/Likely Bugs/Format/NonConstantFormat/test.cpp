@@ -48,7 +48,7 @@ int main(int argc, char **argv) { // $ Source
   printf(choose_message(argc - 1), argc - 1); // GOOD
   printf(messages[1]); // GOOD
   printf(message); // GOOD
-  printf(make_message(argc - 1)); // BAD [NOT DETECTED]
+  printf(make_message(argc - 1)); // $ MISSING: Alert // BAD [NOT DETECTED]
   printf("Hello, World\n"); // GOOD
   printf(_("Hello, World\n")); // GOOD
   {

@@ -18,13 +18,13 @@ void test1(bool cond)
 	{
 		int *p, *q;
 
-		y = *p; // BAD (p is uninitialized and could be 0) [NOT DETECTED]
+		y = *p; // $ MISSING: Alert // BAD (p is uninitialized and could be 0) [NOT DETECTED]
 		p = NULL;
 		y = *p; // $ Alert // BAD (p is 0)
 		p = &x;
 		y = *p; // GOOD (p points to x)
 		p = q;
-		y = *p; // BAD (p is uninitialized and could be 0) [NOT DETECTED]
+		y = *p; // $ MISSING: Alert // BAD (p is uninitialized and could be 0) [NOT DETECTED]
 	}
 
 	{

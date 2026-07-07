@@ -536,14 +536,14 @@ void tests2(person_info *pi)
 		char buffer[1024];
 
 		snprintf(buffer, 1024, "salary = %i\n", pi->newSalary);
-		send(val(), buffer, strlen(buffer), val()); // BAD [NOT DETECTED]
+		send(val(), buffer, strlen(buffer), val()); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 	{
 		char buffer[1024];
 		int sal = pi->newSalary;
 
 		snprintf(buffer, 1024, "salary = %i\n", sal);
-		send(val(), buffer, strlen(buffer), val()); // BAD [NOT DETECTED]
+		send(val(), buffer, strlen(buffer), val()); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 	{
 		char buffer[1024];

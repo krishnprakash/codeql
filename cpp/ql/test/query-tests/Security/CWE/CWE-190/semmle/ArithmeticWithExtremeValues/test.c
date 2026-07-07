@@ -65,7 +65,7 @@ void test_crement() {
   sc9 += 1; // GOOD
 
   sc10 = 1;
-  sc10 += CHAR_MAX; // BAD [NOT DETECTED]
+  sc10 += CHAR_MAX; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test_negatives() {
@@ -75,13 +75,13 @@ void test_negatives() {
   sc1 += 0; // GOOD
   sc1 += -1; // GOOD
   sc2 = CHAR_MIN;
-  sc2 += -1; // BAD [NOT DETECTED]
+  sc2 += -1; // $ MISSING: Alert // BAD [NOT DETECTED]
   sc3 = CHAR_MIN;
-  sc3 = sc3 + -1; // BAD [NOT DETECTED]
+  sc3 = sc3 + -1; // $ MISSING: Alert // BAD [NOT DETECTED]
   sc4 = CHAR_MAX;
-  sc4 -= -1; // BAD [NOT DETECTED]
+  sc4 -= -1; // $ MISSING: Alert // BAD [NOT DETECTED]
   sc5 = -1;
-  sc5 += CHAR_MIN; // BAD [NOT DETECTED]
+  sc5 += CHAR_MIN; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test_guards1(int cond) {
@@ -101,7 +101,7 @@ void test_guards2(int cond) {
 
 	if (x < 128) return;
 
-	return x + 1; // BAD [NOT DETECTED]
+	return x + 1; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test_guards3(int cond) {

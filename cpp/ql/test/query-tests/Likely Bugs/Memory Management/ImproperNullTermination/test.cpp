@@ -27,8 +27,8 @@ void test_unassigned()
 		strdup(buffer2); // $ Alert[cpp/improper-null-termination] // BAD
 
 		memcpy(buffer2, buffer1, sizeof(buffer2));
-		strdup(buffer1); // BAD [NOT DETECTED]
-		strdup(buffer2); // BAD [NOT DETECTED]
+		strdup(buffer1); // $ MISSING: Alert // BAD [NOT DETECTED]
+		strdup(buffer2); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -196,7 +196,7 @@ void test_readlink(int fd, const char *path, size_t sz)
 		char *buffer = (char *)malloc(1024);
 
 		readlink(path, buffer, 1024);
-		strdup(buffer); // BAD [NOT DETECTED]
+		strdup(buffer); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -211,7 +211,7 @@ void test_readlink(int fd, const char *path, size_t sz)
 		char *buffer = (char *)malloc(sz);
 
 		readlink(path, buffer, sz);
-		strdup(buffer); // BAD [NOT DETECTED]
+		strdup(buffer); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -289,7 +289,7 @@ void test_strcat()
 		char buffer[1024];
 
 		doNothing2(buffer);
-		strcat(buffer, "content"); // BAD [NOT DETECTED]
+		strcat(buffer, "content"); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -303,7 +303,7 @@ void test_strcat()
 		strcat(buffer_ptr, "content"); // GOOD
 
 		buffer_ptr = buffer2;
-		strcat(buffer_ptr, "content"); // BAD [NOT DETECTED]
+		strcat(buffer_ptr, "content"); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -361,7 +361,7 @@ void test_strlen(bool cond1, bool cond2)
 		if (cond1)
 			buffer[0] = 0;
 		if (cond2)
-			strlen(buffer); // BAD [NOT DETECTED]
+			strlen(buffer); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -524,7 +524,7 @@ void test_printf(char *str)
 		char *copied_str = (char *)malloc(len);
 
 		memcpy(copied_str, str, len);
-		printf("%s", copied_str); // BAD [NOT DETECTED]
+		printf("%s", copied_str); // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{
@@ -580,7 +580,7 @@ void test_reassignment()
 		{
 			strcpy(buffer_ptr, "content"); // null terminates buffer1 or buffer2
 			buffer_ptr = buffer2;
-			strdup(buffer2); // BAD [NOT DETECTED]
+			strdup(buffer2); // $ MISSING: Alert // BAD [NOT DETECTED]
 		}
 	}
 }

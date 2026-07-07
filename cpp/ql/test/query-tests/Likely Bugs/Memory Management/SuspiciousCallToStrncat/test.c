@@ -15,14 +15,14 @@ void good0(char *s) {
 	char buf[80];
 	strcpy(buf, "s = ");
 	strncat(buf, s, sizeof(buf)-5); // GOOD
-	strncat(buf, ".", 1); // BAD [NOT DETECTED] -- there might not be even 1 character of space
+	strncat(buf, ".", 1); // $ MISSING: Alert // BAD [NOT DETECTED] -- there might not be even 1 character of space
 }
 
 void bad0(char *s) {
 	char buf[80];
 	strcpy(buf, "s = ");
 	strncat(buf, s, sizeof(buf));  // $ Alert // BAD -- Forgot to allow for "s = "
-	strncat(buf, ".", 1); // BAD [NOT DETECTED] -- there might not be even 1 character of space
+	strncat(buf, ".", 1); // $ MISSING: Alert // BAD [NOT DETECTED] -- there might not be even 1 character of space
 }
 
 void good1(char *s) {
@@ -36,7 +36,7 @@ void bad1(char *s) {
 	char buf[80];
 	strcpy(buf, "s = ");
 	strncat(buf, s, sizeof(buf)-strlen("s = ")); // GOOD
-	strncat(buf, ".", 1); // BAD [NOT DETECTED] -- Need to check if any space is left
+	strncat(buf, ".", 1); // $ MISSING: Alert // BAD [NOT DETECTED] -- Need to check if any space is left
 }
 
 void strncat_test1(char *s) {
@@ -51,7 +51,7 @@ void strncat_test2(char *s) {
   int len = 80;
   char* buf = (char *)malloc(len);
   strncat(buf, s, len - strlen(buf) - 1); // GOOD
-  strncat(buf, s, len - strlen(buf));  // BAD [NOT DETECTED]
+  strncat(buf, s, len - strlen(buf));  // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 struct buffers

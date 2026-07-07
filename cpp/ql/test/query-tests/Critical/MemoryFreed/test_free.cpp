@@ -23,7 +23,7 @@ void test_double_free_aliasing(void *a, void* b) {
     free(a); // GOOD
     a = b;
     free(a); // GOOD
-    free(b); // BAD [NOT DETECTED]
+    free(b); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test_dominance1(void *a) {
@@ -40,8 +40,8 @@ void test_dominance2(void *a) {
 void test_post_dominance1(int *a)
 {
     if (condition()) free(a); // $ Source[cpp/double-free] Source[cpp/use-after-free]
-    if (condition()) a[2] = 5; // BAD [NOT DETECTED]
-    if (condition()) free(a); // $ Source[cpp/double-free] Source[cpp/use-after-free] // BAD [NOT DETECTED]
+    if (condition()) a[2] = 5; // $ MISSING: Alert // BAD [NOT DETECTED]
+    if (condition()) free(a); // $ Source[cpp/double-free] Source[cpp/use-after-free] // $ MISSING: Alert // BAD [NOT DETECTED]
     a[2] = 5; // $ Alert[cpp/use-after-free] // BAD
     free(a); // $ Alert[cpp/double-free] // BAD
 }
@@ -61,7 +61,7 @@ void test_use_after_free6(int *a, int *b) {
     free(a);
     a=b;
     free(b);
-    if (condition()) a[0] = 5; // BAD [NOT DETECTED]
+    if (condition()) a[0] = 5; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test_use_after_free7(int *a) {
@@ -343,7 +343,7 @@ void test_array(PtrContainer *containers) {
     delete containers[0].ptr; // GOOD
     delete containers[1].ptr; // GOOD
     delete containers[2].ptr; // GOOD
-    delete containers[2].ptr; // BAD (double free) [NOT DETECTED]
+    delete containers[2].ptr; // $ MISSING: Alert // BAD (double free) [NOT DETECTED]
 }
 
 struct E {
@@ -424,5 +424,5 @@ void testHasGetter() {
     free(buffer2);
 
     HasGetterNoFree hg3;
-    void *buffer3 = hg3.getBuffer(); // BAD (not freed) [NOT DETECTED]
+    void *buffer3 = hg3.getBuffer(); // $ MISSING: Alert // BAD (not freed) [NOT DETECTED]
 }

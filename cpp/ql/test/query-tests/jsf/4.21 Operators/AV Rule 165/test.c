@@ -23,5 +23,5 @@ void f(int i, unsigned int ui, signed int si, TUI tui, volatile unsigned int vui
 	vui = -vui; // $ Alert // BAD
 	u = -u; // $ Alert // BAD
 	us = -us; // $ Alert // BAD
-	ui = -(5U); // BAD [NOT DETECTED]
+	ui = -(5U); // $ MISSING: Alert // BAD [NOT DETECTED]
 }

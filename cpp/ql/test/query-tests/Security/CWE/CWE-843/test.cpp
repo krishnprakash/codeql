@@ -138,7 +138,7 @@ void test12() {
   // This has doesn't have any non-bitfield member, so we don't detect
   // the problem here since the query currently ignores bitfields.
   S1* s1 = new S1;
-  HasBitFields* hbf = reinterpret_cast<HasBitFields*>(s1); // BAD [NOT DETECTED]
+  HasBitFields* hbf = reinterpret_cast<HasBitFields*>(s1); // $ MISSING: Alert // BAD [NOT DETECTED]
 
   S1* s1_2 = new S1; // $ Source
   // This one has a non-bitfield members. So we detect the problem
@@ -168,7 +168,7 @@ void test14(bool b) {
     a = new Dog;
   }
   if(!b) {
-    Cat* d = static_cast<Cat*>(a); // BAD [NOT DETECTED]
+    Cat* d = static_cast<Cat*>(a); // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 }
 
@@ -206,7 +206,7 @@ union MyUnion
 void test16() {
   void* si = new SingleInt;
   // ...
-  MyUnion* mu = (MyUnion*)si; // BAD [NOT DETECTED]
+  MyUnion* mu = (MyUnion*)si; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 struct UnrelatedStructSize {

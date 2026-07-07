@@ -34,7 +34,7 @@ void test2()
 	wcsncpy(buf1, str, wcslen(str)); // $ Alert // BAD
 	wcsncpy(buf1, str, wcslen(str) + 1); // $ Alert // BAD
 	wcsncpy(buf1, buf2, sizeof(buf2)); // $ Alert // BAD
-	wcsncpy(buf1, buf2, sizeof(buf2) / sizeof(wchar_t)); // $ Alert // BAD [NOT DETECTED]
+	wcsncpy(buf1, buf2, sizeof(buf2) / sizeof(wchar_t)); // $ Alert // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test3()

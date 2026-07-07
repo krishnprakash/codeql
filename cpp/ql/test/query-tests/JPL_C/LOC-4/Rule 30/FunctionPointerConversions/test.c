@@ -20,8 +20,8 @@ void test()
 
 	funPtr1 = funPtr2; // GOOD
 	funPtr2 = funPtr2; // GOOD
-	intPtr = funPtr2; // BAD (function pointer -> int pointer) [NOT DETECTED]
-	voidPtr = funPtr2; // BAD (function pointer -> void pointer) [NOT DETECTED]
+	intPtr = funPtr2; // $ MISSING: Alert // BAD (function pointer -> int pointer) [NOT DETECTED]
+	voidPtr = funPtr2; // $ MISSING: Alert // BAD (function pointer -> void pointer) [NOT DETECTED]
 	i = funPtr2; // GOOD (permitted)
 
 	funPtr1 = (void (*)())funPtr1; // GOOD

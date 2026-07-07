@@ -43,7 +43,7 @@ void tests1(int case_num)
 			break;
 
 		case 5:
-			buffer = (char *)calloc(strlen(str), sizeof(char)); // BAD [NOT DETECTED]
+			buffer = (char *)calloc(strlen(str), sizeof(char)); // $ MISSING: Alert // BAD [NOT DETECTED]
 			strcpy(buffer, str);
 			break;
 
@@ -81,7 +81,7 @@ void tests1(int case_num)
 			break;
 
 		case 12:
-			buffer = (char *)malloc(strlen(str) + 0); // BAD [NOT DETECTED]
+			buffer = (char *)malloc(strlen(str) + 0); // $ MISSING: Alert // BAD [NOT DETECTED]
 			strcpy(buffer, str);
 			break;
 
@@ -91,17 +91,17 @@ void tests1(int case_num)
 			break;
 
 		case 102:
-			wbuffer = (wchar_t *)malloc(wcslen(wstr) + 1); // BAD (no sizeof) [NOT DETECTED]
+			wbuffer = (wchar_t *)malloc(wcslen(wstr) + 1); // $ MISSING: Alert // BAD (no sizeof) [NOT DETECTED]
 			wcscpy(wbuffer, wstr);
 			break;
 
 		case 103:
-			wbuffer = (wchar_t *)calloc(wcslen(wstr), sizeof(char)); // BAD [NOT DETECTED]
+			wbuffer = (wchar_t *)calloc(wcslen(wstr), sizeof(char)); // $ MISSING: Alert // BAD [NOT DETECTED]
 			wcscpy(wbuffer, wstr);
 			break;
 
 		case 104:
-			wbuffer = (wchar_t *)calloc(wcslen(wstr) + 1, sizeof(char)); // BAD (wrong sizeof) [NOT DETECTED]
+			wbuffer = (wchar_t *)calloc(wcslen(wstr) + 1, sizeof(char)); // $ MISSING: Alert // BAD (wrong sizeof) [NOT DETECTED]
 			wcscpy(wbuffer, wstr);
 			break;
 
@@ -116,7 +116,7 @@ void tests1(int case_num)
 			break;
 
 		case 107:
-			wbuffer = (wchar_t *)calloc(wcslen(wstr), sizeof(wchar_t)); // BAD [NOT DETECTED]
+			wbuffer = (wchar_t *)calloc(wcslen(wstr), sizeof(wchar_t)); // $ MISSING: Alert // BAD [NOT DETECTED]
 			wcscpy(wbuffer, wstr);
 			break;
 

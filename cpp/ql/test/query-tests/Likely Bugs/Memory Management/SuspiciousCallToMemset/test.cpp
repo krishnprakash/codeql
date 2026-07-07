@@ -22,7 +22,7 @@ int main()
 
 		memset(&ms, 0, sizeof(myStruct)); // GOOD
 		memset(&ms, 0, sizeof(ms)); // GOOD
-		memset(&ms, 0, 8); // BAD [NOT DETECTED]
+		memset(&ms, 0, 8); // $ MISSING: Alert // BAD [NOT DETECTED]
 		memset(&ms, 0, sizeof(otherStruct)); // $ Alert // BAD
 
 		{
@@ -87,7 +87,7 @@ int main()
 		memset(&msPtrArr, 0, sizeof(myStruct *) * NUM); // GOOD
 		memset(&msPtrArr, 0, sizeof(myStructPtr) * NUM); // GOOD
 		memset(&msPtrArr, 0, sizeof(myStruct **) * NUM); // $ Alert // BAD
-		memset(msPtrArr, 0, sizeof(myStruct) * NUM); // BAD [NOT DETECTED]
+		memset(msPtrArr, 0, sizeof(myStruct) * NUM); // $ MISSING: Alert // BAD [NOT DETECTED]
 		memset(msPtrArr, 0, sizeof(myStruct *) * NUM); // GOOD
 		memset(msPtrArr, 0, sizeof(myStructPtr) * NUM); // GOOD
 		memset(msPtrArr, 0, sizeof(myStruct **) * NUM); // $ Alert // BAD
@@ -128,7 +128,7 @@ void myFunc(myStruct paramArray[80], myStruct &refStruct)
 	memset(paramArray, 0, sizeof(myStruct) * 80); // GOOD
 	memset(paramArray, 0, sizeof(paramArray)); // $ SPURIOUS: Alert // GOOD [FALSE POSITIVE]
 	memset(&paramArray, 0, sizeof(myStruct) * 80); // $ Alert // BAD
-	memset(&paramArray, 0, sizeof(paramArray)); // BAD [NOT DETECTED]
+	memset(&paramArray, 0, sizeof(paramArray)); // $ MISSING: Alert // BAD [NOT DETECTED]
 
 	memset(&refStruct, 0, sizeof(myStruct)); // GOOD
 	memset(&refStruct, 0, sizeof(refStruct)); // GOOD

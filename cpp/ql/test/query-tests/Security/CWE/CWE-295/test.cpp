@@ -113,7 +113,7 @@ void test1_1(SSL *ssl)
 	{
 		int result = SSL_get_verify_result(ssl);
 
-		if (result == 1) // BAD (conflates OK and a non-OK codes in `else`) [NOT DETECTED]
+		if (result == 1) // $ MISSING: Alert // BAD (conflates OK and a non-OK codes in `else`) [NOT DETECTED]
 		{
 		} else {
 		}
@@ -139,7 +139,7 @@ void test1_3(SSL *ssl)
 {
 	int result = SSL_get_verify_result(ssl);
 
-	if (result == 0) { // BAD (error code 1 is treated as OK, not as non-OK) [NOT DETECTED]
+	if (result == 0) { // $ MISSING: Alert // BAD (error code 1 is treated as OK, not as non-OK) [NOT DETECTED]
 		do_good();
 	} else if (result == 1) {
 		do_good();

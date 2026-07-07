@@ -37,7 +37,7 @@ void test1()
 	data = (char *)malloc(100*sizeof(char));
 	use_if_nonzero(data); // GOOD
 	free(data); // $ Source
-	use_if_nonzero(data); // BAD [NOT DETECTED]
+	use_if_nonzero(data); // $ MISSING: Alert // BAD [NOT DETECTED]
 	use(data); // $ Alert // BAD
 }
 
@@ -75,7 +75,7 @@ void test4()
 	free(data); // $ Source
 	if (data)
 	{
-		use_if_nonzero(data); // BAD [NOT DETECTED]
+		use_if_nonzero(data); // $ MISSING: Alert // BAD [NOT DETECTED]
 		use(data); // $ Alert // BAD
 	}
 }
@@ -94,8 +94,8 @@ char* returnsFreedData(int i)
 void test5()
 {
 	char* data = returnsFreedData(1);
-	use_if_nonzero(data); // BAD [NOT DETECTED]
-	use(data); // BAD [NOT DETECTED]
+	use_if_nonzero(data); // $ MISSING: Alert // BAD [NOT DETECTED]
+	use(data); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test6()
@@ -104,7 +104,7 @@ void test6()
 	data = (char *)malloc(100*sizeof(char));
 	data2 = data;
 	free(data); // $ Source
-	use_if_nonzero(data2); // BAD [NOT DETECTED]
+	use_if_nonzero(data2); // $ MISSING: Alert // BAD [NOT DETECTED]
 	use(data); // $ Alert // BAD
 }
 
@@ -115,7 +115,7 @@ void test7()
 	data2 = data;
 	free(data); // $ Source
 	data2 = NULL;
-	use_if_nonzero(data); // BAD [NOT DETECTED]
+	use_if_nonzero(data); // $ MISSING: Alert // BAD [NOT DETECTED]
 	use(data); // $ Alert // BAD
 }
 
@@ -126,7 +126,7 @@ void test8()
 	data = data2;
 	free(data); // $ Source
 	data2 = NULL;
-	use_if_nonzero(data); // BAD [NOT DETECTED]
+	use_if_nonzero(data); // $ MISSING: Alert // BAD [NOT DETECTED]
 	use(data); // $ Alert // BAD
 }
 
@@ -171,8 +171,8 @@ template<class T> T test()
 	T* x;
 	use(x); // GOOD
 	delete x;
-	use_if_nonzero(x); // BAD [NOT DETECTED]
-	use(x); // BAD [NOT DETECTED]
+	use_if_nonzero(x); // $ MISSING: Alert // BAD [NOT DETECTED]
+	use(x); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void test12(int count)
@@ -214,7 +214,7 @@ template<class T> T test15()
 	T* x;
 	use(x); // GOOD
 	delete x; // $ Source
-	use(x); // $ Alert // BAD [NOT DETECTED]
+	use(x); // $ Alert // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 void test15runner(void)
 {

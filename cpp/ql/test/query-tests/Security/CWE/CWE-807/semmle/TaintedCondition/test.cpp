@@ -15,7 +15,7 @@ extern const char* adminCookie;
 
 const char *currentUser;
 
-void processRequest() 
+void processRequest()
 {
      const char *userName = getenv("USER_NAME"); // $ Source
 
@@ -35,17 +35,17 @@ void processRequest()
         adminPrivileges = 0; // OK, since it's a 0 and not a 1
      }
 
-     // BAD (requires pointer analysis to catch) [NOT DETECTED]
+     // $ MISSING: Alert // BAD (requires pointer analysis to catch) [NOT DETECTED]
      const char** userp = &currentUser;
      *userp = userName;
      if (!strcmp(currentUser, "admin")) {
-       adminPrivileges = 1;     
+       adminPrivileges = 1;
      }
 }
 
 void bugWithBinop() {
      const char *userName = getenv("USER_NAME");
-     
+
      // The following is tainted, but should not cause
      // the whole program to be considered tainted.
      int bytes = strlen(userName) + 1;

@@ -25,7 +25,7 @@ void test(float f3[3], float f4[4], float f5[5], float *fp)
 	g(arr4); // GOOD
 	g(arr5); // GOOD
 
-	h(f3); // BAD [NOT DETECTED]
+	h(f3); // $ MISSING: Alert // BAD [NOT DETECTED]
 	h(f4); // GOOD
 	h(f5); // GOOD
 	h(fp); // GOOD

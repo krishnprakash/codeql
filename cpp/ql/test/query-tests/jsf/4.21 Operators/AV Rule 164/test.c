@@ -10,10 +10,10 @@ void f(unsigned char uc, signed char sc, int i) {
 	uc << 7;
 	uc << 8; // $ Alert // BAD
 
-	uc >>= -1; // BAD [NOT DETECTED]
-	uc >>= 0; // BAD [NOT DETECTED]
+	uc >>= -1; // $ MISSING: Alert // BAD [NOT DETECTED]
+	uc >>= 0; // $ MISSING: Alert // BAD [NOT DETECTED]
 	uc >>= 7;
-	uc >>= 8; // BAD [NOT DETECTED]
+	uc >>= 8; // $ MISSING: Alert // BAD [NOT DETECTED]
 
 	sc >> -1; // $ Alert // BAD
 	sc >> 0;

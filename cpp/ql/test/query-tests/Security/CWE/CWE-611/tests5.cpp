@@ -93,11 +93,11 @@ void test5_8(DOMImplementationLS *impl, InputSource &data) {
 	DOMLSParser *p = impl->createLSParser();
 	DOMConfiguration *cfg = p->getDomConfig();
 
-	p->parse(data); // BAD (parser not correctly configured) [NOT DETECTED]
+	p->parse(data); // $ MISSING: Alert // BAD (parser not correctly configured) [NOT DETECTED]
 
 	cfg->setParameter(XMLUni::fgXercesDisableDefaultEntityResolution, true);
 	p->parse(data); // GOOD
 
 	cfg->setParameter(XMLUni::fgXercesDisableDefaultEntityResolution, false);
-	p->parse(data); // BAD (parser not correctly configured) [NOT DETECTED]
+	p->parse(data); // $ MISSING: Alert // BAD (parser not correctly configured) [NOT DETECTED]
 }

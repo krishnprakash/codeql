@@ -197,7 +197,7 @@ void IntendedOverflow(unsigned char p)
     for (s = m + 1; s < m; s--) {} // $ Alert // BAD (never runs)
 
     for (i = p - 1; i < p; i--) {} // GOOD
-    for (s = p - 1; s < p; s--) {} // BAD [NOT DETECTED]
+    for (s = p - 1; s < p; s--) {} // $ MISSING: Alert // BAD [NOT DETECTED]
 
 	{
 		int n;
@@ -210,10 +210,10 @@ void IntendedOverflow(unsigned char p)
 		for (i = 63; i < n; i--) {} // GOOD
 
 		n = 64;
-		for (s = n - 1; s < n; s--) {} // BAD [NOT DETECTED]
+		for (s = n - 1; s < n; s--) {} // $ MISSING: Alert // BAD [NOT DETECTED]
 		n = 64;
 		for (s = n - 1; s < 64; s--) {} // $ Alert // BAD
 		n = 64;
-		for (s = 63; s < n; s--) {} // BAD [NOT DETECTED]
+		for (s = 63; s < n; s--) {} // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 }

@@ -686,7 +686,7 @@ void test() {
   for (auto x : returnRef()[0]) {} // GOOD
   for (auto x : returnRef().at(0)) {} // GOOD
 
-  for(auto it = returnValue().begin(); it != returnValue().end(); ++it) {} // BAD [NOT DETECTED]
+  for(auto it = returnValue().begin(); it != returnValue().end(); ++it) {} // $ MISSING: Alert // BAD [NOT DETECTED]
 
   {
   auto v = returnValue();
@@ -713,7 +713,7 @@ void test() {
   for(auto it = v.begin(); it != v.end(); ++it) {} // GOOD
   }
 
-  for (auto x : return_self_by_ref(returnValue())) {} // BAD [NOT DETECTED]
+  for (auto x : return_self_by_ref(returnValue())) {} // $ MISSING: Alert // BAD [NOT DETECTED]
 
   for (auto x : return_self_by_value(returnValue())) {} // GOOD
 }
@@ -728,7 +728,7 @@ std::vector<int>& ref_to_first_in_returnValue_1() {
 }
 
 std::vector<int>& ref_to_first_in_returnValue_2() {
-  return returnValue()[0]; // BAD [NOT DETECTED]
+  return returnValue()[0]; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 std::vector<int>& ref_to_first_in_returnValue_3() {

@@ -5,6 +5,6 @@ void test_buildless(const char *p_c, const short *p_short, const int *p_int, con
   *(p_short + sizeof(int)); // $ Alert // BAD
   *(p_int + sizeof(int)); // $ Alert // BAD
   *(p_8 + sizeof(int)); // GOOD (`sizeof(uint8_t)` is 1, but there's an error in the type)
-  *(p_16 + sizeof(int)); // BAD [NOT DETECTED]
-  *(p_32 + sizeof(int)); // BAD [NOT DETECTED]
+  *(p_16 + sizeof(int)); // $ MISSING: Alert // BAD [NOT DETECTED]
+  *(p_32 + sizeof(int)); // $ MISSING: Alert // BAD [NOT DETECTED]
 }

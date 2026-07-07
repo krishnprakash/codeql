@@ -22,7 +22,7 @@ struct Q {
 void foo(int untrusted_int) {
 	Q q;
     if (q.begin() + untrusted_int > q.end() || // GOOD (for the purpose of this test)
-          q.begin() + untrusted_int < q.begin()) // BAD [NOT DETECTED]
+          q.begin() + untrusted_int < q.begin()) // $ MISSING: Alert // BAD [NOT DETECTED]
       throw q;
 }
 

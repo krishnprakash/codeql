@@ -299,7 +299,7 @@ int main()
 		int *ptr_i = &i;
 
 		scanf("%d", &i);
-		use(*ptr_i); // BAD [NOT DETECTED]: may not have written `i`
+		use(*ptr_i); // $ MISSING: Alert // BAD [NOT DETECTED]: may not have written `i`
 	}
 
 	{
@@ -307,7 +307,7 @@ int main()
 		int *ptr_i = &i;
 
 		scanf("%d", ptr_i);
-		use(i); // BAD [NOT DETECTED]: may not have written `*ptr_i`
+		use(i); // $ MISSING: Alert // BAD [NOT DETECTED]: may not have written `*ptr_i`
 	}
 
 	{
@@ -380,7 +380,7 @@ void my_scan_int_test()
 	use(i); // GOOD: used before scanf
 
 	my_scan_int(i);
-	use(i); // BAD [NOT DETECTED]
+	use(i); // $ MISSING: Alert // BAD [NOT DETECTED]
 
 	if (my_scan_int(i))
 	{

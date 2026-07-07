@@ -83,7 +83,7 @@ void test6(const char *sa, const char *sb)
 	int pos = 0;
 
 	pos = snprintf(buffer, 100, "'%s', ", sa);
-	pos += snprintf(&(buffer[pos]), 100 - pos, "'%s'.", sb); // BAD [NOT DETECTED]
+	pos += snprintf(&(buffer[pos]), 100 - pos, "'%s'.", sb); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 size_t strlen(const char *str);

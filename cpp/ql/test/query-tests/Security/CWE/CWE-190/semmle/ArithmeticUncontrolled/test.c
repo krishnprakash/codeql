@@ -68,7 +68,7 @@ void randomTester() {
   }
 
   {
-    int r = rand() + 100; // BAD [NOT DETECTED]
+    int r = rand() + 100; // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 
   {
@@ -84,20 +84,20 @@ void randomTester() {
   }
 
   {
-    int r = RAND2() + 100; // BAD [NOT DETECTED]
+    int r = RAND2() + 100; // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 
   {
     int r = RAND();
     int *ptr_r = &r;
-    *ptr_r += 100; // BAD [NOT DETECTED]
+    *ptr_r += 100; // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 
   {
     int r = 0;
     int *ptr_r = &r;
     *ptr_r = RAND();
-    r += 100; // BAD [NOT DETECTED]
+    r += 100; // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 
   {
@@ -142,7 +142,7 @@ void moreTests() {
   {
     int r = rand();
 
-    r <<= 8; // BAD [NOT DETECTED]
+    r <<= 8; // $ MISSING: Alert // BAD [NOT DETECTED]
   }
 
   {

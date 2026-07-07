@@ -105,6 +105,6 @@ void test7(int size) {
     }
 
     for (char *p = arr; p <= arr + size; p++) {
-        *p = 0; // BAD [NOT DETECTED]
+        *p = 0; // $ MISSING: Alert // BAD [NOT DETECTED]
     }
 }

@@ -182,7 +182,7 @@ void test_strdupa_no_dealloc() {
 void test_strdupa_dealloc() {
 	char msg[] = "OctoCat";
 	char *cpy = strdupa(msg);
-    free(cpy); // BAD [NOT DETECTED]
+    free(cpy); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 // --- strndupa ---
@@ -196,7 +196,7 @@ void test_strndupa_no_dealloc() {
 void test_strndupa_dealloc() {
 	char msg[] = "OctoCat";
 	char *cpy = strndupa(msg, 4);
-    free(cpy); // BAD [NOT DETECTED]
+    free(cpy); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 // ---

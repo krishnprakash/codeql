@@ -22,12 +22,12 @@ void unions_test(MyUnion *mu)
 	strcpy(mu, "1234567890"); // GOOD
 	strcpy(&(mu->ptr), "1234567890"); // GOOD (dubious)
 	strcpy(&(mu->buffer), "1234567890"); // GOOD
-	strcpy(mu, "12345678901234567890"); // BAD [NOT DETECTED]
+	strcpy(mu, "12345678901234567890"); // $ MISSING: Alert // BAD [NOT DETECTED]
 	strcpy(&(mu->ptr), "12345678901234567890"); // $ Alert[cpp/very-likely-overrunning-write] // BAD
 	strcpy(&(mu->buffer), "12345678901234567890"); // $ Alert[cpp/very-likely-overrunning-write] // BAD
 
 	mu->ptr = buffer;
 	strcpy(mu->ptr, "1234567890"); // GOOD
 	strcpy(mu->ptr, "12345678901234567890"); // GOOD
-	strcpy(mu->ptr, "123456789012345678901234567890"); // BAD [NOT DETECTED]
+	strcpy(mu->ptr, "123456789012345678901234567890"); // $ MISSING: Alert // BAD [NOT DETECTED]
 }

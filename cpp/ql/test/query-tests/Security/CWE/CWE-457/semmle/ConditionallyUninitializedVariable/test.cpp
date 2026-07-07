@@ -27,12 +27,12 @@ void test1()
 		use(b);
 	}
 
-	if (maybeInitialize1(&c) == 0) // BAD (initialization check is wrong) [NOT DETECTED]
+	if (maybeInitialize1(&c) == 0) // $ MISSING: Alert // BAD (initialization check is wrong) [NOT DETECTED]
 	{
 		use(c);
 	}
 
-	result1 = maybeInitialize1(&d); // BAD (initialization stored but not checked) [NOT DETECTED]
+	result1 = maybeInitialize1(&d); // $ MISSING: Alert // BAD (initialization stored but not checked) [NOT DETECTED]
 	use(d);
 
 	result2 = maybeInitialize1(&e); // GOOD

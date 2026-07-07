@@ -30,7 +30,7 @@ void test(int i, const char *str)
 
 		printf("%1$*2$d", 0, num, width); // $ Alert[cpp/too-many-format-arguments] // BAD (too many format arguments) [INCORRECT MESSAGE]
 		printf("%1$*2$d", num, width); // $ SPURIOUS: Alert[cpp/too-many-format-arguments] // GOOD [FALSE POSITIVE]
-		printf("%1$*2$d", width); // BAD (too few format arguments) [NOT DETECTED]
+		printf("%1$*2$d", width); // $ MISSING: Alert // BAD (too few format arguments) [NOT DETECTED]
 	}
 	{
 		int precision;

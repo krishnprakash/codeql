@@ -22,9 +22,9 @@ public:
 	myClass(myClass *ptr, myClass &ref) {
 		assert(ptr != NULL);
 		assert(y != NULL);
-		assert(&y != NULL); // BAD [NOT DETECTED]
+		assert(&y != NULL); // $ MISSING: Alert // BAD [NOT DETECTED]
 		assert(this->y != NULL);
-		assert(&this->y != NULL); // BAD [NOT DETECTED]
+		assert(&this->y != NULL); // $ MISSING: Alert // BAD [NOT DETECTED]
 		assert(ptr->y != NULL);
 		assert(&ptr->y != NULL); // $ Alert // BAD
 		assert((ptr->y) != NULL);

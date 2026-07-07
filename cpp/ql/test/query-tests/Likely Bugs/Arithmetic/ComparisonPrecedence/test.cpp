@@ -57,7 +57,7 @@ void test1(int x, int y, int z) {
 	{
 		MyClass1 a, b, c;
 
-		if (a < b < c) {} // BAD (the overloaded `operator<` behaves like `<`) [NOT DETECTED]
+		if (a < b < c) {} // $ MISSING: Alert // BAD (the overloaded `operator<` behaves like `<`) [NOT DETECTED]
 	}
 
 	// overloaded non-comparison

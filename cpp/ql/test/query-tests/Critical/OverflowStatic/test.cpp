@@ -35,16 +35,16 @@ void f2(char *src)
 	amount = 100;
 	memcpy(buffer, src, amount); // GOOD
 	amount = amount + 1;
-	memcpy(buffer, src, amount); // BAD [NOT DETECTED]
+	memcpy(buffer, src, amount); // $ MISSING: Alert // BAD [NOT DETECTED]
 	amount = 101;
 	memcpy(buffer, src, amount); // $ Alert // BAD
 
 	ptr = buffer;
-	memcpy(ptr, src, 101); // BAD [NOT DETECTED]
+	memcpy(ptr, src, 101); // $ MISSING: Alert // BAD [NOT DETECTED]
 	ptr = &(buffer[0]);
-	memcpy(ptr, src, 101); // BAD [NOT DETECTED]
+	memcpy(ptr, src, 101); // $ MISSING: Alert // BAD [NOT DETECTED]
 	ptr = &(buffer[1]);
-	memcpy(ptr, src, 100); // BAD [NOT DETECTED]
+	memcpy(ptr, src, 100); // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 void f3() {

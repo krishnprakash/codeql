@@ -42,7 +42,7 @@ int main(int argc, char **argv) { // $ Source
 	MyStruct *arr1 = (MyStruct *)malloc(sizeof(MyStruct)); // GOOD
 	MyStruct *arr2 = (MyStruct *)malloc(tainted); // $ Alert // BAD
 	MyStruct *arr3 = (MyStruct *)malloc(tainted * sizeof(MyStruct)); // $ Alert // BAD
-	MyStruct *arr4 = (MyStruct *)malloc(getTainted() * sizeof(MyStruct)); // BAD [NOT DETECTED]
+	MyStruct *arr4 = (MyStruct *)malloc(getTainted() * sizeof(MyStruct)); // $ MISSING: Alert // BAD [NOT DETECTED]
 	MyStruct *arr5 = (MyStruct *)malloc(sizeof(MyStruct) + tainted); // $ Alert // BAD
 
 	int size = tainted * 8;
@@ -158,7 +158,7 @@ void more_bounded_tests() {
 
 		if (size < 100)
 		{
-			malloc(size * sizeof(int)); // BAD [NOT DETECTED]
+			malloc(size * sizeof(int)); // $ MISSING: Alert // BAD [NOT DETECTED]
 		}
 	}
 
@@ -213,7 +213,7 @@ void more_bounded_tests() {
 	{
 		int size = atoi(getenv("USER"));
 
-		malloc(size * sizeof(int)); // BAD [NOT DETECTED]
+		malloc(size * sizeof(int)); // $ MISSING: Alert // BAD [NOT DETECTED]
 
 		if ((size > 0) && (size < 100))
 		{
@@ -226,7 +226,7 @@ void more_bounded_tests() {
 
 		if (size > 100)
 		{
-			malloc(size * sizeof(int)); // BAD [NOT DETECTED]
+			malloc(size * sizeof(int)); // $ MISSING: Alert // BAD [NOT DETECTED]
 		}
 	}
 }

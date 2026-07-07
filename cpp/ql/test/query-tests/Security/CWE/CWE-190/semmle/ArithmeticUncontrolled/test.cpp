@@ -157,8 +157,8 @@ int test_underflow()
 int test_cast()
 {
 	int x = rand();
-	short a = x; // BAD [NOT DETECTED]
-	short b = -x; // BAD [NOT DETECTED]
+	short a = x; // $ MISSING: Alert // BAD [NOT DETECTED]
+	short b = -x; // $ MISSING: Alert // BAD [NOT DETECTED]
 	long long c = x; // GOOD
 	long long d = -x; // GOOD
 }
@@ -174,7 +174,7 @@ void test_float()
 	{
 		int x = rand();
 		float y = x * 5.0f; // GOOD
-		int z = y; // BAD [NOT DETECTED]
+		int z = y; // $ MISSING: Alert // BAD [NOT DETECTED]
 	}
 
 	{

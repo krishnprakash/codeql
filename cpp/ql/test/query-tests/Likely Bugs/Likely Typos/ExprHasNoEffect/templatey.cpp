@@ -15,9 +15,9 @@ void operator<<(streamable& lhs, streamable& rhs)
 int main()
 {
   int x = 3;
-  foo(x, x); // BAD [NOT DETECTED]
+  foo(x, x); // $ MISSING: Alert // BAD [NOT DETECTED]
   streamable y;
-  foo(y, y); // BAD [NOT DETECTED]
+  foo(y, y); // $ MISSING: Alert // BAD [NOT DETECTED]
   return 0;
 }
 

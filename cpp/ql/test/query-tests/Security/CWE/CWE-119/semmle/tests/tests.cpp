@@ -575,7 +575,7 @@ void test20()
 	}
 
 	num = 101;
-	if (fread(intBuffer, sizeof(int), num, fileSource) > 0) // BAD [NOT DETECTED]
+	if (fread(intBuffer, sizeof(int), num, fileSource) > 0) // $ MISSING: Alert // BAD [NOT DETECTED]
 	{
 		// ...
 	}

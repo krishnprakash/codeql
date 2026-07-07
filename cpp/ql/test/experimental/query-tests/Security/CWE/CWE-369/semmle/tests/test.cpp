@@ -58,9 +58,9 @@ int badTestf3(int type, int met) {
   is = getSize(type);
   switch (met) {
   case 1:
-    if (is >= 0) return 123 / is; // BAD [NOT DETECTED]
+    if (is >= 0) return 123 / is; // $ MISSING: Alert // BAD [NOT DETECTED]
   case 2:
-    if (0 == is) return 123 / is; // BAD [NOT DETECTED]
+    if (0 == is) return 123 / is; // $ MISSING: Alert // BAD [NOT DETECTED]
   case 3:
     if (!is & 123 / is) // $ Alert // BAD
       return 123;
@@ -82,7 +82,7 @@ int badTestf3(int type, int met) {
   }
   if (is != 0) return -1;
   if (is == 0) type += 1;
-  return 123 / is; // BAD [NOT DETECTED]
+  return 123 / is; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
 
 int goodTestf3(int type, int met) {
@@ -223,7 +223,7 @@ int badTestf12(FILE * f) {
   int a;
   int ret = -1;
   a = getc(f);
-  if (a == 0) ret = 123 / a; // BAD [NOT DETECTED]
+  if (a == 0) ret = 123 / a; // $ MISSING: Alert // BAD [NOT DETECTED]
   return ret;
 }
 
@@ -262,7 +262,7 @@ void badTestf13(int type) {
   if (is < 5)
     badMySubDiv(type, is); // $ Alert // BAD
   if (is < 0)
-    badMySubDiv(type, is); // BAD [NOT DETECTED]
+    badMySubDiv(type, is); // $ MISSING: Alert // BAD [NOT DETECTED]
   if (is > 5)
     badMySubDiv(type, is); // GOOD
   if (is == 0)

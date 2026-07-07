@@ -49,14 +49,14 @@ void test1()
 	{
 		// ...
 	}
-	if (getFloatRef()) // BAD [NOT DETECTED]
+	if (getFloatRef()) // $ MISSING: Alert // BAD [NOT DETECTED]
 	{
-		setPosInt(getFloatRef()); // BAD [NOT DETECTED]
+		setPosInt(getFloatRef()); // $ MISSING: Alert // BAD [NOT DETECTED]
 		setPosFloat(getFloatRef());
 	}
-	if (getConstFloatRef()) // BAD [NOT DETECTED]
+	if (getConstFloatRef()) // $ MISSING: Alert // BAD [NOT DETECTED]
 	{
-		setPosInt(getConstFloatRef()); // BAD [NOT DETECTED]
+		setPosInt(getConstFloatRef()); // $ MISSING: Alert // BAD [NOT DETECTED]
 		setPosFloat(getConstFloatRef());
 	}
 

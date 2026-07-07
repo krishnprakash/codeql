@@ -39,5 +39,5 @@ bool is_bit_set_v3(int x, int bitnum) {
 }
 
 bool is_bit_set_v4(int x, int bitnum) {
-  return (x & (1 << bitnum)) >= 1; // BAD [NOT DETECTED]
+  return (x & (1 << bitnum)) >= 1; // $ MISSING: Alert // BAD [NOT DETECTED]
 }
