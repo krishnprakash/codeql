@@ -41,7 +41,7 @@ void test_post_dominance1(int *a)
 {
     if (condition()) free(a); // $ Source[cpp/double-free] Source[cpp/use-after-free]
     if (condition()) a[2] = 5; // $ MISSING: Alert // BAD [NOT DETECTED]
-    if (condition()) free(a); // $ Source[cpp/double-free] Source[cpp/use-after-free] // $ MISSING: Alert // BAD [NOT DETECTED]
+    if (condition()) free(a); // $ Source[cpp/double-free] Source[cpp/use-after-free] MISSING: Alert // BAD [NOT DETECTED]
     a[2] = 5; // $ Alert[cpp/use-after-free] // BAD
     free(a); // $ Alert[cpp/double-free] // BAD
 }

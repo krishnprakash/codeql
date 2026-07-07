@@ -214,7 +214,7 @@ template<class T> T test15()
 	T* x;
 	use(x); // GOOD
 	delete x; // $ Source
-	use(x); // $ Alert // $ MISSING: Alert // BAD [NOT DETECTED]
+	use(x); // $ Alert // BAD
 }
 void test15runner(void)
 {

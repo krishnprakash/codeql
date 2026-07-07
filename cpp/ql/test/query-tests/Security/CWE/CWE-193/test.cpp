@@ -39,9 +39,9 @@ void test3(int size) {
 void test4(int size) {
     char* p = (char*)malloc(size - 1);
     char* q = p + (size - 1); // $ MISSING: alloc=L40-1
-    char a = *q; // $ MISSING: deref=L42 // $ MISSING: Alert // BAD [NOT DETECTED]
+    char a = *q; // $ MISSING: deref=L42 Alert // BAD [NOT DETECTED]
     char b = *(q - 1); // GOOD
-    char c = *(q + 1); // $ MISSING: deref=L44+1 // $ MISSING: Alert // BAD [NOT DETECTED]
+    char c = *(q + 1); // $ MISSING: deref=L44+1 Alert // BAD [NOT DETECTED]
     char d = *(q + size); // $ MISSING: Alert // BAD [NOT DETECTED]
     char e = *(q - size); // GOOD
     char f = *(q + size + 1); // $ MISSING: Alert // BAD [NOT DETECTED]
@@ -93,7 +93,7 @@ void test6(int size) {
     }
 
     for (char* p = arr.begin; p <= arr.end; ++p) {
-        *p = 0; // $ MISSING: deref=L83->L91->L96 deref=L83->L95->L96 // $ MISSING: Alert // BAD [NOT DETECTED]
+        *p = 0; // $ MISSING: deref=L83->L91->L96 deref=L83->L95->L96 Alert // BAD [NOT DETECTED]
     }
 
     for (char* p = arr.begin; p < arr.end; ++p) {
@@ -107,7 +107,7 @@ void test7_callee(array_t arr) {
     }
 
     for (char* p = arr.begin; p <= arr.end; ++p) {
-        *p = 0; // $ MISSING: deref=L83->L105->L110 deref=L83->L109->L110 // $ MISSING: Alert // BAD [NOT DETECTED]
+        *p = 0; // $ MISSING: deref=L83->L105->L110 deref=L83->L109->L110 Alert // BAD [NOT DETECTED]
     }
 
     for (char* p = arr.begin; p < arr.end; ++p) {
@@ -154,7 +154,7 @@ void test9(int size) {
     }
 
     for (char* p = arr->begin; p <= arr->end; ++p) {
-        *p = 0; // $ MISSING: deref=L144->L156->L157 // $ MISSING: Alert // BAD [NOT DETECTED]
+        *p = 0; // $ MISSING: deref=L144->L156->L157 Alert // BAD [NOT DETECTED]
     }
 
     for (char* p = arr->begin; p < arr->end; ++p) {
@@ -168,7 +168,7 @@ void test10_callee(array_t *arr) {
     }
 
     for (char* p = arr->begin; p <= arr->end; ++p) {
-        *p = 0; // $ MISSING: deref=L144->L166->L171 deref=L144->L170->L171 // $ MISSING: Alert // BAD [NOT DETECTED]
+        *p = 0; // $ MISSING: deref=L144->L166->L171 deref=L144->L170->L171 Alert // BAD [NOT DETECTED]
     }
 
     for (char* p = arr->begin; p < arr->end; ++p) {
@@ -198,7 +198,7 @@ void test12(unsigned len, unsigned index) {
         return;
     }
 
-    p[index] = '\0'; // $ MISSING: deref=L195->L201 // $ MISSING: Alert // BAD [NOT DETECTED]
+    p[index] = '\0'; // $ MISSING: deref=L195->L201 Alert // BAD [NOT DETECTED]
 }
 
 void test13(unsigned len, unsigned index) {
@@ -703,7 +703,7 @@ void test34(unsigned size) {
 }
 
 void deref(char* q) {
-  char x = *q; // $ MISSING: deref=L714->L705->L706 // $ MISSING: Alert // BAD [NOT DETECTED]
+  char x = *q; // $ MISSING: deref=L714->L705->L706 Alert // BAD [NOT DETECTED]
 }
 
 void test35(size_t size, char* q)
