@@ -1,3 +1,4 @@
+# Copyright © 2026 Apple Inc.
 extensions:
   - addsTo:
       pack: codeql/java-all
@@ -5,3 +6,4 @@ extensions:
     data:
       - ["org.springframework.web.reactive.function.client", "WebClient", False, "create", "", "", "Argument[0]", "request-forgery", "manual"]
       - ["org.springframework.web.reactive.function.client", "WebClient$Builder", False, "baseUrl", "", "", "Argument[0]", "request-forgery", "manual"]
+      - ["org.springframework.web.reactive.function.client", "WebClient$UriSpec", True, "uri", "", "", "Argument[0]", "request-forgery", "manual"]
