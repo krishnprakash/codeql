@@ -10,6 +10,7 @@ private import semmle.code.java.dataflow.SSA
 private import semmle.code.java.frameworks.kotlin.IO
 private import semmle.code.java.frameworks.kotlin.Text
 private import semmle.code.java.dataflow.Nullness
+private import semmle.code.java.security.Sanitizers
 
 /** A sanitizer that protects against path injection vulnerabilities. */
 abstract class PathInjectionSanitizer extends DataFlow::Node { }
@@ -470,12 +471,7 @@ private class DirectoryCharactersGuard extends PathGuard {
   Expr checkedExpr;
   boolean branch;
 
-  DirectoryCharactersGuard() {
-    // Annotations are handled directly as barriers in `DirectoryCharactersSanitizer`,
-    // since they don't dominate the sanitized expression and so can't act as barrier guards.
-    not this instanceof Annotation and
-    isMatchesCall(this, checkedExpr, branch)
-  }
+  DirectoryCharactersGuard() { isMatchesCall(this, checkedExpr, branch) }
 
   override Expr getCheckedExpr() { result = checkedExpr }
 
@@ -501,12 +497,5 @@ private class DirectoryCharactersSanitizer extends PathInjectionSanitizer {
     this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer
     or
     this = DataFlow::BarrierGuard<directoryCharactersGuard/3>::getABarrierNode()
-    or
-    // Annotations don't fit into the model of barrier guards because the
-    // annotation doesn't dominate the sanitized expression, so we instead
-    // treat them as barriers directly.
-    exists(RegexMatch rm | rm instanceof Annotation and isMatchesCall(rm, _, true) |
-      this.asExpr() = rm.getString()
-    )
   }
 }
