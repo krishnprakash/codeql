@@ -39,20 +39,39 @@ private let keptTriviaKinds: Set<String> = [
     "unexpectedText",
 ]
 
-/// Serialize a trivia collection into an array of `{ kind, text }` pieces,
-/// keeping only the kinds in `keptTriviaKinds`.
-private func serializeTrivia(_ trivia: Trivia) -> [Any] {
-    trivia.pieces.compactMap { piece -> [String: Any]? in
+/// Serialize a trivia collection into an array of `{ kind, text, range }`
+/// pieces, keeping only the kinds in `keptTriviaKinds`.
+///
+/// `start` is the absolute position of the first piece (a token's leading
+/// trivia starts at `token.position`; its trailing trivia at
+/// `token.endPositionBeforeTrailingTrivia`). Each piece's range is derived by
+/// accumulating piece lengths, so kept pieces carry an exact source location.
+private func serializeTrivia(
+    _ trivia: Trivia,
+    startingAt start: AbsolutePosition,
+    _ converter: SourceLocationConverter
+) -> [Any] {
+    var result: [Any] = []
+    var offset = start.utf8Offset
+    for piece in trivia.pieces {
+        let length = piece.sourceLength.utf8Length
         // The label of an enum case mirror is the case name (e.g. "spaces",
         // "lineComment"), which gives us a stable kind without an exhaustive
         // switch over every `TriviaPiece` case.
         let kind = Mirror(reflecting: piece).children.first?.label ?? "\(piece)"
-        guard keptTriviaKinds.contains(kind) else { return nil }
-        return [
-            "kind": kind,
-            "text": Trivia(pieces: [piece]).description,
-        ]
+        if keptTriviaKinds.contains(kind) {
+            result.append([
+                "kind": kind,
+                "text": Trivia(pieces: [piece]).description,
+                "range": [
+                    "start": location(AbsolutePosition(utf8Offset: offset), converter),
+                    "end": location(AbsolutePosition(utf8Offset: offset + length), converter),
+                ],
+            ])
+        }
+        offset += length
     }
+    return result
 }
 
 /// Recursively convert a SwiftSyntax node into a JSON-serializable value.
@@ -95,11 +114,17 @@ private func serialize(
             "range": range,
         ]
         // Only emit trivia when present; after filtering, most tokens have none.
-        let leading = serializeTrivia(token.leadingTrivia)
+        // Leading trivia starts at the token's own position; trailing trivia
+        // starts just after the token's content.
+        let leading = serializeTrivia(
+            token.leadingTrivia, startingAt: token.position, converter)
         if !leading.isEmpty {
             result["leadingTrivia"] = leading
         }
-        let trailing = serializeTrivia(token.trailingTrivia)
+        let trailing = serializeTrivia(
+            token.trailingTrivia,
+            startingAt: token.endPositionBeforeTrailingTrivia,
+            converter)
         if !trailing.isEmpty {
             result["trailingTrivia"] = trailing
         }

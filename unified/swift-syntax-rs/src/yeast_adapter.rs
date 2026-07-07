@@ -25,6 +25,29 @@ use serde_json::Value;
 use yeast::schema::Schema;
 use yeast::{Ast, Id, NodeContent, Point, Range};
 
+/// A comment (or `unexpectedText`) recovered from the syntax tree's trivia.
+///
+/// These are collected into a side channel rather than embedded in the
+/// [`yeast::Ast`], mirroring how the extractor treats tree-sitter `extra`
+/// nodes: they carry a location and text but are not attached to a parent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TriviaToken {
+    /// The trivia kind (e.g. `lineComment`, `blockComment`, `docLineComment`,
+    /// `docBlockComment`, `unexpectedText`).
+    pub kind: String,
+    /// The verbatim source text of the piece (e.g. `// comment`).
+    pub text: String,
+    /// The source range the piece occupies.
+    pub range: Range,
+}
+
+/// The result of adapting a swift-syntax JSON tree: the [`yeast::Ast`] plus the
+/// comment/`unexpectedText` trivia harvested from it (in source order).
+pub struct AdaptedTree {
+    pub ast: Ast,
+    pub trivia: Vec<TriviaToken>,
+}
+
 /// swift-syntax `TokenKind` cases whose text is *not* determined by the kind
 /// (i.e. `TokenKind.defaultText == nil`). These carry varying information and
 /// are modelled as named leaf nodes; every other token is a fixed
@@ -142,16 +165,19 @@ fn children_of(value: &Value) -> Vec<&Value> {
 ///
 /// This is a single traversal: each node's kind and field names are registered
 /// in the schema on the fly, immediately before the node is created. Children
-/// are built first so a parent's field lists reference existing ids.
-fn build(node: &Value, ast: &mut Ast) -> Result<Id, String> {
+/// are built first so a parent's field lists reference existing ids. Any
+/// comment/`unexpectedText` trivia carried by a token is harvested into
+/// `trivia` during the same pass rather than embedded in the tree.
+fn build(node: &Value, ast: &mut Ast, trivia: &mut Vec<TriviaToken>) -> Result<Id, String> {
     let info = classify(node)?;
+    collect_trivia(node, trivia);
 
     let mut fields: BTreeMap<u16, Vec<Id>> = BTreeMap::new();
     for (field, value) in field_entries(node) {
         let field_id = ast.register_field(field);
         let mut ids = Vec::new();
         for child in children_of(value) {
-            ids.push(build(child, ast)?);
+            ids.push(build(child, ast, trivia)?);
         }
         fields.insert(field_id, ids);
     }
@@ -169,6 +195,35 @@ fn build(node: &Value, ast: &mut Ast) -> Result<Id, String> {
         info.is_named,
         parse_range(node),
     ))
+}
+
+/// Harvest a token's `leadingTrivia`/`trailingTrivia` pieces (each already
+/// filtered to comments/`unexpectedText` upstream) into `out`. Non-token nodes
+/// have no trivia keys, so this is a no-op for them.
+fn collect_trivia(node: &Value, out: &mut Vec<TriviaToken>) {
+    for key in ["leadingTrivia", "trailingTrivia"] {
+        let Some(Value::Array(pieces)) = node.get(key) else {
+            continue;
+        };
+        for piece in pieces {
+            let (Some(kind), Some(range)) = (
+                piece.get("kind").and_then(Value::as_str),
+                parse_range(piece),
+            ) else {
+                continue;
+            };
+            let text = piece
+                .get("text")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
+            out.push(TriviaToken {
+                kind: kind.to_string(),
+                text,
+                range,
+            });
+        }
+    }
 }
 
 /// Parse a node's `range` into a [`yeast::Range`].
@@ -201,14 +256,20 @@ fn parse_range(node: &Value) -> Option<Range> {
 }
 
 /// Convert a swift-syntax JSON tree (as produced by [`crate::parse_to_json`])
-/// into a [`yeast::Ast`].
-pub fn json_to_ast(json: &str) -> Result<Ast, String> {
+/// into a [`yeast::Ast`] plus the comment/`unexpectedText` trivia harvested
+/// from it. Both are produced in a single traversal.
+pub fn json_to_ast(json: &str) -> Result<AdaptedTree, String> {
     let root: Value = serde_json::from_str(json).map_err(|e| format!("invalid JSON: {e}"))?;
 
     let mut ast = Ast::with_schema(Schema::new());
-    let root_id = build(&root, &mut ast)?;
+    let mut trivia = Vec::new();
+    let root_id = build(&root, &mut ast, &mut trivia)?;
     ast.set_root(root_id);
-    Ok(ast)
+
+    // Emit trivia in source order (the traversal visits nodes bottom-up).
+    trivia.sort_by_key(|t| t.range.start_byte);
+
+    Ok(AdaptedTree { ast, trivia })
 }
 
 #[cfg(test)]
@@ -245,7 +306,9 @@ mod tests {
 
     #[test]
     fn builds_ast_from_json() {
-        let ast = json_to_ast(sample_json()).expect("adapter should succeed");
+        let ast = json_to_ast(sample_json())
+            .expect("adapter should succeed")
+            .ast;
         let root = ast.get_root();
         let root_node = ast.get_node(root).expect("root exists");
         assert_eq!(root_node.kind_name(), "sourceFile");
@@ -254,7 +317,9 @@ mod tests {
 
     #[test]
     fn classifies_named_and_anonymous_tokens() {
-        let ast = json_to_ast(sample_json()).expect("adapter should succeed");
+        let ast = json_to_ast(sample_json())
+            .expect("adapter should succeed")
+            .ast;
         // Walk all nodes and collect (kind_name, is_named) for the two tokens.
         let mut let_named = None;
         let mut ident_named = None;
@@ -273,7 +338,9 @@ mod tests {
 
     #[test]
     fn preserves_leaf_text() {
-        let ast = json_to_ast(sample_json()).expect("adapter should succeed");
+        let ast = json_to_ast(sample_json())
+            .expect("adapter should succeed")
+            .ast;
         let ident = ast
             .nodes()
             .iter()
@@ -286,7 +353,9 @@ mod tests {
 
     #[test]
     fn maps_source_locations() {
-        let ast = json_to_ast(sample_json()).expect("adapter should succeed");
+        let ast = json_to_ast(sample_json())
+            .expect("adapter should succeed")
+            .ast;
         let ident = ast
             .nodes()
             .iter()
@@ -300,13 +369,55 @@ mod tests {
         assert_eq!(ident.end_position(), Point::new(0, 5));
     }
 
+    #[test]
+    fn collects_trivia_into_side_channel() {
+        // A token carrying a trailing line comment in its trivia.
+        let json = r#"{
+            "kind": "sourceFile",
+            "range": {"start":{"offset":0,"line":1,"column":1},"end":{"offset":14,"line":1,"column":15}},
+            "value": {
+                "kind": "token",
+                "tokenKind": "integerLiteral(\"1\")",
+                "text": "1",
+                "range": {"start":{"offset":0,"line":1,"column":1},"end":{"offset":1,"line":1,"column":2}},
+                "trailingTrivia": [
+                    {
+                        "kind": "lineComment",
+                        "text": "// c",
+                        "range": {"start":{"offset":2,"line":1,"column":3},"end":{"offset":6,"line":1,"column":7}}
+                    }
+                ]
+            }
+        }"#;
+        let adapted = json_to_ast(json).expect("adapter should succeed");
+
+        // The comment is in the side channel, with its text and location.
+        assert_eq!(adapted.trivia.len(), 1);
+        let comment = &adapted.trivia[0];
+        assert_eq!(comment.kind, "lineComment");
+        assert_eq!(comment.text, "// c");
+        assert_eq!(comment.range.start_byte, 2);
+        assert_eq!(comment.range.end_byte, 6);
+
+        // It is not embedded in the AST as a node.
+        assert!(
+            adapted
+                .ast
+                .nodes()
+                .iter()
+                .all(|n| n.kind_name() != "lineComment"),
+            "comment should not appear as an AST node"
+        );
+    }
+
     /// End-to-end: real Swift source parsed by the shim, then adapted into a
     /// `yeast::Ast`. Requires the Swift toolchain (like the crate's FFI tests).
     #[test]
     fn end_to_end_from_swift_source() {
-        let json = crate::parse_to_json("func f(n: Int) -> Int { return n }")
+        let json = crate::parse_to_json("func f(n: Int) -> Int { return n } // trailing")
             .expect("parsing should succeed");
-        let ast = json_to_ast(&json).expect("adapter should succeed");
+        let adapted = json_to_ast(&json).expect("adapter should succeed");
+        let ast = &adapted.ast;
 
         let root = ast.get_node(ast.get_root()).expect("root exists");
         assert_eq!(root.kind_name(), "sourceFile");
@@ -322,6 +433,16 @@ mod tests {
         assert!(
             kinds.contains(&"func"),
             "expected an anonymous `func` token, got kinds: {kinds:?}"
+        );
+
+        // The trailing comment is recovered into the side channel.
+        assert!(
+            adapted
+                .trivia
+                .iter()
+                .any(|t| t.kind == "lineComment" && t.text == "// trailing"),
+            "expected the trailing comment in the trivia side channel, got: {:?}",
+            adapted.trivia
         );
     }
 }

@@ -177,15 +177,20 @@ rewrite rules operate on — via [`yeast_adapter::json_to_ast`](src/yeast_adapte
 
 ```rust
 let json = swift_syntax_rs::parse_to_json("let x = 1")?;
-let ast = swift_syntax_rs::yeast_adapter::json_to_ast(&json)?;
+let adapted = swift_syntax_rs::yeast_adapter::json_to_ast(&json)?;
+let ast = adapted.ast; // the yeast::Ast
+let comments = adapted.trivia; // side-channel comment/unexpectedText tokens
 ```
 
 The adapter mirrors tree-sitter's node model, which is what yeast expects:
 layout nodes and varying tokens (identifiers, literals, operators) become
 **named** nodes; fixed tokens (keywords, punctuation) become **anonymous**
-nodes keyed by their text. It preserves swift-syntax's own kind/field names —
-aligning them with the tree-sitter-swift schema so the existing rewrite rules
-fire is a separate, later step.
+nodes keyed by their text. Comments (and `unexpectedText`) are harvested into a
+side channel (`adapted.trivia`) during the same traversal rather than embedded
+in the tree, matching how the extractor treats tree-sitter `extra` nodes. It
+preserves swift-syntax's own kind/field names — aligning them with the
+tree-sitter-swift schema so the existing rewrite rules fire is a separate,
+later step.
 
 ## Layout
 
