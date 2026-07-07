@@ -57,11 +57,14 @@ private func serializeTrivia(_ trivia: Trivia) -> [Any] {
 
 /// Recursively convert a SwiftSyntax node into a JSON-serializable value.
 ///
-///   * Tokens and layout nodes (e.g. `functionDecl`) become objects carrying
-///     `kind` and source `range`. Layout nodes additionally embed their children
-///     directly as members keyed by the child's name in the parent (e.g. `name`,
-///     `signature`, `body`); absent optional children are omitted. Field names
-///     never collide with `kind`/`range`.
+///   * Tokens carry `kind`, `tokenKind`, `text`, and `range`, plus
+///     `leadingTrivia`/`trailingTrivia` — but only when non-empty (after
+///     filtering, most tokens have no trivia, so the keys are simply absent).
+///   * Layout nodes (e.g. `functionDecl`) carry `kind` and source `range`, and
+///     additionally embed their children directly as members keyed by the
+///     child's name in the parent (e.g. `name`, `signature`, `body`); absent
+///     optional children are omitted. Field names never collide with
+///     `kind`/`range`.
 ///   * Collection nodes (e.g. `codeBlockItemList`) are *elided*: they become a
 ///     plain array of their serialized elements, taking the place of the
 ///     collection node itself. A list-valued layout field (e.g. `parameters`) is
@@ -85,14 +88,22 @@ private func serialize(
     ]
 
     if let token = node.as(TokenSyntax.self) {
-        return [
+        var result: [String: Any] = [
             "kind": "token",
             "tokenKind": "\(token.tokenKind)",
             "text": token.text,
             "range": range,
-            "leadingTrivia": serializeTrivia(token.leadingTrivia),
-            "trailingTrivia": serializeTrivia(token.trailingTrivia),
         ]
+        // Only emit trivia when present; after filtering, most tokens have none.
+        let leading = serializeTrivia(token.leadingTrivia)
+        if !leading.isEmpty {
+            result["leadingTrivia"] = leading
+        }
+        let trailing = serializeTrivia(token.trailingTrivia)
+        if !trailing.isEmpty {
+            result["trailingTrivia"] = trailing
+        }
+        return result
     }
 
     var result: [String: Any] = [
