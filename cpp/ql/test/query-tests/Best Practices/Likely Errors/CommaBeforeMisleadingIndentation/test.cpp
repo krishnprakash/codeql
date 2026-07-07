@@ -175,7 +175,7 @@ int Foo::test(int (*baz)(int))
 		return i++
 			, i++ // GOOD(?) [FALSE POSITIVE] -- can't exclude w/o source code text :/
 			? 1
-			: 2; // $ Alert
+			: 2; // $ SPURIOUS: Alert
 
     int quux =
       (tata->titi.tutu(),

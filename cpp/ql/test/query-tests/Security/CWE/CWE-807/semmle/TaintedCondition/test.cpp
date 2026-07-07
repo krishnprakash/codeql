@@ -35,10 +35,10 @@ void processRequest()
         adminPrivileges = 0; // OK, since it's a 0 and not a 1
      }
 
-     // $ MISSING: Alert // BAD (requires pointer analysis to catch) [NOT DETECTED]
+     // BAD (requires pointer analysis to catch) [NOT DETECTED]
      const char** userp = &currentUser;
      *userp = userName;
-     if (!strcmp(currentUser, "admin")) {
+     if (!strcmp(currentUser, "admin")) { // $ MISSING: Alert
        adminPrivileges = 1;
      }
 }

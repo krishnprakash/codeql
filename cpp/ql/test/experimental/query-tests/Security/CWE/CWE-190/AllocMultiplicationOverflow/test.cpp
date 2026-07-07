@@ -24,7 +24,7 @@ void test()
 
 	size_t size2 = x;
 	size2 *= y;
-	char *buffer6 = (char *)malloc(size2); // $ MISSING: Alert // $ MISSING: Alert // BAD [NOT DETECTED]
+	char *buffer6 = (char *)malloc(size2); // $ MISSING: Alert // BAD [NOT DETECTED]
 
 	char *buffer7 = new char[x * 10]; // GOOD
 	char *buffer8 = new char[x * y]; // $ Alert // BAD

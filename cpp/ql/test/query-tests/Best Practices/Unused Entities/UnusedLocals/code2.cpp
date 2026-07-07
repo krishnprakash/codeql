@@ -6,7 +6,7 @@ int test_const_init()
 	int v2; // GOOD
 	int v3 = 0; // $ Alert // BAD: unused
 	int v4 = 0; // GOOD
-	const int v5 = 0; // BAD: unused [NOT DETECTED]
+	const int v5 = 0; // $ MISSING: Alert // BAD: unused [NOT DETECTED]
 	const int v6 = 0; // GOOD
 	constexpr int v7 = 0; // $ Alert // BAD: unused
 	constexpr int v8 = 0; // GOOD
@@ -126,7 +126,7 @@ int test_lambdas1()
 int test_lambdas2()
 {
 	int a, b; // $ Alert // BAD: b is not used
-	auto myLambda = [=]() -> int // BAD: myLambda is not used [NOT DETECTED] (due to containing a Constructor)
+	auto myLambda = [=]() -> int // $ MISSING: Alert // BAD: myLambda is not used [NOT DETECTED] (due to containing a Constructor)
 	{
 		return a;
 	};

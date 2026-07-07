@@ -39,8 +39,8 @@ namespace std
 //// Test code /////
 
 static void bad1(char *str) {
-    // $ MISSING: Alert // BAD -- Not allocating space for '\0' terminator [NOT DETECTED]
-    char *buffer = (char *)malloc(strlen(str));
+    // BAD -- Not allocating space for '\0' terminator [NOT DETECTED]
+    char *buffer = (char *)malloc(strlen(str)); // $ MISSING: Alert
     std::string str2(buffer);
     free(buffer);
 }
@@ -53,8 +53,8 @@ static void good1(char *str) {
 }
 
 static void bad2(wchar_t *str) {
-    // $ MISSING: Alert // BAD -- Not allocating space for '\0' terminator [NOT DETECTED]
-    wchar_t *buffer = (wchar_t *)calloc(wcslen(str), sizeof(wchar_t));
+    // BAD -- Not allocating space for '\0' terminator [NOT DETECTED]
+    wchar_t *buffer = (wchar_t *)calloc(wcslen(str), sizeof(wchar_t)); // $ MISSING: Alert
     wcscpy(buffer, str);
     free(buffer);
 }
