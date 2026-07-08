@@ -1529,7 +1529,8 @@ module Make1<LocationSig Location, InputSig1<Location> Input1> {
             SatisfiesParameterConstraint::satisfiesConstraint(MkRelevantAccess(a,
                 pragma[only_bind_into](apos), e),
               MkRelevantTarget(target, pragma[only_bind_into](apos)), pathToTp.appendInverse(path),
-              t)
+              t) and
+            not exists(getTypeArgument(a, target, tp, _))
           )
         }
       }
