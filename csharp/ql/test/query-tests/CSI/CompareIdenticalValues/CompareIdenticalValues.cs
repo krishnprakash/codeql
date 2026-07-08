@@ -17,7 +17,7 @@ class CompareIdenticalValues : Super
 
         var x = "Abc";
         if (x == "Abc") ;
-        var temp = x == x; // $ Alert[cs/constant-condition] // BAD: but flagged by cs/constant-condition
+        var temp = x == x; // $ Alert[cs/constant-condition]
 
         double d = double.NaN;
         if (d == d) ; // $ Alert[cs/comparison-of-identical-expressions] // !double.IsNan(d)
@@ -36,8 +36,8 @@ class CompareIdenticalValues : Super
         if (f < f) ; // $ Alert[cs/comparison-of-identical-expressions] // always false
 
         int i = 0;
-        if (i == i) ; // $ Alert[cs/constant-condition] // BAD: but flagged by cs/constant-condition
-        if (i != i) ; // $ Alert[cs/constant-condition] // BAD: but flagged by cs/constant-condition
+        if (i == i) ; // $ Alert[cs/constant-condition]
+        if (i != i) ; // $ Alert[cs/constant-condition]
 
         CompareIdenticalValues c = null;
         c.Prop.Equals(c.Prop); // $ Alert[cs/comparison-of-identical-expressions]
@@ -48,9 +48,9 @@ class CompareIdenticalValues : Super
         if (Bar == this.Bar) ; // $ Alert[cs/comparison-of-identical-expressions]
         Equals(this); // $ Alert[cs/comparison-of-identical-expressions]
 
-        if (1 + 1 == 2) ; // $ Alert[cs/constant-condition] // BAD: but flagged by cs/constant-condition
-        if (1 + 1 == 3) ; // $ Alert[cs/constant-condition] // BAD: but flagged by cs/constant-condition
-        if (0 == 1) ; // $ Alert[cs/constant-condition] // BAD: but flagged by cs/constant-condition
+        if (1 + 1 == 2) ; // $ Alert[cs/constant-condition]
+        if (1 + 1 == 3) ; // $ Alert[cs/constant-condition]
+        if (0 == 1) ; // $ Alert[cs/constant-condition]
 
         var a = new int[0];
         if (a[0] == a[0]) ; // $ Alert[cs/comparison-of-identical-expressions]
