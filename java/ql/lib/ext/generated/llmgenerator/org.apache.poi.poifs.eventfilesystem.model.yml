@@ -10,7 +10,6 @@ extensions:
       pack: codeql/java-all
       extensible: sourceModel
     data:
-      - ["org.apache.poi.poifs.eventfilesystem", "POIFSReader", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
       - ["org.apache.poi.poifs.eventfilesystem", "POIFSReaderListener", True, "processPOIFSReaderEvent", "(POIFSReaderEvent)", "", "Parameter[0]", "file", "ai-generated"]
   - addsTo:
       pack: codeql/java-all

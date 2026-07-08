@@ -15,8 +15,6 @@ extensions:
       extensible: sourceModel
     data:
       - ["org.apache.poi.util", "DefaultTempFileCreationStrategy", True, "getJavaIoTmpDir", "()", "", "ReturnValue", "environment", "ai-generated"]
-      - ["org.apache.poi.util", "DrawingDump", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
-      - ["org.apache.poi.util", "FontMetricsDumper", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
       - ["org.apache.poi.util", "HexRead", True, "readData", "(String)", "", "ReturnValue", "file", "ai-generated"]
       - ["org.apache.poi.util", "HexRead", True, "readData", "(String,String)", "", "ReturnValue", "file", "ai-generated"]
   - addsTo:

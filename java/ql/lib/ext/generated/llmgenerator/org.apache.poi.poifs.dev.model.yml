@@ -11,14 +11,6 @@ extensions:
       - ["org.apache.poi.poifs.dev", "POIFSDump", True, "dump", "(POIFSFileSystem,int,String,File)", "", "Argument[3]", "path-injection", "ai-generated"]
       - ["org.apache.poi.poifs.dev", "POIFSLister", True, "viewFile", "(String,boolean)", "", "Argument[0]", "path-injection", "ai-generated"]
       - ["org.apache.poi.poifs.dev", "POIFSLister", True, "viewFileOld", "(String,boolean)", "", "Argument[0]", "path-injection", "ai-generated"]
-      - ["org.apache.poi.poifs.dev", "POIFSViewer", True, "main", "(String[])", "", "Argument[0].Element", "path-injection", "ai-generated"]
-  - addsTo:
-      pack: codeql/java-all
-      extensible: sourceModel
-    data:
-      - ["org.apache.poi.poifs.dev", "POIFSDump", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
-      - ["org.apache.poi.poifs.dev", "POIFSLister", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
-      - ["org.apache.poi.poifs.dev", "POIFSViewer", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
   - addsTo:
       pack: codeql/java-all
       extensible: summaryModel

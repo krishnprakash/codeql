@@ -9,14 +9,12 @@ extensions:
       - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "POIFSFileSystem", "(File)", "", "Argument[0]", "path-injection", "ai-generated"]
       - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "POIFSFileSystem", "(File,boolean)", "", "Argument[0]", "path-injection", "ai-generated"]
       - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "create", "(File)", "", "Argument[0]", "path-injection", "ai-generated"]
-      - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "main", "(String[])", "", "Argument[0]", "path-injection", "ai-generated"]
   - addsTo:
       pack: codeql/java-all
       extensible: sourceModel
     data:
       - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "POIFSFileSystem", "(File)", "", "Argument[this]", "file", "ai-generated"]
       - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "POIFSFileSystem", "(File,boolean)", "", "Argument[this]", "file", "ai-generated"]
-      - ["org.apache.poi.poifs.filesystem", "POIFSFileSystem", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
   - addsTo:
       pack: codeql/java-all
       extensible: summaryModel

@@ -15,7 +15,6 @@ extensions:
       pack: codeql/java-all
       extensible: sourceModel
     data:
-      - ["org.apache.poi.poifs.macros", "VBAMacroExtractor", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
       - ["org.apache.poi.poifs.macros", "VBAMacroReader", True, "VBAMacroReader", "(File)", "", "Argument[this]", "file", "ai-generated"]
   - addsTo:
       pack: codeql/java-all

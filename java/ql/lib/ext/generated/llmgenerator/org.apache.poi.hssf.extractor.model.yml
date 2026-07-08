@@ -11,7 +11,6 @@ extensions:
       extensible: sourceModel
     data:
       - ["org.apache.poi.hssf.extractor", "OldExcelExtractor", True, "OldExcelExtractor", "(File)", "", "Argument[this]", "file", "ai-generated"]
-      - ["org.apache.poi.hssf.extractor", "OldExcelExtractor", True, "main", "(String[])", "", "Parameter[0]", "commandargs", "ai-generated"]
   - addsTo:
       pack: codeql/java-all
       extensible: summaryModel
