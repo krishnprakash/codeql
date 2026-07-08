@@ -6,12 +6,12 @@ class FalsePositiveCases
 	// regular FVN
 	ulong GetRegularFvnHash(string s)
 	{
-		ulong num = 14695981039346656037UL; /* FNV base offset */ // $ Alert[cs/solorigate/number-of-known-hashes-above-threshold]
+		ulong num = 14695981039346656037UL; /* FNV base offset */ // $ SPURIOUS: Alert[cs/solorigate/number-of-known-hashes-above-threshold]
 
 		foreach (byte b in Encoding.UTF8.GetBytes(s))
 		{
 			num ^= (ulong)b;
-			num *= 1099511628211UL; /* FNV prime */ // $ Alert[cs/solorigate/number-of-known-hashes-above-threshold]
+			num *= 1099511628211UL; /* FNV prime */ // $ SPURIOUS: Alert[cs/solorigate/number-of-known-hashes-above-threshold]
 		}
 
 		return num;

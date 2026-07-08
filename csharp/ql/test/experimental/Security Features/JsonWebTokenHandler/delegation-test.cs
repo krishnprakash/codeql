@@ -98,8 +98,8 @@ namespace JsonWebTokenHandlerTest
                 SaveSigninToken = true
             };
 
-            tokenValidationParamsBaseline.LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => ValidateLifetimeAlwaysTrue(securityToken, validationParameters); // $ Alert[cs/json-webtoken-handler/delegated-security-validations-always-return-true] // BUG delegated-security-validations-always-return-true
-            tokenValidationParamsBaseline.AudienceValidator = (IEnumerable<string> audiences, SecurityToken securityToken, TokenValidationParameters validationParameters) => true; // $ Alert[cs/json-webtoken-handler/delegated-security-validations-always-return-true] // BUG delegated-security-validations-always-return-true
+            tokenValidationParamsBaseline.LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => ValidateLifetimeAlwaysTrue(securityToken, validationParameters); // $ Alert[cs/json-webtoken-handler/delegated-security-validations-always-return-true]
+            tokenValidationParamsBaseline.AudienceValidator = (IEnumerable<string> audiences, SecurityToken securityToken, TokenValidationParameters validationParameters) => true; // $ Alert[cs/json-webtoken-handler/delegated-security-validations-always-return-true]
             tokenValidationParamsBaseline.TokenReplayValidator = (DateTime? expirationTime, string securityToken, TokenValidationParameters validationParameters) =>    // GOOD
                 {
                     if (securityToken is null)

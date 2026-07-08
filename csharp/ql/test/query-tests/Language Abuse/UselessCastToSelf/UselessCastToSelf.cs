@@ -9,7 +9,7 @@ class Test
         var bad1 = (int)1; // $ Alert
         var bad2 = (Test)this; // $ Alert
         var bad3 = this as Test; // $ Alert
-        func = (Func<int, int?>)(x => x); // MISSING
+        func = (Func<int, int?>)(x => x); // $ MISSING: Alert
         exprFunc = (Expression<Func<int, int?>>)(x => x); // $ Alert
 
         // GOOD
@@ -22,7 +22,7 @@ class Test
         var good7 = (Action<int>)((int x) => { });
         func = x => x;
         exprFunc = x => x;
-        exprFuncUntyped = (Expression<Func<int, int?>>)(x => x); // $ Alert // FP
+        exprFuncUntyped = (Expression<Func<int, int?>>)(x => x); // $ SPURIOUS: Alert
     }
 
     enum Enum

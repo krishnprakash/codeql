@@ -24,7 +24,7 @@ public class ConditionalBypassHandler : IHttpHandler
 
         // FALSE POSITIVES: both methods are conditionally executed, but they probably
         // both perform the security-critical action
-        if (adminCookie.Value == "false") // $ Alert=r3 Alert=r4 Alert=r2
+        if (adminCookie.Value == "false") // $ SPURIOUS: Alert=r3 Alert=r4 Alert=r2
         {
             login(user, password);
         }
