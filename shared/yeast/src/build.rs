@@ -168,7 +168,7 @@ impl<C: Clone> BuildCtx<'_, C> {
     /// meaningful when input and output share a schema).
     ///
     /// The single-`Id` case works too, because `Id: IntoIterator<Item
-    /// = Id>` as a singleton iterator — so `ctx.translate(some_id)?`
+    /// = Id>` is a singleton iterator — so `ctx.translate(some_id)?`
     /// returns a `Vec<Id>` containing whatever `some_id` translated to.
     ///
     /// Errors if this `BuildCtx` was constructed by hand (without a
