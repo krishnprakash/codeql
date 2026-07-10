@@ -23,8 +23,7 @@ where
   // the checked-out code may lead to arbitrary code execution
   checkout.getAFollowingStep() = step and
   // the checkout occurs in a privileged context
-  inPrivilegedContext(checkout, event)
-   and
+  inPrivilegedContext(checkout, event) and
   // the mutable checkout step is protected by an Insufficient access check
   exists(ControlCheck check1 | check1.protects(checkout, event, "untrusted-checkout")) and
   not exists(ControlCheck check2 | check2.protects(checkout, event, "untrusted-checkout-toctou"))
