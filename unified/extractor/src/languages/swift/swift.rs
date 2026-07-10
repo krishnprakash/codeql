@@ -133,8 +133,8 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
             )
         ),
         // Declarations may be wrapped in local/global wrapper nodes.
-        rule!((global_declaration _ @inner) => {inner}),
-        rule!((local_declaration _ @inner) => {inner}),
+        rule!((global_declaration _ @inner) => stmt { inner }),
+        rule!((local_declaration _ @inner) => stmt { inner }),
         // ---- Literals ----
         rule!((integer_literal) => (int_literal)),
         rule!((hex_literal) => (int_literal)),
@@ -227,7 +227,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 type: _? @ty
                 computed_value: (computed_property accessor: _+ @@accessors))
             =>
-            {{
+            accessor_declaration* {
                 ctx.property_name = Some(tree!((identifier #{pattern})));
                 ctx.property_type = ty;
 
@@ -239,7 +239,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                     result.extend(ctx.translate(acc)?);
                 }
                 result
-            }}
+            }
         ),
         // Computed property: shorthand getter (no explicit get/set, just
         // statements) → a single accessor_declaration with kind "get".
@@ -277,7 +277,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 value: _? @@val
                 observers: (willset_didset_block willset: _? @@ws didset: _? @@ds))
             =>
-            {{
+            member* {
                 // The initializer value must not inherit the binding
                 // context (it may contain patterns, e.g. a switch
                 // expression), so translate it inside a `ctx.scoped`
@@ -313,7 +313,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                     result.extend(ctx.translate(obs)?);
                 }
                 result
-            }}
+            }
         ),
         // property_binding with any pattern name (identifier or
         // destructuring). Reads outer modifiers / chained tag from `ctx`.
@@ -351,7 +351,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 declarator: _* @@decls
                 (modifiers)* @mods)
             =>
-            {{
+            member* {
                 let binding_text = ctx.ast.source_text(binding_kind);
                 let binding = ctx.literal("modifier", &binding_text);
                 // The `let`/`var` binding modifier leads the declaration's
@@ -365,7 +365,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                     result.extend(ctx.translate(decl)?);
                 }
                 result
-            }}
+            }
         ),
         // ---- Enums ----
         // enum_type_parameter → parameter (with optional name as pattern).
@@ -425,7 +425,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!(
             (enum_entry case: _+ @@cases (modifiers)* @mods)
             =>
-            {{
+            member* {
                 ctx.outer_modifiers = mods;
 
                 let mut result = Vec::new();
@@ -434,7 +434,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                     result.extend(ctx.translate(case)?);
                 }
                 result
-            }}
+            }
         ),
         // Plain assignment: `x = expr`
         rule!(
@@ -449,9 +449,9 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
             (compound_assign_expr target: {target} operator: (infix_operator #{op}) value: {value})
         ),
         // Unwrap `type` wrapper node
-        rule!((type name: @inner) => {inner}),
+        rule!((type name: @inner) => type_expr { inner }),
         // `directly_assignable_expression` is just a wrapper; unwrap it
-        rule!((directly_assignable_expression expr: @inner) => {inner}),
+        rule!((directly_assignable_expression expr: @inner) => expr { inner }),
         // Pattern with bound_identifier → name_pattern.
         rule!(
             (pattern bound_identifier: @name)
@@ -463,12 +463,12 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!(
             (pattern kind: (binding_pattern binding: (value_binding_pattern mutability: @@binding_kind) pattern: @@pattern))
             =>
-            {{
+            pattern* {
                 let binding_text = ctx.ast.source_text(binding_kind);
                 let binding = ctx.literal("modifier", &binding_text);
                 ctx.outer_modifiers = vec![binding];
                 ctx.translate(pattern)?
-            }}
+            }
         ),
         // case T.foo(x,y) pattern
         rule!(
@@ -501,7 +501,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!(
             (pattern kind: (simple_identifier) @name)
             =>
-            {
+            pattern {
                 if ctx.in_binding_pattern() {
                     tree!((name_pattern identifier: (identifier #{name})))
                 } else {
@@ -537,10 +537,10 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!(
             (function_parameter parameter: @@p default_value: _? @def)
             =>
-            {{
+            parameter* {
                 ctx.default_value = def;
                 ctx.translate(p)?
-            }}
+            }
         ),
         // Parameter with external name and type
         rule!(
@@ -763,7 +763,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                     element: (pattern_element pattern: (name_pattern identifier: (identifier #{name})))))
         ),
         // If-condition — unwrap (pass through the inner expression/pattern)
-        rule!((if_condition kind: @inner) => {inner}),
+        rule!((if_condition kind: @inner) => expr_or_pattern { inner }),
         // ---- Loops ----
         // For-in loop with optional where-clause guard.
         rule!(
@@ -796,7 +796,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 body: (block stmt: {body}))
         ),
         // Labeled statement (e.g. `outer: for ...`). Strip the trailing ':' from the label token.
-        rule!((labeled_statement label: (statement_label) @lbl statement: @stmt) => {
+        rule!((labeled_statement label: (statement_label) @lbl statement: @stmt) => labeled_stmt {
             let text = ctx.ast.source_text(lbl);
             let name = &text[..text.len() - 1];
             tree!((labeled_stmt label: (identifier #{name}) stmt: {stmt}))
@@ -818,7 +818,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!((dictionary_literal_item key: @k value: @v) => (key_value_pair key: {k} value: {v})),
         // ---- Optionals and errors ----
         // Optional chaining — unwrap the marker
-        rule!((optional_chain_marker expr: @inner) => {inner}),
+        rule!((optional_chain_marker expr: @inner) => expr { inner }),
         // try/try?/try! expr → unary_expr with operator "try", "try?" or "try!"
         rule!((try_expression (try_operator) @op expr: @inner) => (unary_expr operator: (prefix_operator #{op}) operand: {inner})),
         rule!((try_expression operator: (try_operator) @op expr: @inner) => (unary_expr operator: (prefix_operator #{op}) operand: {inner})),
@@ -874,7 +874,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!(
             (identifier part: _+ @parts)
             =>
-            {member_chain(&mut ctx, parts)}
+            expr { member_chain(&mut ctx, parts) }
         ),
         // Scoped import declaration (for example `import struct Foo.Bar`):
         // flatten the identifier parts into a member_access_expr and bind the
@@ -905,7 +905,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         // Super expression → super_expr
         rule!((super_expression) => (super_expr)),
         // Modifiers — unwrap to individual modifier children
-        rule!((modifiers _* @mods) => {mods}),
+        rule!((modifiers _* @mods) => modifier* { mods }),
         rule!((attribute) @m => (modifier #{m})),
         rule!((visibility_modifier) @m => (modifier #{m})),
         rule!((function_modifier) @m => (modifier #{m})),
@@ -917,7 +917,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         rule!((inheritance_modifier) @m => (modifier #{m})),
         rule!((property_behavior_modifier) @m => (modifier #{m})),
         // Type annotations — unwrap
-        rule!((type_annotation type: @inner) => {inner}),
+        rule!((type_annotation type: @inner) => type_expr { inner }),
         // user_type is split into simple_user_type parts.
         // Keep a conservative textual fallback to avoid dropping type information.
         rule!((user_type) @ty => (named_type_expr name: (identifier #{ty}))),
@@ -1092,7 +1092,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 type: _? @ty
                 (modifiers)* @mods)
             =>
-            {{
+            accessor_declaration* {
                 ctx.property_name = Some(tree!((identifier #{name})));
                 ctx.property_type = ty;
                 ctx.outer_modifiers = mods;
@@ -1103,7 +1103,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                     result.extend(ctx.translate(acc)?);
                 }
                 result
-            }}
+            }
         ),
         // getter_specifier / setter_specifier → bodyless accessor_declaration
         // getter_specifier / setter_specifier → bodyless
@@ -1130,7 +1130,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 modifier: {chained_modifier(&mut ctx)})
         ),
         // protocol_property_requirements wrapper — should be consumed by above; fallback
-        rule!((protocol_property_requirements accessor: _* @accs) => {accs}),
+        rule!((protocol_property_requirements accessor: _* @accs) => accessor_declaration* { accs }),
         // Computed getter → accessor_declaration (body optional).
         // Reads property name/type from the outer property_binding rule
         // and binding/outer modifiers + chained tag from the outer
@@ -1186,7 +1186,7 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         // willset/didset block — spread to children (only reachable as a
         // fallback; the outer property_binding manual rule normally
         // captures the willset/didset clauses directly).
-        rule!((willset_didset_block _* @clauses) => {clauses}),
+        rule!((willset_didset_block _* @clauses) => accessor_declaration* { clauses }),
         // willset clause → accessor_declaration (body optional). Reads
         // `ctx.property_name` set by the outer property_binding rule and
         // binding/outer modifiers + chained tag from the outer
@@ -1215,15 +1215,17 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         // Preprocessor conditionals — unsupported
         rule!((diagnostic) => (unsupported_node)),
         // ---- Fallbacks ----
+        // Bare `_` (rather than `(_)`) so this matches both named nodes
+        // and unnamed tokens. Any unnamed token that escapes the
+        // input-schema-specific rules (e.g. captured operators in
+        // `additive_expression op: @op`) has its auto-translated value
+        // replaced with an `unsupported_node` whose source range is
+        // inherited from the original token, so `#{op}` still reads the
+        // original text.
         rule!(
-            (_)
+            _
             =>
             (unsupported_node)
-        ),
-        rule!(
-            _ @node
-            =>
-            {node}
         ),
     ]
 }
