@@ -4,17 +4,9 @@ load("//misc/bazel/3rdparty/tree_sitter_extractors_deps:defs.bzl", "aliases", "a
 exports_files(["Cargo.toml"])
 
 rust_library(
-    name = "yeast",
-    srcs = glob(
-        ["src/**/*.rs"],
-        exclude = ["src/bin/**"],
-    ),
+    name = "yeast-schema",
+    srcs = glob(["src/**/*.rs"]),
     aliases = aliases(),
-    proc_macro_deps = [
-        "//shared/yeast-macros",
-    ],
     visibility = ["//visibility:public"],
-    deps = all_crate_deps() + [
-        "//shared/yeast-schema",
-    ],
+    deps = all_crate_deps(),
 )
