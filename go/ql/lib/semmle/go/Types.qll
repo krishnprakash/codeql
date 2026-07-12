@@ -382,18 +382,18 @@ class CompositeType extends @compositetype, Type { }
 /** A type that comes from a type parameter. */
 class TypeParamType extends @typeparamtype, CompositeType {
   /** Gets the name of this type parameter type. */
-  string getParamName() { typeparam(this, result, _, _, _) }
+  string getParamName() { typeparam(this, result, _, _, _, _) }
 
   /** Gets the constraint of this type parameter type. */
-  Type getConstraint() { typeparam(this, _, result, _, _) }
+  Type getConstraint() { typeparam(this, _, result, _, _, _) }
 
   override InterfaceType getUnderlyingType() { result = this.getConstraint().getUnderlyingType() }
 
   /** Gets the parent object of this type parameter type. */
-  TypeParamParentEntity getParent() { typeparam(this, _, _, result, _) }
+  TypeParamParentEntity getParent() { typeparam(this, _, _, result, _, _) }
 
   /** Gets the index of this type parameter type. */
-  int getIndex() { typeparam(this, _, _, _, result) }
+  int getIndex() { typeparam(this, _, _, _, result, _) }
 
   override string pp() { result = this.getParamName() }
 
