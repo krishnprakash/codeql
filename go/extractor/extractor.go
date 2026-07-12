@@ -1529,12 +1529,6 @@ func extractSpec(tw *trap.Writer, spec ast.Spec, parent trap.Label, idx int) {
 	extractNodeLocation(tw, spec, lbl)
 }
 
-// Determines whether the given type is an alias.
-func isAlias(tp types.Type) bool {
-	_, ok := tp.(*types.Alias)
-	return ok
-}
-
 // extractType extracts type information for `tp` and returns its associated label;
 // types are only extracted once, so the second time `extractType` is invoked it simply returns the label
 func extractType(tw *trap.Writer, tp types.Type) trap.Label {
