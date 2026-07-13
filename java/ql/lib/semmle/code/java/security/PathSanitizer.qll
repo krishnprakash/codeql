@@ -10,6 +10,7 @@ private import semmle.code.java.dataflow.SSA
 private import semmle.code.java.frameworks.kotlin.IO
 private import semmle.code.java.frameworks.kotlin.Text
 private import semmle.code.java.dataflow.Nullness
+private import semmle.code.java.security.Sanitizers
 
 /** A sanitizer that protects against path injection vulnerabilities. */
 abstract class PathInjectionSanitizer extends DataFlow::Node { }
@@ -493,7 +494,8 @@ private predicate directoryCharactersGuard(Guard g, Expr e, boolean branch) {
  */
 private class DirectoryCharactersSanitizer extends PathInjectionSanitizer {
   DirectoryCharactersSanitizer() {
-    this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer or
+    this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer
+    or
     this = DataFlow::BarrierGuard<directoryCharactersGuard/3>::getABarrierNode()
   }
 }
