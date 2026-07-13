@@ -7,11 +7,20 @@ use std::path::{Path, PathBuf};
 
 use crate::diagnostics;
 use crate::node_types;
+use yeast;
 
 pub struct LanguageSpec {
     pub prefix: &'static str,
     pub ts_language: tree_sitter::Language,
     pub node_types: &'static str,
+    /// Optional desugarer. When set, the parsed tree is rewritten through
+    /// the desugarer before TRAP extraction. The desugarer's
+    /// `output_node_types_yaml()` (if set) provides the schema used both
+    /// at runtime (for the rewriter) and for TRAP validation.
+    ///
+    /// `Box<dyn yeast::Desugarer>` so the shared extractor is agnostic to
+    /// the user-defined context type the desugarer uses internally.
+    pub desugar: Option<Box<dyn yeast::Desugarer>>,
     pub file_globs: Vec<String>,
 }
 
@@ -86,7 +95,20 @@ impl Extractor {
 
         let mut schemas = vec![];
         for lang in &self.languages {
-            let schema = node_types::read_node_types_str(lang.prefix, lang.node_types)?;
+            let effective_node_types: String = match lang
+                .desugar
+                .as_ref()
+                .and_then(|d| d.output_node_types_yaml())
+            {
+                Some(yaml) => yeast::node_types_yaml::convert(yaml).map_err(|e| {
+                    std::io::Error::other(format!(
+                        "Failed to convert YAML node-types to JSON for {}: {e}",
+                        lang.prefix
+                    ))
+                })?,
+                None => lang.node_types.to_string(),
+            };
+            let schema = node_types::read_node_types_str(lang.prefix, &effective_node_types)?;
             schemas.push(schema);
         }
 
@@ -162,6 +184,7 @@ impl Extractor {
                                     &path,
                                     &source,
                                     &[],
+                                    lang.desugar.as_deref(),
                                 );
                                 std::fs::create_dir_all(src_archive_file.parent().unwrap())?;
                                 std::fs::copy(&path, &src_archive_file)?;

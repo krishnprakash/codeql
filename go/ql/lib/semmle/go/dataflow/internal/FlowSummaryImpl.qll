@@ -31,6 +31,8 @@ module Input implements InputSig<Location, DataFlowImplSpecific::GoDataFlow> {
 
   class SinkBase = Void;
 
+  class FlowSummaryCallBase = Void;
+
   predicate callableFromSource(SummarizedCallableBase c) { exists(c.getFuncDef()) }
 
   predicate neutralElement(
@@ -113,6 +115,10 @@ module Input implements InputSig<Location, DataFlowImplSpecific::GoDataFlow> {
 private import Make<Location, DataFlowImplSpecific::GoDataFlow, Input> as Impl
 
 private module StepsInput implements Impl::Private::StepsInputSig {
+  Impl::Private::SummaryNode getSummaryNode(Node n) {
+    result = n.(FlowSummaryNode).getSummaryNode()
+  }
+
   DataFlowCall getACall(Public::SummarizedCallable sc) {
     exists(DataFlow::CallNode call |
       call.asExpr() = result and
@@ -174,13 +180,13 @@ module SourceSinkInterpretationInput implements
   }
 
   predicate barrierGuardElement(
-    Element e, string input, Public::AcceptingValue acceptingvalue, string kind,
+    Element e, string input, Public::AcceptingValue acceptingValue, string kind,
     Public::Provenance provenance, string model
   ) {
     exists(
       string package, string type, boolean subtypes, string name, string signature, string ext
     |
-      barrierGuardModel(package, type, subtypes, name, signature, ext, input, acceptingvalue, kind,
+      barrierGuardModel(package, type, subtypes, name, signature, ext, input, acceptingValue, kind,
         provenance, model) and
       e = interpretElement(package, type, subtypes, name, signature, ext)
     )

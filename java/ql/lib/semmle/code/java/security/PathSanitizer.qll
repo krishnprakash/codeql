@@ -10,6 +10,7 @@ private import semmle.code.java.dataflow.SSA
 private import semmle.code.java.frameworks.kotlin.IO
 private import semmle.code.java.frameworks.kotlin.Text
 private import semmle.code.java.dataflow.Nullness
+private import semmle.code.java.security.Sanitizers
 
 /** A sanitizer that protects against path injection vulnerabilities. */
 abstract class PathInjectionSanitizer extends DataFlow::Node { }
@@ -243,7 +244,7 @@ private class PathNormalizeSanitizer extends MethodCall {
   PathNormalizeSanitizer() {
     exists(RefType t | this.getMethod().getDeclaringType() = t |
       (t instanceof TypePath or t instanceof FilesKt) and
-      this.getMethod().hasName("normalize")
+      this.getMethod().hasName(["normalize", "toRealPath"])
       or
       t instanceof TypeFile and
       this.getMethod().hasName(["getCanonicalPath", "getCanonicalFile"])
@@ -290,7 +291,7 @@ private Method getSourceMethod(Method m) {
 }
 
 private class ExternalPathInjectionSanitizer extends PathInjectionSanitizer {
-  ExternalPathInjectionSanitizer() { barrierNode(this, "path-injection") }
+  ExternalPathInjectionSanitizer() { barrierNode(this, ["path-injection", "path-injection[read]"]) }
 }
 
 /** Holds if `g` is a guard that checks for `..` components. */
@@ -493,7 +494,8 @@ private predicate directoryCharactersGuard(Guard g, Expr e, boolean branch) {
  */
 private class DirectoryCharactersSanitizer extends PathInjectionSanitizer {
   DirectoryCharactersSanitizer() {
-    this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer or
+    this.asExpr() instanceof ReplaceDirectoryCharactersSanitizer
+    or
     this = DataFlow::BarrierGuard<directoryCharactersGuard/3>::getABarrierNode()
   }
 }
