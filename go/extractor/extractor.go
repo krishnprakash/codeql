@@ -1529,12 +1529,6 @@ func extractSpec(tw *trap.Writer, spec ast.Spec, parent trap.Label, idx int) {
 	extractNodeLocation(tw, spec, lbl)
 }
 
-// Determines whether the given type is an alias.
-func isAlias(tp types.Type) bool {
-	_, ok := tp.(*types.Alias)
-	return ok
-}
-
 // extractType extracts type information for `tp` and returns its associated label;
 // types are only extracted once, so the second time `extractType` is invoked it simply returns the label
 func extractType(tw *trap.Writer, tp types.Type) trap.Label {
@@ -1644,7 +1638,6 @@ func extractType(tw *trap.Writer, tp types.Type) trap.Label {
 			dbscheme.TypeNameTable.Emit(tw, lbl, origintp.Obj().Name())
 			underlying := origintp.Underlying()
 			extractUnderlyingType(tw, lbl, underlying)
-			trackInstantiatedStructFields(tw, tp, origintp)
 
 			entitylbl, exists := tw.Labeler.LookupObjectID(origintp.Obj(), lbl)
 			if entitylbl == trap.InvalidLabel {
@@ -2032,36 +2025,6 @@ func getObjectBeingUsed(tw *trap.Writer, ident *ast.Ident) types.Object {
 		return obj.Origin()
 	default:
 		return obj
-	}
-}
-
-// trackInstantiatedStructFields tries to give the fields of an instantiated
-// struct type underlying `tp` the same labels as the corresponding fields of
-// the generic struct type. This is so that when we come across the
-// instantiated field in `tw.Package.TypesInfo.Uses` we will get the label for
-// the generic field instead.
-func trackInstantiatedStructFields(tw *trap.Writer, tp, origintp *types.Named) {
-	if tp == origintp {
-		return
-	}
-
-	if instantiatedStruct, ok := tp.Underlying().(*types.Struct); ok {
-		genericStruct, ok2 := origintp.Underlying().(*types.Struct)
-		if !ok2 {
-			log.Fatalf(
-				"Error: underlying type of instantiated type is a struct but underlying type of generic type is %s",
-				origintp.Underlying())
-		}
-
-		if instantiatedStruct.NumFields() != genericStruct.NumFields() {
-			log.Fatalf(
-				"Error: instantiated struct %s has different number of fields than the generic version %s (%d != %d)",
-				instantiatedStruct, genericStruct, instantiatedStruct.NumFields(), genericStruct.NumFields())
-		}
-
-		for i := 0; i < instantiatedStruct.NumFields(); i++ {
-			tw.ObjectsOverride[instantiatedStruct.Field(i)] = genericStruct.Field(i)
-		}
 	}
 }
 
