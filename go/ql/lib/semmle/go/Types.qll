@@ -396,7 +396,7 @@ class TypeParamType extends @typeparamtype, CompositeType {
   int getIndex() { typeparam(this, _, _, _, result, _) }
 
   /** Holds if this type parameter type is declared as part of a receiver */
-  boolean isFromReceiver() { typeparam(this, _, _, _, _, result) }
+  predicate isFromReceiver() { typeparam(this, _, _, _, _, true) }
 
   override string pp() { result = this.getParamName() }
 
