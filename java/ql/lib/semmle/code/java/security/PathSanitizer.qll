@@ -108,17 +108,19 @@ private class FileGetNameCall extends MethodCall {
  */
 private predicate dotDotCheckGuard(Guard g, Expr e, boolean branch) {
   pathTraversalGuard(g, e, branch) and
-  (
-    exists(Guard previousGuard |
-      previousGuard.(AllowedPrefixGuard).controls(g.getBasicBlock(), true)
-      or
-      previousGuard.(BlockListGuard).controls(g.getBasicBlock(), false)
-    )
+  exists(Guard previousGuard |
+    previousGuard.(AllowedPrefixGuard).controls(g.getBasicBlock(), true)
     or
-    // `File.getName` strips any directory prefix, returning only the final path
-    // component. The only remaining path traversal risk is when that component is
-    // itself `..`, so a check for `..` components completes the sanitization.
-    exists(FileGetNameCall getName | localTaintFlowToPathGuard(getName, g))
+    previousGuard.(BlockListGuard).controls(g.getBasicBlock(), false)
+  )
+  or
+  // `File.getName` strips any directory prefix, returning only the final path
+  // component. The only remaining path traversal risk is when that component is
+  // itself `..`, so a check for `..` components on the result of `getName`
+  // completes the sanitization.
+  exists(FileGetNameCall getName |
+    pathTraversalGuard(g, getName, branch) and
+    TaintTracking::localExprTaint(getName, e)
   )
 }
 
