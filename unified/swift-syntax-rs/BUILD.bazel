@@ -1,31 +1,36 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
-load("@rules_swift//swift:swift.bzl", "swift_library")
+load(":xcode_transition.bzl", "xcode_transition_swift_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# The pinned Swift version, shared with the local `cargo` build and
-# `swift/Package.swift`. Referenced by the `swift.toolchain` extension in
-# //:MODULE.bazel via `swift_version_file`.
+# Pinned Swift version, shared with `cargo` and `swift/Package.swift`.
+# Referenced by `swift.toolchain(swift_version_file = ...)` in //:MODULE.bazel.
 exports_files([".swift-version"])
 
-# The Swift FFI shim: wraps swift-syntax and exposes a small C ABI
-# (`ssr_parse_json` / `ssr_string_free`). Built with the hermetic Swift
-# toolchain registered in //:MODULE.bazel; provides a `CcInfo` that the Rust
-# targets below link against.
-swift_library(
+# Targets in this package require a Swift toolchain (Linux or macOS).
+# `select()` gives us OR-of-OSes; other platforms get marked incompatible
+# so `bazel build/test //...` skips them cleanly.
+_SWIFT_SUPPORTED_PLATFORMS = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+# Swift FFI shim: wraps swift-syntax and exposes a small C ABI. The Rust
+# targets below link against its `CcInfo`.
+xcode_transition_swift_library(
     name = "swift_syntax_ffi",
     srcs = ["swift/Sources/SwiftSyntaxFFI/SwiftSyntaxFFI.swift"],
     module_name = "SwiftSyntaxFFI",
+    target_compatible_with = _SWIFT_SUPPORTED_PLATFORMS,
     deps = [
         "@swift-syntax//:SwiftParser",
         "@swift-syntax//:SwiftSyntax",
     ],
 )
 
-# Safe Rust bindings on top of the C ABI. `build.rs` is intentionally *not*
-# wired up here (no `cargo_build_script`): under Bazel the Swift side is
-# provided by `:swift_syntax_ffi`, whereas `build.rs` only exists to build the
-# Swift shim in the local `cargo` workflow.
+# Safe Rust bindings on top of the C ABI. Under Bazel the Swift side comes
+# from `:swift_syntax_ffi`; `build.rs` is only used by the `cargo` workflow.
 rust_library(
     name = "swift_syntax_rs",
     srcs = glob(
@@ -33,6 +38,7 @@ rust_library(
         exclude = ["src/main.rs"],
     ),
     edition = "2024",
+    target_compatible_with = _SWIFT_SUPPORTED_PLATFORMS,
     deps = [
         ":swift_syntax_ffi",
     ],
@@ -41,13 +47,16 @@ rust_library(
 rust_binary(
     name = "swift-syntax-parse",
     srcs = ["src/main.rs"],
-    # The Swift toolchain propagates a runfiles-relative RPATH to its runtime
-    # `.so`s via `swift_syntax_ffi`'s `CcInfo`, but (unlike `swift_binary`)
-    # `rust_binary` does not copy those libraries into runfiles. Add the
-    # toolchain files as `data` so the runtime is found at execution time.
-    # (rules_swift does not yet support statically linking the runtime.)
-    data = ["@swift_toolchain_ubuntu24.04//:files"],
+    # `rust_binary` doesn't copy the Swift runtime into runfiles the way
+    # `swift_binary` does. On Linux, ship the standalone toolchain's runtime;
+    # on macOS the OS provides it at `/usr/lib/swift` (rpath'd by
+    # `xcode_swift_toolchain`).
+    data = select({
+        "@platforms//os:macos": [],
+        "@platforms//os:linux": ["@swift_toolchain_ubuntu24.04//:files"],
+    }),
     edition = "2024",
+    target_compatible_with = _SWIFT_SUPPORTED_PLATFORMS,
     deps = [":swift_syntax_rs"],
 )
 
@@ -55,6 +64,10 @@ rust_test(
     name = "swift_syntax_rs_test",
     size = "small",
     crate = ":swift_syntax_rs",
-    data = ["@swift_toolchain_ubuntu24.04//:files"],
+    data = select({
+        "@platforms//os:macos": [],
+        "@platforms//os:linux": ["@swift_toolchain_ubuntu24.04//:files"],
+    }),
     edition = "2024",
+    target_compatible_with = _SWIFT_SUPPORTED_PLATFORMS,
 )

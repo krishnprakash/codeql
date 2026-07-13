@@ -33,6 +33,11 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "rules_rust", version = "0.69.0")
 bazel_dep(name = "rules_swift", version = "4.0.0-rc4")
 bazel_dep(name = "swift-syntax", version = "602.0.0.bcr.2")
+
+# Needed so we can `use_repo` `local_config_xcode` and
+# `local_config_apple_cc_toolchains` below (referenced by the per-target
+# Xcode-config transition in `unified/swift-syntax-rs/xcode_transition.bzl`).
+bazel_dep(name = "apple_support", version = "2.6.1")
 bazel_dep(name = "zstd", version = "1.5.7.bcr.1")
 
 bazel_dep(name = "buildifier_prebuilt", version = "6.4.0", dev_dependency = True)
@@ -221,22 +226,11 @@ use_repo(
     "swift-resource-dir-macos",
 )
 
-# Hermetic Swift toolchain (from swift.org) for building the `swift-syntax`
-# based Rust wrapper in `unified/swift-syntax-rs`. This is the official
-# `rules_swift` standalone-toolchain extension and is independent of the
-# patched prebuilt toolchain wired up via `swift_deps` above.
-#
-# Bazel cannot auto-select between Linux distributions, so the toolchain is
-# registered explicitly for the distribution our CI runs on (ubuntu24.04,
-# x86_64). Add further platforms here if CI grows to cover them.
-#
-# We register the `exec` toolchain (normal host compilation, targeting
-# linux/x86_64) rather than the `embedded` one, which targets `os:none`
-# (Embedded Swift) and would not match a normal host build.
-#
-# The Swift version is read from `unified/swift-syntax-rs/.swift-version`, which
-# is the single source of truth shared with the local `cargo` build (via
-# swiftly / any Swift install) and `swift/Package.swift`.
+# Swift toolchain for building `unified/swift-syntax-rs`. On Linux we register
+# a hermetic swift.org toolchain as the exec toolchain; on macOS `rules_swift`
+# auto-registers `xcode_swift_toolchain` (host Xcode + OS-provided Swift
+# runtime), which is not hermetic. Version comes from
+# `unified/swift-syntax-rs/.swift-version`.
 swift = use_extension("@rules_swift//swift:extensions.bzl", "swift")
 swift.toolchain(
     name = "swift_toolchain",
@@ -251,6 +245,14 @@ use_repo(
 register_toolchains(
     "@swift_toolchain//:swift_toolchain_exec_ubuntu24.04",
 )
+
+# `apple_support`'s xcode_config and CC toolchains, needed by the Xcode
+# transition in `unified/swift-syntax-rs/xcode_transition.bzl`.
+xcode_configure = use_extension("@apple_support//xcode:xcode_configure.bzl", "xcode_configure_extension")
+use_repo(xcode_configure, "local_config_xcode")
+
+apple_cc_configure = use_extension("@apple_support//crosstool:setup.bzl", "apple_cc_configure_extension")
+use_repo(apple_cc_configure, "local_config_apple_cc_toolchains")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
 node.toolchain(
