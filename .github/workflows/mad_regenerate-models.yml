@@ -17,6 +17,7 @@ permissions:
 jobs:
   regenerate-models:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     strategy:
       matrix:
         # placeholder required for each axis, excluded below, replaced by the actual combinations (see include)
