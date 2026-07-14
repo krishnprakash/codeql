@@ -2010,11 +2010,9 @@ func extractTypeParamDecls(tw *trap.Writer, fields *ast.FieldList, parent trap.L
 }
 
 func populateTypeParamParentsFromFunction(funcObj *types.Func) {
-	recvTypeParams := funcObj.Type().(*types.Signature).RecvTypeParams()
-	populateTypeParamParents(recvTypeParams, funcObj, true)
-	typeParams := funcObj.Type().(*types.Signature).TypeParams()
-	populateTypeParamParents(typeParams, funcObj, false)
-
+	signature := funcObj.Type().(*types.Signature)
+	populateTypeParamParents(signature.RecvTypeParams(), funcObj, true)
+	populateTypeParamParents(signature.TypeParams(), funcObj, false)
 }
 
 // populateTypeParamParents sets `parent` as the parent of the elements of `typeparams`
@@ -2053,12 +2051,14 @@ func getTypeParamParentLabel(tw *trap.Writer, tp *types.TypeParam) (trap.Label, 
 	return parentlbl, entry.isFromReceiver
 }
 
-func setTypeParamParent(tp *types.TypeParam, newobj types.Object, isFromReceiver bool) {
+func setTypeParamParent(tp *types.TypeParam, parent types.Object, isFromReceiver bool) {
 	entry, exists := typeParamParent[tp]
+	newEntry := typeParamParentEntry{parent, isFromReceiver}
 	if !exists {
-		typeParamParent[tp] = typeParamParentEntry{newobj, isFromReceiver}
-	} else if entry.parent != newobj {
-		log.Fatalf("Parent of type parameter '%s %s' being set to a different value: '%s' vs '%s'", tp.String(), tp.Constraint().String(), entry.parent, newobj)
+		typeParamParent[tp] = newEntry
+	} else if entry != newEntry {
+		log.Fatalf("Parent of type parameter '%s %s' being set to a different value: {'%s', %t}'  vs {'%s', %t}",
+			tp.String(), tp.Constraint().String(), entry.parent, entry.isFromReceiver, parent, isFromReceiver)
 	}
 }
 
