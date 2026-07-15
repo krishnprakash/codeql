@@ -155,15 +155,20 @@ Requirements:
   [`xcode_transition.bzl`](xcode_transition.bzl)), so other targets on macOS
   keep using Bazel's default CC toolchain.
 
-The Swift compiler version in [`.swift-version`](.swift-version) is kept in sync
-with the `swift-syntax` release pinned in `swift/Package.swift`. It is honored on
-**Linux**, where the hermetic swift.org Bazel toolchain
-(`swift.toolchain(swift_version_file = …)`) and the local `cargo`/`swift build`
-both read it. On **macOS** it is *not* honored by the Bazel build: `rules_swift`
-auto-registers the host `xcode_swift_toolchain`, which uses whichever Swift ships
-with the installed Xcode and ignores `.swift-version`. So the pinned version
-governs Linux (and local) builds, while the macOS compiler version depends on the
-host Xcode.
+The Swift compiler version is kept in sync across three places: the
+[`.swift-version`](.swift-version) file (read by the local `cargo`/`swift build`
+and by [swiftly](https://www.swift.org/swiftly/)), the literal `swift_version`
+pinned on `swift.toolchain(...)` in the root `MODULE.bazel` (the hermetic
+swift.org **Linux** Bazel toolchain), and the `swift-syntax` release in
+`swift/Package.swift`. On **macOS** the version is *not* pinned by the Bazel
+build: `rules_swift` auto-registers the host `xcode_swift_toolchain`, which uses
+whichever Swift ships with the installed Xcode. So the pin governs Linux (and
+local) builds, while the macOS compiler version depends on the host Xcode.
+
+(The Bazel toolchain pins a literal rather than reading `.swift-version` via
+`swift_version_file`, because the latter makes the module extension read a
+`//unified/...` label, which fails when this repo is consumed as a dependency
+module.)
 
 ## Usage
 

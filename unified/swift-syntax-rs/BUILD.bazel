@@ -3,10 +3,6 @@ load(":xcode_transition.bzl", "xcode_transition_swift_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# Pinned Swift version, shared with `cargo` and `swift/Package.swift`.
-# Referenced by `swift.toolchain(swift_version_file = ...)` in //:MODULE.bazel.
-exports_files([".swift-version"])
-
 # Targets in this package require a Swift toolchain (Linux or macOS).
 # `select()` gives us OR-of-OSes; other platforms get marked incompatible
 # so `bazel build/test //...` skips them cleanly.
