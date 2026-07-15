@@ -155,10 +155,15 @@ Requirements:
   [`xcode_transition.bzl`](xcode_transition.bzl)), so other targets on macOS
   keep using Bazel's default CC toolchain.
 
-The Swift compiler version is read from [`.swift-version`](.swift-version) by
-both the Bazel toolchain (`swift.toolchain(swift_version_file = …)`) and the
-local build, and is kept in sync with the `swift-syntax` release pinned in
-`swift/Package.swift`, so local and CI builds behave identically.
+The Swift compiler version in [`.swift-version`](.swift-version) is kept in sync
+with the `swift-syntax` release pinned in `swift/Package.swift`. It is honored on
+**Linux**, where the hermetic swift.org Bazel toolchain
+(`swift.toolchain(swift_version_file = …)`) and the local `cargo`/`swift build`
+both read it. On **macOS** it is *not* honored by the Bazel build: `rules_swift`
+auto-registers the host `xcode_swift_toolchain`, which uses whichever Swift ships
+with the installed Xcode and ignores `.swift-version`. So the pinned version
+governs Linux (and local) builds, while the macOS compiler version depends on the
+host Xcode.
 
 ## Usage
 

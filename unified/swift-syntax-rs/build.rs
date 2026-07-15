@@ -6,16 +6,20 @@ fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let swift_dir = manifest_dir.join("swift");
 
-    println!(
-        "cargo:rerun-if-changed={}",
-        swift_dir.join("Package.swift").display()
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        swift_dir
-            .join("Sources/SwiftSyntaxFFI/SwiftSyntaxFFI.swift")
-            .display()
-    );
+    // Emitting any `rerun-if-changed` disables Cargo's default whole-package
+    // scan, so we must list every input to the `swift build` below. Watch the
+    // package manifests, the pinned dependency lockfile, the pinned compiler
+    // version, and the entire Swift sources tree (a directory is scanned
+    // recursively). `.build/` is intentionally *not* watched (it is this
+    // build's output; watching it would cause perpetual rebuilds).
+    for input in [
+        swift_dir.join("Package.swift"),
+        swift_dir.join("Package.resolved"),
+        swift_dir.join("Sources"),
+        manifest_dir.join(".swift-version"),
+    ] {
+        println!("cargo:rerun-if-changed={}", input.display());
+    }
     println!("cargo:rerun-if-env-changed=SWIFT");
     println!("cargo:rerun-if-env-changed=SWIFTC");
 

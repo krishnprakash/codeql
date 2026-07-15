@@ -29,7 +29,10 @@ unsafe extern "C" {
 pub enum ParseError {
     /// The provided source contained an interior NUL byte.
     NulByte,
-    /// The Swift side failed to produce a result.
+    /// The Swift shim returned no result. `SwiftParser` recovers from invalid
+    /// syntax (it always produces a tree, possibly with error nodes), so this
+    /// does *not* indicate a syntax error in the source — it means the shim
+    /// failed to serialize the tree to JSON or to allocate the result string.
     SwiftFailure,
 }
 
@@ -37,7 +40,9 @@ impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ParseError::NulByte => write!(f, "source contained an interior NUL byte"),
-            ParseError::SwiftFailure => write!(f, "swift-syntax failed to parse the source"),
+            ParseError::SwiftFailure => {
+                write!(f, "the swift-syntax shim failed to produce a JSON result")
+            }
         }
     }
 }
