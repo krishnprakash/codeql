@@ -244,9 +244,9 @@ has_ellipsis(int id: @callorconversionexpr ref);
 
 variadic(int id: @signaturetype ref);
 
-#keyset[parent, idx, is_from_recv]
-typeparam(unique int tp: @typeparamtype ref, string name: string ref,
-          int bound: @compositetype ref, int parent: @typeparamparentobject ref, int idx: int ref, boolean is_from_recv: boolean ref);
+#keyset[parent, idx]
+typeparam(unique int tp: @typeparamtype ref, string name: string ref, int bound: @compositetype ref,
+          int parent: @typeparamparentobject ref, int idx: int ref);
 
 @container = @file | @folder;
 

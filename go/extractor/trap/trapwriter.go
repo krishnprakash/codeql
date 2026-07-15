@@ -165,6 +165,8 @@ func (tw *Writer) Emit(table string, values []interface{}) error {
 			fmt.Fprintf(tw.wzip, "%d", value)
 		case float64:
 			fmt.Fprintf(tw.wzip, "%e", value)
+		case bool:
+			fmt.Fprintf(tw.wzip, "%t", value)
 		default:
 			return errors.New("Cannot emit value")
 		}
