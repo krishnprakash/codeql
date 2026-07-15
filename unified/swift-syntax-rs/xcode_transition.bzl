@@ -45,6 +45,7 @@ _xcode_transition = transition(
 
 def _wrapper_impl(ctx):
     src = ctx.attr.actual[0]
+
     # Forward the providers a downstream `rust_*` target reads from `deps`:
     # `DefaultInfo`, `CcInfo` (linking info), and `OutputGroupInfo`.
     providers = [src[DefaultInfo]]
