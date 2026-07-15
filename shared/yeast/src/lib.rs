@@ -358,8 +358,14 @@ impl Ast {
     /// programmatically from a source other than a tree-sitter parse (e.g. an
     /// external parser's output). Populate it with [`Ast::create_node`] /
     /// [`Ast::create_node_with_range`] and then designate the root with
-    /// [`Ast::set_root`]. The `schema` must already have every node kind and
-    /// field name registered (see [`schema::Schema`]).
+    /// [`Ast::set_root`].
+    ///
+    /// Node kind and field names may be registered in `schema` up front, or on
+    /// demand while building via [`Ast::register_kind`],
+    /// [`Ast::register_unnamed_kind`], and [`Ast::register_field`] (which return
+    /// the ids to pass to [`Ast::create_node_with_range`]). Passing a fresh
+    /// [`schema::Schema::new`] and registering names during construction is
+    /// therefore fine — see the swift-syntax adapter for an example.
     pub fn with_schema(schema: schema::Schema) -> Self {
         Self {
             root: Id(0),
