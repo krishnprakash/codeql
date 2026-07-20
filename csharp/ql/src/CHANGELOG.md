@@ -1,3 +1,21 @@
+## 1.8.0
+
+### Query Metadata Changes
+
+* Added the tag `external/cwe/cwe-073` to `cs/assembly-path-injection`.
+
+## 1.7.5
+
+No user-facing changes.
+
+## 1.7.4
+
+No user-facing changes.
+
+## 1.7.3
+
+No user-facing changes.
+
 ## 1.7.2
 
 No user-facing changes.

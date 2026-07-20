@@ -1,3 +1,33 @@
+## 9.2.1
+
+### Minor Analysis Improvements
+
+* Regular expression checks via annotation with `@javax.validation.constraints.Pattern` are now recognized as sanitizers for `java/path-injection`.
+* Added summary and LLM-generated source and sink models for `org.apache.poi`.
+* The first argument of the `uri` method of `WebClient$UriSpec` in `org.springframework.web.reactive.function.client` is now considered a request forgery sink. Previously only the first arguments of the `WebClient.create` and `WebClient$Builder.baseUrl` methods were considered. This may lead to more alerts for the query `java/ssrf` (Server-side request forgery).
+
+## 9.2.0
+
+### New Features
+
+* Kotlin 2.4.0 can now be analysed.
+
+### Minor Analysis Improvements
+
+* Improved modeling of Apache HttpClient `execute` method sinks for `java/ssrf` and `java/non-https-url`.
+
+## 9.1.2
+
+### Minor Analysis Improvements
+
+* Added LLM-generated source and sink models for `org.apache.avro`.
+
+## 9.1.1
+
+### Minor Analysis Improvements
+
+* Introduced a new sink kind `path-injection[read]` for Models-as-Data rows that only read from a path (such as `ClassLoader.getResource`, `FileInputStream`, `FileReader`, `Files.readAllBytes`, and related APIs). The general `java/path-injection` query continues to consider both `path-injection` and `path-injection[read]` sinks.
+
 ## 9.1.0
 
 ### New Features

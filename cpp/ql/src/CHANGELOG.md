@@ -1,3 +1,23 @@
+## 1.7.0
+
+### Query Metadata Changes
+
+* Added the tags `external/cwe/cwe-073` and `external/cwe/cwe-078` to `cpp/uncontrolled-process-operation`.
+
+## 1.6.5
+
+No user-facing changes.
+
+## 1.6.4
+
+No user-facing changes.
+
+## 1.6.3
+
+### Minor Analysis Improvements
+
+* The 'Cleartext transmission of sensitive information' query (`cpp/cleartext-transmission`) no longer raises an alert on calls to `fscanf` (and variants) when the call reads from an "obviously local" `FILE` stream such as `stdin`.
+
 ## 1.6.2
 
 No user-facing changes.

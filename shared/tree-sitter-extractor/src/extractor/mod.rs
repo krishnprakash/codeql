@@ -66,7 +66,7 @@ impl<'a> AstNode for Node<'a> {
 
 impl AstNode for yeast::Node {
     fn kind(&self) -> &str {
-        yeast::Node::kind(self)
+        yeast::Node::kind_name(self)
     }
     fn is_named(&self) -> bool {
         yeast::Node::is_named(self)
@@ -280,10 +280,11 @@ pub fn location_label(writer: &mut trap::Writer, location: trap::Location) -> tr
 }
 
 /// Extracts the source file at `path`, which is assumed to be canonicalized.
-/// When `yeast_runner` is `Some`, the parsed tree is first transformed
-/// through the supplied yeast `Runner` before TRAP extraction. Building the
-/// `Runner` (which parses YAML and constructs the schema) is the caller's
-/// responsibility, allowing it to be done once and shared across files.
+/// When `desugarer` is `Some`, the parsed tree is first transformed
+/// through the supplied yeast desugarer before TRAP extraction. Building
+/// the desugarer (which parses YAML and constructs the schema) is the
+/// caller's responsibility, allowing it to be done once and shared across
+/// files.
 #[allow(clippy::too_many_arguments)]
 pub fn extract(
     language: &Language,
@@ -295,9 +296,13 @@ pub fn extract(
     path: &Path,
     source: &[u8],
     ranges: &[Range],
-    yeast_runner: Option<&yeast::Runner<'_>>,
+    desugarer: Option<&dyn yeast::Desugarer>,
 ) {
     let path_str = file_paths::normalize_and_transform_path(path, transformer);
+    let source_root = std::env::current_dir()
+        .ok()
+        .and_then(|d| d.canonicalize().ok());
+    let diagnostics_path = file_paths::relativize_for_diagnostic(path, source_root.as_deref());
     let span = tracing::span!(
         tracing::Level::TRACE,
         "extract",
@@ -318,17 +323,20 @@ pub fn extract(
         source,
         diagnostics_writer,
         trap_writer,
-        &path_str,
+        &diagnostics_path,
         file_label,
         language_prefix,
         schema,
     );
 
-    if let Some(yeast_runner) = yeast_runner {
-        let ast = yeast_runner
-            .run_from_tree(&tree)
+    if let Some(desugarer) = desugarer {
+        let ast = desugarer
+            .run_from_tree(&tree, source)
             .unwrap_or_else(|e| panic!("Desugaring failed for {path_str}: {e}"));
         traverse_yeast(&ast, &mut visitor);
+        // Comments and other `extra` nodes are not represented in the desugared
+        // AST, so recover them directly from the original parse tree.
+        traverse_extras(&tree, &mut visitor);
     } else {
         traverse(&tree, &mut visitor);
     }
@@ -343,8 +351,9 @@ struct ChildNode {
 }
 
 struct Visitor<'a> {
-    /// The file path of the source code (as string)
-    path: &'a str,
+    /// A path suitable for diagnostic locations: relative to the source root if possible,
+    /// otherwise a file: URI
+    diagnostics_path: &'a str,
     /// The label to use whenever we need to refer to the `@file` entity of this
     /// source file.
     file_label: trap::Label,
@@ -360,6 +369,8 @@ struct Visitor<'a> {
     ast_node_parent_table_name: String,
     /// Language-specific name of the tokeninfo table
     tokeninfo_table_name: String,
+    /// Language-specific name of the trivia tokeninfo table
+    trivia_tokeninfo_table_name: String,
     /// A lookup table from type name to node types
     schema: &'a NodeTypeMap,
     /// A stack for gathering information from child nodes. Whenever a node is
@@ -376,13 +387,13 @@ impl<'a> Visitor<'a> {
         source: &'a [u8],
         diagnostics_writer: &'a mut diagnostics::LogWriter,
         trap_writer: &'a mut trap::Writer,
-        path: &'a str,
+        diagnostics_path: &'a str,
         file_label: trap::Label,
         language_prefix: &str,
         schema: &'a NodeTypeMap,
     ) -> Visitor<'a> {
         Visitor {
-            path,
+            diagnostics_path,
             file_label,
             source,
             diagnostics_writer,
@@ -390,9 +401,31 @@ impl<'a> Visitor<'a> {
             ast_node_location_table_name: format!("{language_prefix}_ast_node_location"),
             ast_node_parent_table_name: format!("{language_prefix}_ast_node_parent"),
             tokeninfo_table_name: format!("{language_prefix}_tokeninfo"),
+            trivia_tokeninfo_table_name: format!("{language_prefix}_trivia_tokeninfo"),
             schema,
             stack: Vec::new(),
         }
+    }
+
+    /// Emits a `TriviaToken` for the given `extra` node (e.g. a comment) from
+    /// the original parse tree. Trivia tokens carry a location and their source
+    /// text, but are not attached to a parent in the (possibly desugared) AST.
+    fn emit_trivia_token(&mut self, node: &Node) {
+        let id = self.trap_writer.fresh_id();
+        let loc = location_for(self, self.file_label, node);
+        let loc_label = location_label(self.trap_writer, loc);
+        self.trap_writer.add_tuple(
+            &self.ast_node_location_table_name,
+            vec![trap::Arg::Label(id), trap::Arg::Label(loc_label)],
+        );
+        self.trap_writer.add_tuple(
+            &self.trivia_tokeninfo_table_name,
+            vec![
+                trap::Arg::Label(id),
+                trap::Arg::Int(node.kind_id() as usize),
+                sliced_source_arg(self.source, node),
+            ],
+        );
     }
 
     fn record_parse_error(&mut self, loc: trap::Label, mesg: &diagnostics::DiagnosticMessage) {
@@ -433,7 +466,7 @@ impl<'a> Visitor<'a> {
         );
         mesg.severity(diagnostics::Severity::Warning)
             .location(
-                self.path,
+                self.diagnostics_path,
                 loc.start_line,
                 loc.start_column,
                 loc.end_line,
@@ -554,7 +587,7 @@ impl<'a> Visitor<'a> {
                         )
                         .severity(diagnostics::Severity::Warning)
                         .location(
-                            self.path,
+                            self.diagnostics_path,
                             loc.start_line,
                             loc.start_column,
                             loc.end_line,
@@ -830,8 +863,25 @@ fn traverse(tree: &Tree, visitor: &mut Visitor) {
     }
 }
 
+/// Walks the original tree-sitter tree and emits a `TriviaToken` for every
+/// `extra` node (e.g. a comment). Used to preserve comments that would
+/// otherwise be lost after a desugaring pass rewrites the tree.
+fn traverse_extras(tree: &Tree, visitor: &mut Visitor) {
+    emit_extras_in(visitor, tree.root_node());
+}
+
+fn emit_extras_in(visitor: &mut Visitor, node: Node<'_>) {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if child.is_extra() {
+            visitor.emit_trivia_token(&child);
+        } else {
+            emit_extras_in(visitor, child);
+        }
+    }
+}
+
 fn traverse_yeast(tree: &yeast::Ast, visitor: &mut Visitor) {
-    use yeast::Cursor;
     let mut cursor = tree.walk();
     visitor.enter_node(cursor.node());
     let mut recurse = true;
