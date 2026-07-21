@@ -246,11 +246,11 @@ swift.toolchain(
 use_repo(
     swift,
     "swift_toolchain",
-    "swift_toolchain_ubuntu24.04",
+    "swift_toolchain_ubuntu22.04",
 )
 
 register_toolchains(
-    "@swift_toolchain//:swift_toolchain_exec_ubuntu24.04",
+    "@swift_toolchain//:swift_toolchain_exec_ubuntu22.04",
 )
 
 # `apple_support`'s xcode_config and CC toolchains, needed by the Xcode

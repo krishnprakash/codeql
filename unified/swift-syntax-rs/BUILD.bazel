@@ -6,7 +6,7 @@ package(default_visibility = ["//visibility:public"])
 
 swift_runtime_libs(
     name = "swift_runtime_libs",
-    toolchain = "@swift_toolchain_ubuntu24.04//:files",
+    toolchain = "@swift_toolchain_ubuntu22.04//:files",
 )
 
 # Targets in this package require a Swift toolchain (Linux or macOS).
