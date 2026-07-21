@@ -1,7 +1,13 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load(":swift_runtime.bzl", "swift_runtime_libs")
 load(":xcode_transition.bzl", "xcode_transition_swift_library")
 
 package(default_visibility = ["//visibility:public"])
+
+swift_runtime_libs(
+    name = "swift_runtime_libs",
+    toolchain = "@swift_toolchain_ubuntu24.04//:files",
+)
 
 # Targets in this package require a Swift toolchain (Linux or macOS).
 # `select()` gives us OR-of-OSes; other platforms get marked incompatible
@@ -50,7 +56,7 @@ rust_binary(
     # `xcode_swift_toolchain`).
     data = select({
         "@platforms//os:macos": [],
-        "@platforms//os:linux": ["@swift_toolchain_ubuntu24.04//:files"],
+        "@platforms//os:linux": [":swift_runtime_libs"],
     }),
     edition = "2024",
     target_compatible_with = _SWIFT_SUPPORTED_PLATFORMS,
@@ -63,7 +69,7 @@ rust_test(
     crate = ":swift_syntax_rs",
     data = select({
         "@platforms//os:macos": [],
-        "@platforms//os:linux": ["@swift_toolchain_ubuntu24.04//:files"],
+        "@platforms//os:linux": [":swift_runtime_libs"],
     }),
     edition = "2024",
     target_compatible_with = _SWIFT_SUPPORTED_PLATFORMS,
