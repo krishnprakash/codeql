@@ -24,22 +24,19 @@ _EXTRA_TOOLCHAINS = "//command_line_option:extra_toolchains"
 
 def _transition_impl(settings, attr):
     if attr.os != "macos":
-        # Preserve inputs so the configuration is identical to the incoming one.
+        return {}
+    else:
         return {
-            _XCODE_VERSION_CONFIG: settings[_XCODE_VERSION_CONFIG],
-            _EXTRA_TOOLCHAINS: settings[_EXTRA_TOOLCHAINS],
+            _XCODE_VERSION_CONFIG: "@local_config_xcode//:host_xcodes",
+            _EXTRA_TOOLCHAINS: (
+                list(settings[_EXTRA_TOOLCHAINS]) +
+                ["@local_config_apple_cc_toolchains//:all"]
+            ),
         }
-    return {
-        _XCODE_VERSION_CONFIG: "@local_config_xcode//:host_xcodes",
-        _EXTRA_TOOLCHAINS: (
-            list(settings[_EXTRA_TOOLCHAINS]) +
-            ["@local_config_apple_cc_toolchains//:all"]
-        ),
-    }
 
 _xcode_transition = transition(
     implementation = _transition_impl,
-    inputs = [_XCODE_VERSION_CONFIG, _EXTRA_TOOLCHAINS],
+    inputs = [_EXTRA_TOOLCHAINS],
     outputs = [_XCODE_VERSION_CONFIG, _EXTRA_TOOLCHAINS],
 )
 
