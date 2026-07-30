@@ -4,12 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "30 2 * * *"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/mad_regenerate-models.yml"
-      - ".github/actions/fetch-codeql/action.yml"
 
 permissions:
   contents: read
