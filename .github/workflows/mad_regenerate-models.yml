@@ -28,11 +28,14 @@ jobs:
       - name: Setup CodeQL binaries
         uses: ./.github/actions/fetch-codeql
       - name: Clone repositories
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v5
         with:
           path: repos/${{ matrix.ref }}
           ref: ${{ matrix.ref }}
           repository: ${{ matrix.slug }}
+          persist-credentials: false
+          fetch-depth: 1
       - name: Build database
         env:
           SLUG: ${{ matrix.slug }}
