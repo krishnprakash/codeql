@@ -37,7 +37,7 @@ bazel_dep(name = "swift-syntax", version = "603.0.2")
 # Needed so we can `use_repo` `local_config_xcode` and
 # `local_config_apple_cc_toolchains` below (referenced by the per-target
 # Xcode-config transition in `unified/swift-syntax-rs/xcode_transition.bzl`).
-bazel_dep(name = "apple_support", version = "2.6.1")
+bazel_dep(name = "apple_support", version = "2.8.0")
 bazel_dep(name = "zstd", version = "1.5.7.bcr.1")
 
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.3", dev_dependency = True)
