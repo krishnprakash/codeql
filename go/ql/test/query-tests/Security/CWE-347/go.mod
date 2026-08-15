@@ -10,5 +10,5 @@ require (
 require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/stretchr/testify v1.8.3 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 )
