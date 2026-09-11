@@ -84,10 +84,9 @@ namespace Semmle.Extraction.CSharp.DependencyFetching
                     logger.LogInfo($"Querying NuGet feed '{feed}' succeeded.");
                     return true;
                 }
-                catch (Exception exc)
+                catch (TaskCanceledException tce)
                 {
-                    if (exc is TaskCanceledException tce &&
-                        tce.CancellationToken == cts.Token &&
+                    if (tce.CancellationToken == cts.Token &&
                         cts.Token.IsCancellationRequested)
                     {
                         logger.LogInfo($"Didn't receive answer from NuGet feed '{feed}' in {timeoutMilliSeconds}ms.");
@@ -95,6 +94,16 @@ namespace Semmle.Extraction.CSharp.DependencyFetching
                         continue;
                     }
 
+                    logger.LogInfo($"Querying NuGet feed '{feed}' failed. The reason for the failure: {tce.Message}");
+                    return false;
+                }
+                catch (HttpRequestException exc)
+                {
+                    logger.LogInfo($"Querying NuGet feed '{feed}' failed. The reason for the failure: {exc.Message}");
+                    return false;
+                }
+                catch (UriFormatException exc)
+                {
                     logger.LogInfo($"Querying NuGet feed '{feed}' failed. The reason for the failure: {exc.Message}");
                     return false;
                 }
