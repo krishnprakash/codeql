@@ -1,6 +1,6 @@
 {
     "name": "foo",
     "dependencies": {
-        "async": "3.2.2"
+        "async": "3.2.6"
     }
 }
