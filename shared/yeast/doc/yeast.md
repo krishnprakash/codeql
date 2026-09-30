@@ -53,29 +53,18 @@ A YEAST `Rule` has two parts:
    pattern language.
 2. A **transform** that produces replacement nodes from the match captures.
 
-The `Runner` applies rules by walking the tree top-down. At each node, it
-tries each rule in order. If a rule's query matches, the node is replaced by
-the transform's output, and the rules are re-applied to the result. If no
-rule matches, the node is kept and its children are processed recursively.
+The `Runner` translates the root with the first matching rule. Before the
+rule's transform runs, captured input nodes are recursively translated with
+the same rules. Every visited input node must match a rule; a missing match is
+an error.
 
 A rule can replace one node with zero nodes (deletion), one node (rewriting),
 or multiple nodes (expansion).
 
-By default a rule fires **at most once on a given node**: after firing, the
-engine will not re-try that same rule on the result root. Other rules may
-still fire on the result, and the rule may still fire on different nodes
-(including the result's children). To opt into iterative behaviour — when a
-rule's output is intentionally re-matched by the same rule — call
-`.repeated()` on the constructed `Rule`:
-
-```rust
-let r = yeast::rule!((foo ...) => (foo ...)).repeated();
-```
-
-Without `.repeated()`, a rule whose output happens to match its own query
-simply fires once and stops. With `.repeated()`, the rule is allowed to
-re-match indefinitely; the runner still enforces a global rewrite-depth
-limit (currently 100) as a safety net against accidental cycles.
+A rule's output is final for the current phase: it is not matched or traversed
+again. This allows rule queries to describe the input schema while transforms
+build nodes from a different output schema. Use another named phase when the
+output of one exhaustive translation must become the input to another.
 
 ## Query language
 
@@ -171,22 +160,21 @@ Templates construct new AST nodes using the `tree!` and `trees!` macros.
 All children in a template must be in named fields — output AST nodes are
 always fully fielded.
 
-When used inside a `rule!` macro, the context is implicit — no explicit
-`BuildCtx` argument is needed. When used standalone, they take a `BuildCtx`
-as the first argument:
+The macros use a `BuildCtx` binding named `ctx` from the surrounding scope.
+`rule!` provides this binding automatically; standalone uses must create it:
 
 ```rust
-// Inside rule! — implicit context, captures are Rust variables
+// Inside rule! — ctx is provided automatically, captures are Rust variables
 yeast::rule!(
     (assignment left: (_) @left right: (_) @right)
     =>
     (assignment left: {right} right: {left})
 );
 
-// Standalone — explicit context
+// Standalone — create a binding named ctx
 let mut user_ctx = ();
 let mut ctx = BuildCtx::new(ast, &captures, &mut user_ctx);
-let id = yeast::tree!(ctx,
+let id = yeast::tree!(
     (assignment
         left: {ctx.capture("lhs")}
         right: {ctx.capture("rhs")}
@@ -199,7 +187,7 @@ let id = yeast::tree!(ctx,
 `tree!(...)` returns a single node `Id`:
 
 ```rust
-yeast::tree!(ctx,
+yeast::tree!(
     (assignment
         left: {ctx.capture("lhs")}
         right: {ctx.capture("rhs")}
@@ -212,7 +200,7 @@ yeast::tree!(ctx,
 `trees!(...)` returns `Vec<Id>`:
 
 ```rust
-yeast::trees!(ctx,
+yeast::trees!(
     (assignment left: {tmp} right: {right})
     {body}
 )
@@ -273,7 +261,6 @@ rule!(
     =>
     synthetic_node {
         tree_at!(
-            ctx,
             source_node,
             (synthetic_node child: (nested value: {child}))
         )
@@ -293,7 +280,6 @@ rule!(
     =>
     synthetic_node {
         tree_spanning!(
-            ctx,
             [first, second],
             (synthetic_node child: {child})
         )
@@ -393,7 +379,7 @@ options uniformly:
     right: {rhs}               // a captured value (inside rule!)
 )
 
-yeast::trees!(ctx,
+yeast::trees!(
     (assignment left: {tmp} right: {right})
     {extra_nodes}              // splices a Vec<Id>
 )
@@ -429,10 +415,9 @@ rule!(
 
 ### Raw captures (`@@name`)
 
-The default `@name` capture marker is *auto-translated*: in OneShot
-phases the macro recursively translates the captured node before
-binding it, so `{name}` in the output template splices a node that
-already conforms to the output schema.
+The default `@name` capture marker is *auto-translated*: the macro recursively
+translates the captured node before binding it, so `{name}` in the output
+template splices a node that already conforms to the output schema.
 
 For rules that need the raw (input-schema) capture — typically to read
 its source text or to translate it explicitly with mutable context
@@ -456,9 +441,7 @@ yeast::rule!(
 );
 ```
 
-Mix `@` and `@@` freely in the same rule. In a Repeating phase both
-markers are equivalent (auto-translation is a no-op for repeating
-rules).
+Mix `@` and `@@` freely in the same rule.
 
 ## The `rule!` macro
 
@@ -574,18 +557,17 @@ Prefer the simplest form that fits:
 
 ## Integration with the extractor
 
-A YEAST desugaring pass is configured with a [`DesugaringConfig`], which
-carries one or more named [`Phase`]s of rules and an optional output
-node-types schema (in YAML format). Each phase is a complete traversal
-that runs to completion before the next phase starts; only the current
-phase's rules are considered during that traversal. Attach the config to
-a language spec
-to enable rewriting:
+A YEAST translation pass is configured with a [`DesugaringConfig`], which
+carries one or more named [`Phase`]s of exhaustive rules and an optional
+output node-types schema (in YAML format). Each phase translates the previous
+phase's root before the next phase starts; only the current phase's rules are
+considered during that translation. Attach the config to a language spec to
+enable rewriting:
 
 ```rust
 let desugar = yeast::DesugaringConfig::new()
-    .add_phase("cleanup", yeast::PhaseKind::Repeating, cleanup_rules())
-    .add_phase("translate", yeast::PhaseKind::OneShot, translate_rules())
+    .add_phase("normalize", normalization_rules())
+    .add_phase("translate", translation_rules())
     .with_output_node_types_yaml(include_str!("output-node-types.yml"));
 
 let lang = simple::LanguageSpec {
@@ -600,14 +582,10 @@ let lang = simple::LanguageSpec {
 A single-phase config is just `.add_phase(...)` called once. Phase names
 appear in error messages so you can tell which phase failed.
 
-There are two kinds of phases:
-- **Repeating**:
-    Each node is re-processed until none of the rules in the phase matches.
-    When a node no longer matches any rules, its children are recursively processed. In practice this is used to desugar or simplify an AST, while staying mostly within the same schema.
-- **One-shot**:
-    Each node is processed by the first matching rule, and the engine panics if no rule matches.
-    Rules are then recursively applied to every captured node.
-    In practice this is used when translating from one AST schema to another, where an exhaustive match is required.
+Every phase uses one-shot translation: each visited input node is processed by
+the first matching rule, captured nodes are recursively translated, and the
+phase errors if no rule matches. Output nodes are not reprocessed in the same
+phase.
 
 The same YAML node-types is used for both the runtime yeast `Schema` (so
 rules can refer to output-only kinds and fields) and TRAP validation (it
@@ -645,8 +623,7 @@ let translation_rules: Vec<yeast::Rule> = yeast::rules! {
 Each comma-separated item in the bracketed list may be:
 
 - A **bare rule body** `(query) => (template)` — no `rule!(...)` wrapper.
-- An explicit `rule!(...)` invocation, with optional postfix calls such
-  as `rule!(...).repeated()`.
+- An explicit `rule!(...)` invocation.
 - Any other expression returning a `Rule` (helper functions, etc.).
 
 Schema paths are resolved relative to the consuming crate's
