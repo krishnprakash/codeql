@@ -4,6 +4,7 @@
 overlay[local?]
 module;
 
+private import AstPlugin
 private import codeql.files.FileSystem
 private import codeql.unified.internal.NameBinding as NameBinding
 
@@ -150,14 +151,21 @@ module Unified {
     /** Gets a direct base class of this class. */
     ClassLikeDeclaration getABaseClass() {
       result.getNameNode() =
-        NameBinding::getStaticBindingTarget(NameBinding::getIdentifierFromRef(this.getABaseType()
-                .getType()))
+        NameBinding::getStaticBindingTargetFromRef(this.getABaseType().getType())
+    }
+
+    override string toString() {
+      result = concat(getClassLikeDeclarationKeyword(this) + " ") + concat(this.getName())
     }
   }
 
   class ConstructorDeclaration extends G::ConstructorDeclaration {
     /** Gets the name of this constructor. */
     string getName() { result = this.getNameNode().getValue() }
+
+    override string toString() {
+      result = concat(getConstructorDeclarationKeyword(this) + " ") + concat(this.getName())
+    }
   }
 
   class ContinueExpr extends G::ContinueExpr {
@@ -168,6 +176,22 @@ module Unified {
   class FunctionDeclaration extends G::FunctionDeclaration {
     /** Gets the name of this function. */
     string getName() { result = this.getNameNode().getValue() }
+
+    override string toString() {
+      result = concat(getFunctionDeclarationKeyword(this) + " ") + concat(this.getName())
+    }
+  }
+
+  class VariableDeclaration extends G::VariableDeclaration {
+    /** Gets the name node of this variable declaration, if any. */
+    Identifier getNameNode() { result = this.getPattern() }
+
+    /** Gets the name of the variable being declared, if any. */
+    string getName() { result = this.getNameNode().getValue() }
+
+    override string toString() {
+      result = concat(getVariableDeclarationKeyword(this) + " ") + concat(this.getName())
+    }
   }
 
   class LabeledStmt extends G::LabeledStmt {
@@ -215,6 +239,12 @@ module Unified {
           p order by p.getParentIndex()
         )
     }
+  }
+
+  /** A tuple expression. */
+  class TupleExpr extends G::TupleExpr {
+    /** Gets the number of elements in this tuple expression. */
+    int getNumberOfElements() { result = count(this.getAnElement()) }
   }
 
   class TypeAliasDeclaration extends G::TypeAliasDeclaration {
@@ -273,5 +303,11 @@ module Unified {
     int getNumberOfPositionalArguments() {
       result = count(Argument arg | arg = this.getAnArgument() and arg.isPositional())
     }
+  }
+
+  /** A function expression. */
+  class FunctionExpr extends G::FunctionExpr {
+    /** Gets the number of parameters of this function. */
+    int getNumberOfParameters() { result = count(this.getAParameter()) }
   }
 }
