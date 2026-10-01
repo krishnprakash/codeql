@@ -96,7 +96,6 @@ fn and_chain(
 /// Return the only pattern unchanged when there is exactly one, otherwise
 /// wrap the list in an `or_pattern`.
 fn make_or_pattern(
-    ctx: &mut yeast::build::BuildCtx<'_, SwiftContext>,
     items: Vec<yeast::Id>,
 ) -> yeast::Id {
     if items.len() == 1 {
