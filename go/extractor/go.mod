@@ -10,7 +10,7 @@ toolchain go1.27.2
 //    bazel mod tidy
 require (
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/mod v0.41.0
+	golang.org/x/mod v0.42.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/tools v0.51.0
 )
