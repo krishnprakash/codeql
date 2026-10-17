@@ -823,10 +823,8 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
                 return_type: {ret}
                 body: (block stmt: {body}))
         ),
-        // A closure capture (`[weak self]`, `[x]`, `[y = expr]`). The optional
-        // ownership specifier (`weak`/`unowned`) becomes a modifier; the
-        // captured name becomes the bound `name_node`; an explicit capture
-        // initializer (`[y = expr]`) becomes the bound value.
+        // A closure capture (`[weak self]`, `[x]`, `[y = expr]`).
+        // Normalize so there is always an explicit initializer, expanding `[x]` into `[x = x]`.
         rule!(
             (closureCapture
                 specifier: (closureCaptureSpecifier specifier: @@spec)?
@@ -836,7 +834,13 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
             (variable_declaration
                 modifier: (modifier #{spec})?
                 pattern: (identifier #{name})
-                value: {val})
+                value: {
+                    // Expand [x] into [x = x]
+                    match val {
+                        Some(val) => val,
+                        None => tree!((identifier #{name})),
+                    }
+                })
         ),
         // A closure parameter clause (`(x: Int, y)`) unwraps to its parameters.
         rule!((closureParameterClause parameters: _* @params) => parameter* { params }),
@@ -1164,6 +1168,24 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         // becomes a `modifier`; its source text is the modifier spelling.
         rule!((attribute) @m => (modifier #{m})),
         rule!((declModifier) @m => (modifier #{m})),
+        // Type specifiers (`inout`, `sending`, ...) are mapped to modifiers.
+        rule!((simpleTypeSpecifier) @m => (modifier #{m})),
+        rule!((lifetimeTypeSpecifier) @m => (modifier #{m})),
+        rule!((nonisolatedTypeSpecifier) @m => (modifier #{m})),
+        // An attributed type is mapped to a modified type of its base type.
+        rule!(
+            (attributedType
+                specifiers: _* @specs
+                attributes: _* @attrs
+                lateSpecifiers: _* @late
+                baseType: @base)
+            =>
+            (modified_type_expr
+                modifier: {specs}
+                modifier: {attrs}
+                modifier: {late}
+                type: {base})
+        ),
         // Preserve the `super` keyword as a dedicated expression, normally used
         // as the base of a member access (`super.foo`).
         rule!((superExpr superKeyword: @@keyword) => (super_expr #{keyword})),
@@ -1471,7 +1493,6 @@ fn translation_rules() -> Vec<Rule<SwiftContext>> {
         // currently map them to the unified AST. Syntax nested inside one of
         // these roots is discarded with its parent and needs no separate rule.
         rule!((actorDecl) => (unsupported_node)),
-        rule!((attributedType) => (unsupported_node)),
         rule!((borrowExpr) => (unsupported_node)),
         rule!((classRestrictionType) => (unsupported_node)),
         rule!((compositionType) => (unsupported_node)),
