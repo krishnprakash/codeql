@@ -1,9 +1,5 @@
 use proc_macro2::{Span, TokenStream, TokenTree};
 use quote::quote;
-use syn::{
-    parse::{Parse, ParseStream},
-    Expr, Token,
-};
 
 type Result<T> = std::result::Result<T, syn::Error>;
 
@@ -26,47 +22,6 @@ pub fn parse_tree_top(input: TokenStream) -> Result<TokenStream> {
 pub fn parse_trees_top(input: TokenStream) -> Result<TokenStream> {
     let templates = crate::template_parse::parse_templates(input)?;
     Ok(crate::ast::Template::lower_list(&templates))
-}
-
-pub fn parse_tree_at_top(input: TokenStream) -> Result<TokenStream> {
-    let LocatedTreeInput { source, template } = syn::parse2(input)?;
-    let template = crate::template_parse::parse_template(template)?;
-    let node = template.lower_root();
-    let ctx = syn::Ident::new("ctx", Span::call_site());
-
-    Ok(quote! {
-        {
-            let __yeast_source: yeast::Id = { #source };
-            let __yeast_source_range = #ctx
-                .ast
-                .get_node(__yeast_source)
-                .and_then(|node| node.source_range());
-            let __yeast_node: yeast::Id = #node;
-            #ctx.set_node_source_range(__yeast_node, __yeast_source_range)
-        }
-    })
-}
-
-pub fn parse_tree_spanning_top(input: TokenStream) -> Result<TokenStream> {
-    let LocatedTreeInput {
-        source: sources,
-        template,
-    } = syn::parse2(input)?;
-    let template = crate::template_parse::parse_template(template)?;
-    let node = template.lower_root();
-    let ctx = syn::Ident::new("ctx", Span::call_site());
-
-    Ok(quote! {
-        {
-            let __yeast_source_range = ::std::iter::IntoIterator::into_iter({ #sources })
-                .filter_map(|source: yeast::Id| {
-                    #ctx.ast.get_node(source).and_then(|node| node.source_range())
-                })
-                .reduce(yeast::Range::union);
-            let __yeast_node: yeast::Id = #node;
-            #ctx.set_node_source_range(__yeast_node, __yeast_source_range)
-        }
-    })
 }
 
 pub fn parse_rule_top(input: TokenStream) -> Result<TokenStream> {
@@ -96,6 +51,25 @@ pub fn parse_rules_top(input: TokenStream) -> Result<TokenStream> {
     };
     let input_abs = resolve_path(&input_path.value);
     let output_abs = resolve_path(&output_path.value);
+    let output_yaml = std::fs::read_to_string(&output_abs).map_err(|error| {
+        syn::Error::new(
+            output_path.literal_span,
+            format!(
+                "rules!: failed to read output schema `{}`: {error}",
+                output_abs.display()
+            ),
+        )
+    })?;
+    let output_leaf_kinds = yeast_schema::node_types_yaml::leaf_kinds_from_yaml(&output_yaml)
+        .map_err(|error| {
+            syn::Error::new(
+                output_path.literal_span,
+                format!(
+                    "rules!: failed to parse output schema `{}`: {error}",
+                    output_abs.display()
+                ),
+            )
+        })?;
 
     let list = expect_group(&mut tokens, proc_macro2::Delimiter::Bracket)?;
     if let Some(token) = tokens.next() {
@@ -108,8 +82,15 @@ pub fn parse_rules_top(input: TokenStream) -> Result<TokenStream> {
     let emitted_items = split_top_level_commas(list.stream())
         .into_iter()
         .map(|item| {
-            if has_top_level_arrow(&item) {
-                Ok(crate::rule_parse::parse_rule(item)?.lower())
+            let rule_body = if has_top_level_arrow(&item) {
+                Some(item.clone())
+            } else {
+                explicit_rule_body(&item)
+            };
+            if let Some(rule_body) = rule_body {
+                let mut rule = crate::rule_parse::parse_rule(rule_body)?;
+                rule.resolve_bare_leaf_content(&output_leaf_kinds)?;
+                Ok(rule.lower())
             } else {
                 Ok(item)
             }
@@ -127,22 +108,9 @@ pub fn parse_rules_top(input: TokenStream) -> Result<TokenStream> {
     })
 }
 
-struct LocatedTreeInput {
-    source: Expr,
-    template: TokenStream,
-}
-
-impl Parse for LocatedTreeInput {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let source = input.parse()?;
-        input.parse::<Token![,]>()?;
-        let template = input.parse()?;
-        Ok(Self { source, template })
-    }
-}
-
 struct NamedString {
     value: String,
+    literal_span: Span,
 }
 
 fn parse_named_string_arg(
@@ -168,7 +136,10 @@ fn parse_named_string_arg(
             format!("`{expected_name}` must be a string literal path"),
         )
     })?;
-    Ok(NamedString { value })
+    Ok(NamedString {
+        value,
+        literal_span: literal.span(),
+    })
 }
 
 fn string_literal_value(literal: &proc_macro2::Literal) -> Option<String> {
@@ -209,6 +180,17 @@ fn has_top_level_arrow(stream: &TokenStream) -> bool {
                     && second.as_char() == '>'
         )
     })
+}
+
+fn explicit_rule_body(stream: &TokenStream) -> Option<TokenStream> {
+    let expression = syn::parse2::<syn::ExprMacro>(stream.clone()).ok()?;
+    let is_rule = expression
+        .mac
+        .path
+        .segments
+        .last()
+        .is_some_and(|segment| segment.ident == "rule");
+    is_rule.then_some(expression.mac.tokens)
 }
 
 type Tokens = std::iter::Peekable<proc_macro2::token_stream::IntoIter>;
@@ -270,5 +252,13 @@ mod tests {
         assert!(!has_top_level_arrow(
             &quote! { { match x { 1 => 2, _ => 3 } } }
         ));
+    }
+
+    #[test]
+    fn recognizes_explicit_rule_macros() {
+        assert!(explicit_rule_body(&quote! { rule!((a) => (b)) }).is_some());
+        assert!(explicit_rule_body(&quote! { yeast::rule!((a) => (b)) }).is_some());
+        assert!(explicit_rule_body(&quote! { other!((a) => (b)) }).is_none());
+        assert!(explicit_rule_body(&quote! { make_rule() }).is_none());
     }
 }
